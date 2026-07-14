@@ -1,0 +1,19 @@
+[package]
+name = "gerax-db"
+
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+description = "Abstrações de persistência do Gerax"
+
+[dependencies]
+gerax-core.workspace = true
+
+async-trait.workspace = true
+serde.workspace = true
+thiserror.workspace = true

@@ -1,0 +1,10 @@
+[package]
+name = "myapp"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+gerax = { version = "0.1", features = ["actix", "mongodb"] }
+# gerax = { version = "0.1", default-features = false, features = ["axum", "mongodb"] }
+
+tokio = { version = "1", features = ["full"] }

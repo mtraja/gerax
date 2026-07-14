@@ -1,0 +1,63 @@
+[workspace]
+resolver = "3"
+
+members = [
+    "crates/gerax",
+
+    "crates/gerax-core",
+    "crates/gerax-http",
+    "crates/gerax-db",
+
+    "crates/gerax-config",
+    "crates/gerax-auth",
+    "crates/gerax-macros",
+
+    "crates/gerax-actix",
+    "crates/gerax-poem",
+
+    "crates/gerax-mongodb",
+
+
+    "examples/myapp"
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+authors = ["Marcos Trajano <trajano.assis@gmail.com>"]
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/mtraja/gerax"
+rust-version = "1.96.1"
+publish = true
+
+[workspace.dependencies]
+[workspace.dependencies]
+
+# Fachada
+gerax = { path = "crates/gerax" }
+
+# Núcleo
+gerax-core = { path = "crates/gerax-core" }
+gerax-http = { path = "crates/gerax-http" }
+gerax-db = { path = "crates/gerax-db" }
+
+# Framework
+gerax-config = { path = "crates/gerax-config" }
+gerax-auth = { path = "crates/gerax-auth" }
+gerax-macros = { path = "crates/gerax-macros" }
+
+# HTTP
+gerax-actix = { path = "crates/gerax-actix" }
+gerax-poem = { path = "crates/gerax-poem" }
+
+# Banco de dados
+gerax-mongodb = { path = "crates/gerax-mongodb" }
+
+actix-web = { version = "4", features = ["macros"] }
+async-trait = "0.1"
+serde = { version = "1.0", features = ["derive"] }
+thiserror = "2.0"
+dotenv = "0.15"
+futures = "0.3"
+mongodb = "3"
+bson = { version = "2", features = ["chrono-0_4"] }

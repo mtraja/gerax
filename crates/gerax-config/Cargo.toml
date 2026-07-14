@@ -1,0 +1,16 @@
+[package]
+name = "gerax-config"
+
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+description = "Configuração"
+
+[dependencies]
+serde.workspace = true
+dotenv.workspace = true

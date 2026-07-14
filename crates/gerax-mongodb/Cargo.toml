@@ -1,0 +1,20 @@
+[package]
+name = "gerax-mongodb"
+
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+description = "Suporte ao MongoDB"
+
+[dependencies]
+gerax-core.workspace = true
+
+mongodb.workspace = true
+bson.workspace = true
+futures.workspace = true
+serde.workspace = true
