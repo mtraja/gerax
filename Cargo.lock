@@ -1032,6 +1032,7 @@ dependencies = [
  "gerax-core",
  "serde",
  "thiserror",
+ "tokio",
 ]
 
 [[package]]
