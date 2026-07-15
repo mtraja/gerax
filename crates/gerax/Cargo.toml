@@ -22,6 +22,7 @@ gerax-axum = { workspace = true, optional = true }
 gerax-poem = { workspace = true, optional = true }
 
 gerax-mongodb = { workspace = true, optional = true }
+gerax-postgres = { workspace = true, optional = true }
 
 gerax-auth = { workspace = true, optional = true }
 gerax-config = { workspace = true, optional = true }
@@ -34,6 +35,8 @@ axum = ["dep:gerax-http", "dep:gerax-axum"]
 poem = ["dep:gerax-http", "dep:gerax-poem"]
 
 mongodb = ["dep:gerax-mongodb"]
+
+postgres = ["dep:gerax-postgres"]
 
 auth = ["dep:gerax-auth"]
 config = ["dep:gerax-config"]

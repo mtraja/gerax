@@ -13,9 +13,11 @@ members = [
     "crates/gerax-macros",
 
     "crates/gerax-actix",
+    "crates/gerax-axum",
     "crates/gerax-poem",
 
     "crates/gerax-mongodb",
+    "crates/gerax-postgres",
 
 
     "examples/myapp"
@@ -47,16 +49,21 @@ gerax-macros = { path = "crates/gerax-macros" }
 
 # HTTP
 gerax-actix = { path = "crates/gerax-actix" }
+gerax-axum = { path = "crates/gerax-axum" }
 gerax-poem = { path = "crates/gerax-poem" }
 
 # Banco de dados
 gerax-mongodb = { path = "crates/gerax-mongodb" }
+gerax-postgres = { path = "crates/gerax-postgres" }
 
 actix-web = { version = "4", features = ["macros"] }
+axum = { version = "0.8", features = ["macros"] }
+poem = { version = "3" }
 async-trait = "0.1"
 serde = { version = "1.0", features = ["derive"] }
 thiserror = "2.0"
 dotenv = "0.15"
 futures = "0.3"
 mongodb = "3"
+tokio-postgres = { version = "0.7", features = ["with-chrono-0_4"] }
 bson = { version = "2", features = ["chrono-0_4"] }

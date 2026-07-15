@@ -15,6 +15,9 @@ pub use gerax_poem::*;
 #[cfg(feature = "mongodb")]
 pub use gerax_mongodb::*;
 
+#[cfg(feature = "postgres")]
+pub use gerax_postgres::*;
+
 #[cfg(feature = "auth")]
 pub use gerax_auth::*;
 
