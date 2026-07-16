@@ -238,6 +238,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "app_postgres"
+version = "0.1.0"
+dependencies = [
+ "dotenv",
+ "gerax-core",
+ "gerax-db",
+ "gerax-postgre",
+ "serde",
+ "tokio",
+]
+
+[[package]]
 name = "async-trait"
 version = "0.1.89"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -974,7 +986,7 @@ dependencies = [
  "gerax-macros",
  "gerax-mongodb",
  "gerax-poem",
- "gerax-postgres",
+ "gerax-postgre",
 ]
 
 [[package]]
@@ -1076,12 +1088,17 @@ dependencies = [
 ]
 
 [[package]]
-name = "gerax-postgres"
+name = "gerax-postgre"
 version = "0.1.0"
 dependencies = [
- "futures",
+ "async-trait",
+ "dotenv",
  "gerax-core",
+ "gerax-db",
  "serde",
+ "serde_json",
+ "thiserror",
+ "tokio",
  "tokio-postgres",
 ]
 

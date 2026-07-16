@@ -1,0 +1,13 @@
+[package]
+name = "app_postgres"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+gerax-postgre = { path = "../../crates/gerax-postgre" }
+gerax-core = { path = "../../crates/gerax-core" }
+gerax-db = { path = "../../crates/gerax-db" }
+
+tokio = { version = "1", features = ["full"] }
+dotenv = "0.15"
+serde = { version = "1.0", features = ["derive"] }

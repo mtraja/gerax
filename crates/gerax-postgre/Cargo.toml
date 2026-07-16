@@ -1,5 +1,5 @@
 [package]
-name = "gerax-postgres"
+name = "gerax-postgre"
 
 version.workspace = true
 edition.workspace = true
@@ -13,7 +13,13 @@ description = "Suporte ao PostgreSQL"
 
 [dependencies]
 gerax-core.workspace = true
+gerax-db.workspace = true
 
 tokio-postgres.workspace = true
 serde.workspace = true
-futures.workspace = true
+serde_json.workspace = true
+
+async-trait.workspace = true
+thiserror.workspace = true
+dotenv.workspace = true
+tokio = { version = "1", features = ["full"] }

@@ -17,10 +17,11 @@ members = [
     "crates/gerax-poem",
 
     "crates/gerax-mongodb",
-    "crates/gerax-postgres",
+    "crates/gerax-postgre",
 
 
-    "examples/myapp"
+    "examples/myapp",
+    "examples/app_postgres"
 ]
 
 [workspace.package]
@@ -54,13 +55,14 @@ gerax-poem = { path = "crates/gerax-poem" }
 
 # Banco de dados
 gerax-mongodb = { path = "crates/gerax-mongodb" }
-gerax-postgres = { path = "crates/gerax-postgres" }
+gerax-postgre = { path = "crates/gerax-postgre" }
 
 actix-web = { version = "4", features = ["macros"] }
 axum = { version = "0.8", features = ["macros"] }
 poem = { version = "3" }
 async-trait = "0.1"
 serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
 thiserror = "2.0"
 dotenv = "0.15"
 futures = "0.3"

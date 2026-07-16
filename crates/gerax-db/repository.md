@@ -6,7 +6,7 @@ Define a interface de persistência de entidades.
 
 ## Contexto
 
-O Repository abstrai o mecanismo de armazenamento, permitindo que a aplicação funcione com MongoDB, PostgreSQL ou qualquer outro backend. A interface deve definir os metodos para atender os requisitos definos.
+O Repository abstrai o mecanismo de armazenamento, permitindo que a aplicação funcione com MongoDB, PostgreSQL ou qualquer outro backend. A interface deve definir os metodos para atender os requisitos definidos.
 
 ## Requisitos
 
@@ -34,3 +34,5 @@ O Repository abstrai o mecanismo de armazenamento, permitindo que a aplicação 
 - Deve criar uma entidade.
 - Deve buscar uma entidade existente.
 - Deve retornar None quando não existir.
+
+
