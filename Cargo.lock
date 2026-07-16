@@ -1061,8 +1061,10 @@ dependencies = [
 name = "gerax-macros"
 version = "0.1.0"
 dependencies = [
+ "gerax-core",
  "proc-macro2",
  "quote",
+ "serde",
  "syn",
 ]
 
