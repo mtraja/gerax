@@ -17,7 +17,7 @@ members = [
     "crates/gerax-poem",
 
     "crates/gerax-mongodb",
-    "crates/gerax-postgre",
+    "crates/gerax-postgres",
 
 
     "examples/myapp",
@@ -55,7 +55,7 @@ gerax-poem = { path = "crates/gerax-poem" }
 
 # Banco de dados
 gerax-mongodb = { path = "crates/gerax-mongodb" }
-gerax-postgre = { path = "crates/gerax-postgre" }
+gerax-postgres = { path = "crates/gerax-postgres" }
 
 actix-web = { version = "4", features = ["macros"] }
 axum = { version = "0.8", features = ["macros"] }

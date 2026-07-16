@@ -244,7 +244,7 @@ dependencies = [
  "dotenv",
  "gerax-core",
  "gerax-db",
- "gerax-postgre",
+ "gerax-postgres",
  "serde",
  "tokio",
 ]
@@ -986,7 +986,7 @@ dependencies = [
  "gerax-macros",
  "gerax-mongodb",
  "gerax-poem",
- "gerax-postgre",
+ "gerax-postgres",
 ]
 
 [[package]]
@@ -1088,7 +1088,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "gerax-postgre"
+name = "gerax-postgres"
 version = "0.1.0"
 dependencies = [
  "async-trait",

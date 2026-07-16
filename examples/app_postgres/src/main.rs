@@ -1,6 +1,6 @@
 use gerax_core::Entity;
 use gerax_db::{Connection, Repository};
-use gerax_postgre::PostgresRepository;
+use gerax_postgres::PostgresRepository;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]

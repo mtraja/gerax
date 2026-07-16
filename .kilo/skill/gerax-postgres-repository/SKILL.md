@@ -1,15 +1,15 @@
 ---
-name: gerax-postgre-repository
-description: Implementa o Repository para PostgreSQL na crate gerax-postgre seguindo o spec RepositoryPostgre.md
+name: gerax-postgres-repository
+description: Implementa o Repository para PostgreSQL na crate gerax-postgres seguindo o spec RepositoryPostgre.md
 ---
 
-# Skill: gerax-postgre-repository
+# Skill: gerax-postgres-repository
 
-Use quando precisar implementar ou modificar o repositório PostgreSQL na crate `gerax-postgre`.
+Use quando precisar implementar ou modificar o repositório PostgreSQL na crate `gerax-postgres`.
 
 ## Especificação
 
-Leia `crates/gerax-postgre/RepositoryPostgre.md` e `crates/gerax-postgre/SPEC.md` antes de implementar.
+Leia `crates/gerax-postgres/RepositoryPostgre.md` e `crates/gerax-postgres/SPEC.md` antes de implementar.
 
 ## Contratos obrigatórios
 
