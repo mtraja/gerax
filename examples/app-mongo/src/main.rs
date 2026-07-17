@@ -1,6 +1,6 @@
 use gerax_core::Entity;
 use gerax_db::{Connection, Repository};
-use gerax_postgres::PostgresRepository;
+use gerax_mongodb::MongoDbRepository;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -26,14 +26,11 @@ impl Entity for User {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    //dotenv::dotenv().ok();
+    dotenv::dotenv().ok();
 
-    let repo = PostgresRepository::<User>::connect().await?;
+    let repo = MongoDbRepository::<User>::connect().await?;
     repo.ping().await?;
-    println!("Conexao com PostgreSQL estabelecida!");
-
-    repo.create_table().await?;
-    println!("Tabela 'users' criada/verificada.");
+    println!("Conexao com MongoDB estabelecida!");
 
     let user = User {
         id: None,
@@ -42,22 +39,22 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
     let created = repo.insert(user).await?;
     println!("Usuario criado: {:?}", created);
+
     let user = User {
         id: None,
         name: "Rafael".to_string(),
         email: "mrafael@gmail.com".to_string(),
     };
-    let created = repo.insert(user).await?;
-    println!("Usuario criado: {:?}", created); 
+    let created2 = repo.insert(user).await?;
+    println!("Usuario criado: {:?}", created2);
 
     let user = User {
         id: None,
         name: "Raquel".to_string(),
         email: "raquelfran@gmail.com".to_string(),
     };
-    
-    let created = repo.insert(user).await?;
-    println!("Usuario criado: {:?}", created);
+    let created3 = repo.insert(user).await?;
+    println!("Usuario criado: {:?}", created3);
 
     let found = repo.find_by_id(&created.id.clone().unwrap()).await?;
     println!("Usuario buscado: {:?}", found);
@@ -67,15 +64,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let updated = repo
         .update(User {
-            id: created.id.clone(),
+            id: created3.id.clone(),
             name: "Raquel Updated".to_string(),
             email: "raquelf@example.com".to_string(),
         })
         .await?;
     println!("Usuario atualizado: {:?}", updated);
 
-  //  repo.delete(&created.id.clone().unwrap()).await?;
-   // println!("Usuario deletado.");
+    repo.delete(&created.id.clone().unwrap()).await?;
+    println!("Usuario deletado.");
 
     let after_delete = repo.find_by_id(&created.id.clone().unwrap()).await?;
     println!("Busca apos delete: {:?}", after_delete);

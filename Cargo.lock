@@ -238,6 +238,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "app_mongo"
+version = "0.1.0"
+dependencies = [
+ "dotenv",
+ "gerax-core",
+ "gerax-db",
+ "gerax-mongodb",
+ "serde",
+ "tokio",
+]
+
+[[package]]
 name = "app_postgres"
 version = "0.1.0"
 dependencies = [
@@ -994,9 +1006,12 @@ name = "gerax-actix"
 version = "0.1.0"
 dependencies = [
  "actix-web",
+ "async-trait",
  "gerax-core",
  "gerax-http",
  "serde",
+ "thiserror",
+ "tokio",
 ]
 
 [[package]]
@@ -1055,6 +1070,7 @@ dependencies = [
  "gerax-core",
  "serde",
  "thiserror",
+ "tokio",
 ]
 
 [[package]]
@@ -1072,11 +1088,15 @@ dependencies = [
 name = "gerax-mongodb"
 version = "0.1.0"
 dependencies = [
+ "async-trait",
  "bson",
+ "dotenv",
  "futures",
  "gerax-core",
+ "gerax-db",
  "mongodb",
  "serde",
+ "thiserror",
 ]
 
 [[package]]

@@ -17,3 +17,9 @@ gerax-http.workspace = true
 
 actix-web.workspace = true
 serde.workspace = true
+async-trait.workspace = true
+thiserror.workspace = true
+tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
+
+[dev-dependencies]
+tokio = { version = "1", features = ["full"] }

@@ -13,8 +13,12 @@ description = "Suporte ao MongoDB"
 
 [dependencies]
 gerax-core.workspace = true
+gerax-db.workspace = true
 
 mongodb.workspace = true
 bson.workspace = true
 futures.workspace = true
 serde.workspace = true
+async-trait.workspace = true
+thiserror.workspace = true
+dotenv.workspace = true

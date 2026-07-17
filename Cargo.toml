@@ -21,7 +21,8 @@ members = [
 
 
     "examples/myapp",
-    "examples/app_postgres"
+    "examples/app_postgres",
+    "examples/app-mongo"
 ]
 
 [workspace.package]
