@@ -1,44 +1,52 @@
----
-name: gerax-actix
-description: Implementa módulo de integração com Actix Web na crate gerax-actix seguindo o spec SPEC.md
----
+# gerax-actix — Habilidade em Português
 
-# Skill: gerax-actix
+## Especificação (Spec)
+- Implementar as abstrações de `gerax-http` para o framework Actix Web.
+- Servidor HTTP recebe estado compartilhado na inicialização.
+- Método de inicialização assíncrono bloqueia até encerramento ou erro.
+- Rotas construídas a partir do estado compartilhado.
+- Configuração de rotas via encadeamento (builder pattern).
+- Inicialização padrão não altera o estado quando nenhuma rota configurada.
+- Dependências apenas de `gerax-core`, `gerax-http` e `actix-web`.
+- Não vazar tipos específicos do Actix na API pública.
+- Porta configurável com padrão `0.0.0.0:8080`.
+- Estado compartilhado seguro para concorrência.
+- Erros usam hierarquia de `gerax-http`.
 
-Use quando precisar implementar ou modificar a integração com Actix Web na crate `gerax-actix`.
+## Implementação (Impl)
+1. Definir crate `gerax-actix` com dependências necessárias.
+2. Reexportar ou usar traits de `gerax-http`: `HttpServer`, `HttpServerBuilder`, `GeraxHttpError`.
+3. Criar struct `ActixHttpServer<S>` contendo:
+   - Configurações de endereço (host/port).
+   - Referência ao `actix_web::App` ou `HttpServer` interno.
+   - Estado compartilhado `S` (via Arc etc).
+4. Implementar trait `HttpServer<S>` para `ActixHttpServer<S>`:
+   - Método `listen(&mut self, state: S)` assíncrono:
+     * Construir `actix_web::App` usando estado (rotas, middlewares) via `configure_routes`.
+     * Vincular (`bind`) ao endereço configurado.
+     * Iniciar servidor (`run`) e aguardar shutdown/erro.
+     * Converter erros do Actix para `GeraxHttpError` (Bind, Runtime, Shutdown).
+   - Método `configure_routes(&mut self, state: &S)`:
+     * Chamar função de rotas fornecida pelo usuário via closure/trait.
+     * Permitir extensão de rotas via state (ex: rotas definidas no estado).
+5. Criar builder `ActixHttpServerBuilder<S>` implementando `HttpServerBuilder<S>`:
+   - Métodos `with_middleware`, `with_option` para armazenar configurações.
+   - Método `build` produzindo `ActixHttpServer<S>`.
+6. Garantir que tipos internos do Actix não vazem: usar apenas tipos públicos da trait.
+7. Porta padrão `0.0.0.0:8080` configurável via `with_option`.
+8. Usar `actix_web::App` com `data<S>` para compartilhar estado.
+9. Lidar com graceful shutdown usando actix signals.
 
-## Especificação
+## Testes (Test)
+- Teste unitário: garantir que `configure_routes` padrão (no-op) não muta estado.
+- Teste unitário: builder permite encadeamento de middlewares e opções.
+- Teste de integração: usar porta aleatória (`0.0.0.0:0`), subir servidor, fazer requisição HTTP (ex: `/`) e validar status 200.
+- Teste de rota protegida (se autenticação habilitada): validar que rota requer auth retorna 401/403 adequadamente.
+- Teste: inicialização sem rotas não altera estado compartilhado.
 
-Leia `crates/gerax-actix/SPEC.md` antes de implementar.
-
-## Contratos obrigatórios
-
-- Implementa as abstrações de `gerax-http` para o framework **Actix Web**.
-- `ActixServer::new()`: constrói instância com configuração padrão.
-- `run(state: AppState)`: inicia o servidor Actix Web em `0.0.0.0:8080` (configurável).
-- `routes(state: AppState)`: mapeia rotas definidas pelo usuário para `actix_web::App`.
-- Implementa `gerax_http::HttpServer<S>` para Actix Web.
-
-## Regras
-
-- Depende apenas de `gerax-core`, `gerax-http` e `actix-web`.
-- Não deve vazar tipos específicos do Actix na API pública do crate.
-- A inicialização deve ocorrer em porta configurável, com padrão em `0.0.0.0:8080`.
-- O estado compartilhado deve ser seguro para uso concorrente (`Send + Sync + 'static`).
-- Erros são representados pela hierarquia definida em `gerax-http::HttpError`.
-- O método de inicialização é assíncrono.
-- Usa `actix_web::HttpServer::bind` ou `actix_web::HttpServer::bind` com configuração de workers.
-
-## Estrutura esperada
-
-- `ActixServer` struct com configuração de porta e número de workers.
-- Implementação de `gerax_http::HttpServer<S>` para `ActixServer`.
-- Método `new()` para construção padrão.
-- Método `run(state)` que inicia o servidor e bloqueia até encerramento.
-- Método ou builder para configuração de rotas a partir do estado compartilhado.
-
-## Testes esperados
-
-- Teste de integração: sobe o servidor em porta aleatória, faz requisição HTTP e valida status 200.
-- Teste de rota protegida (se recurso de autenticação estiver habilitado).
-- Teste garantindo que a inicialização padrão não altera o estado quando nenhuma rota é configurada.
+## Pular (Skip)
+- Integração com outros frameworks além do Actix Web.
+- Suporte a HTTPS nativo (deixar para camada de proxy ou opções avançadas).
+- Recursos avançados do Actix como WebSockets, HTTP/2 (futuras extensões).
+- Geração automática de documentação OpenAPI.
+- Middleware de logging detalhado (pode ser adicionado via opções).
