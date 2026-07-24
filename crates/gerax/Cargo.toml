@@ -20,9 +20,15 @@ gerax-http = { workspace = true, optional = true }
 gerax-actix = { workspace = true, optional = true }
 gerax-axum = { workspace = true, optional = true }
 gerax-poem = { workspace = true, optional = true }
+gerax-salvo = { workspace = true, optional = true }
 
 gerax-mongodb = { workspace = true, optional = true }
 gerax-postgres = { workspace = true, optional = true }
+gerax-turso = { workspace = true, optional = true }
+
+gerax-ai = { workspace = true, optional = true }
+
+gerax-mysql = { workspace = true, optional = true }
 
 gerax-auth = { workspace = true, optional = true }
 gerax-config = { workspace = true, optional = true }
@@ -35,8 +41,12 @@ axum = ["dep:gerax-http", "dep:gerax-axum"]
 poem = ["dep:gerax-http", "dep:gerax-poem"]
 
 mongodb = ["dep:gerax-mongodb"]
-
 postgres = ["dep:gerax-postgres"]
+turso = ["dep:gerax-turso"]
+
+ai = ["dep:gerax-ai"]
+
+mysql = ["dep:gerax-mysql"]
 
 auth = ["dep:gerax-auth"]
 config = ["dep:gerax-config"]

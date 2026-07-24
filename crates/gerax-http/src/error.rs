@@ -1,27 +1,15 @@
-use std::error::Error as StdError;
-use std::fmt;
+use thiserror::Error;
 
-#[derive(Debug)]
-pub enum GeraxHttpError {
-    /// Falha ao vincular o servidor ao endereço/porta configurado.
-    Bind(String),
-    /// Falha durante a execução do servidor (após ele já estar rodando).
-    Runtime(String),
-    /// Falha durante o processo de encerramento (shutdown) do servidor.
-    Shutdown(String),
-    /// Configuração inválida ou incompleta antes da inicialização.
-    Config(String),
+#[derive(Debug, Error)]
+pub enum HttpServerError {
+    #[error("Falha ao iniciar o servidor: {0}")]
+    InitializationFailed(String),
+
+    #[error("Erro durante a execução do servidor: {0}")]
+    RuntimeError(String),
+
+    #[error("Erro de configuração: {0}")]
+    ConfigurationError(String),
 }
 
-impl fmt::Display for GeraxHttpError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::Bind(msg) => write!(f, "falha ao iniciar (bind): {msg}"),
-            Self::Runtime(msg) => write!(f, "falha em tempo de execução: {msg}"),
-            Self::Shutdown(msg) => write!(f, "falha ao encerrar: {msg}"),
-            Self::Config(msg) => write!(f, "configuração inválida: {msg}"),
-        }
-    }
-}
-
-impl StdError for GeraxHttpError {}
+pub type ServerResult<T = ()> = Result<T, HttpServerError>;

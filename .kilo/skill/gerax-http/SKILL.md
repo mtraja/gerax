@@ -1,129 +1,178 @@
-#name: gerax-http
-description: Gera e mantém o módulo gerax-http em Rust — uma camada de abstração (porta/port, no estilo hexagonal) para conexão com frameworks HTTP, totalmente independente de tecnologia. Use esta skill sempre que o usuário pedir para criar, revisar ou estender o módulo/crate "gerax-http", pedir uma "interface abstrata de servidor HTTP em Rust" desacoplada de framework, mencionar termos como "estado compartilhado", "trait HttpServer", "builder de servidor HTTP", ou pedir para integrar um framework concreto (axum, actix-web, warp, etc.) como adaptador dessa abstração. Também use ao gerar testes que verifiquem que a implementação padrão de configuração de rotas não altera o estado.
+# SKILL.md — Contrato Arquitetural Modular do Módulo gerax-http
+
+Este documento estabelece as especificações técnicas, padrões de projeto e o contrato de código abstrato para a skill `gerax-http` na linguagem Rust, estruturada de forma estritamente modular. Este design é independente de frameworks externos e serve como uma fundação reutilizável e desacoplada.
+
 ---
 
-# gerax-http (Rust)
+## 1. Estrutura de Arquivos do Módulo
 
-## O que é
+O módulo segue a organização canônica e modular do ecossistema Rust:
 
-`gerax-http` é a camada de domínio/porta de uma arquitetura hexagonal (ports &
-adapters) para servidores HTTP. Ela define **contratos** (traits) que
-descrevem o que é um servidor HTTP e como ele é configurado, sem nunca saber
-qual framework concreto (axum, actix-web, warp, hyper puro, etc.) vai
-implementá-los. A aplicação final é quem escolhe a tecnologia, criando um
-**adaptador** separado que implementa essas traits.
-
-Sempre que for gerar código para esta skill, gere primeiro a **porta**
-(traits abstratas, sem dependência de framework) e só depois, se pedido,
-um **adaptador** concreto em outro módulo/crate.
-
-## Por que a separação importa
-
-Se a trait `HttpServer` importar `axum::Router` ou `actix_web::App`, a
-abstração deixa de ser abstração — vira apenas uma casca em torno de um
-framework específico, e trocar de framework exige reescrever o domínio
-inteiro. Mantendo a porta livre de qualquer `use` de framework HTTP, a
-aplicação pode trocar de axum para actix-web (ou usar os dois em paralelo,
-por exemplo em testes) sem tocar na lógica de negócio.
-
-## Regras de geração de código
-
-Ao gerar ou revisar código para este módulo, siga estas regras (todas vêm da
-especificação original do projeto):
-
-1. **Zero conhecimento de framework.** Nenhum tipo, trait ou função deste
-   módulo pode referenciar diretamente um crate de framework HTTP. Se o
-   código gerado precisar de algo de um framework específico, isso pertence
-   a um crate adaptador separado, não a `gerax-http`.
-2. **Direção de dependência correta.** Adaptadores dependem da porta
-   (`gerax-http`); a porta nunca depende de um adaptador. Ao adicionar um
-   novo adaptador (ex: `gerax-http-axum`), ele deve importar as traits daqui
-   — nunca o contrário.
-3. **Estado compartilhado como parâmetro de inicialização.** O método que
-   inicializa o servidor (`listen`) recebe o estado compartilhado (`S`) como
-   parâmetro — o estado nunca é campo interno fixo do servidor antes disso.
-4. **`listen` bloqueia até encerramento ou erro.** Semanticamente, `listen`
-   só retorna quando o servidor para (`Ok(())`) ou falha (`Err(GeraxHttpError)`).
-   Não modele isso como fire-and-forget.
-5. **Estado seguro para concorrência.** O tipo genérico de estado deve ter
-   bounds `Clone + Send + Sync + 'static` (tipicamente um wrapper fino sobre
-   `Arc<...>` por dentro). Nunca assuma acesso exclusivo/single-threaded.
-6. **Erros em hierarquia própria.** Nunca propague tipos de erro de
-   framework (`hyper::Error`, `axum::Error`, etc.) através da porta. Modele
-   um enum próprio (ex: `GeraxHttpError`) que implemente `std::error::Error`.
-7. **Assincronia sempre que a plataforma suportar.** Métodos que fazem I/O
-   (`listen`, e outros que a aplicação adicionar) devem ser `async`. Use
-   `async-trait` se a trait precisar suportar `dyn Trait`/trait objects;
-   caso contrário, `async fn` nativo na trait (Rust 1.75+) é suficiente e
-   evita a dependência extra.
-8. **Builder pattern + Facade.** Configuração (middlewares, opções, etc.)
-   deve ser encadeável: métodos consomem e retornam `Self`. O builder atua
-   como facade, escondendo a complexidade de montar a implementação
-   concreta atrás de uma API fluente e uniforme.
-9. **Rotas construídas a partir do estado.** A montagem de rotas deve
-   derivar do estado compartilhado (ex: handlers fecham sobre uma cópia do
-   estado). `configure_routes` recebe `&S` para isso.
-10. **`configure_routes` tem implementação padrão no-op.** A trait
-    `HttpServer` fornece um corpo default vazio para `configure_routes` —
-    implementações concretas só sobrescrevem quando realmente precisam de
-    configuração de rotas além da montagem padrão.
-
-## Estrutura de referência
-
-O arquivo `reference.rs` na raiz do crate gerax-http contém a implementação
-canônica completa: hierarquia de erros, trait `HttpServer<S>`, trait
-`HttpServerBuilder<S>`, um adaptador "noop" mínimo (`NoopHttpServer`) usado
-só para exercitar o contrato em testes, e os testes esperados. Leia esse
-arquivo antes de gerar código novo para garantir consistência de nomes e
-assinaturas — reaproveite os mesmos nomes de tipos/traits a menos que o
-usuário peça explicitamente para renomear.
-
-Ao criar um projeto novo do zero, organize assim:
-
-```
-gerax-http/                  # crate da porta (esta skill)
+```text
+gerax-http/
 ├── Cargo.toml
 └── src/
-    ├── lib.rs               # re-exporta error, server, builder
-    ├── error.rs             # GeraxHttpError
-    ├── server.rs            # trait HttpServer<S>
-    └── builder.rs           # trait HttpServerBuilder<S>
+    ├── error.rs
+    ├── lib.rs
+    ├── builder/
+    │   └── mod.rs
+    ├── middleware/
+    │   └── mod.rs
+    ├── router/
+    │   └── mod.rs
+    └── server/
+        └── mod.rs
+```
 
-Se o usuário só quer o módulo dentro de um crate maior já existente, gere um
-único módulo `gerax_http` com os mesmos arquivos internos como submódulos,
-em vez de um crate separado — pergunte se não estiver claro pelo contexto
-(monorepo com múltiplos crates vs. módulo dentro de uma aplicação única).
+---
 
-## Testes esperados
+## 2. Implementação por Arquivo
 
-Sempre gere (ou verifique que já existe) um teste que comprove que a
-implementação padrão de `configure_routes` **não altera o estado**: clone o
-estado antes, chame o default no-op, e compare (`assert_eq!`) com o estado
-original. Veja `default_configure_routes_does_not_mutate_state` em
-`references/gerax_http_reference.rs` como modelo. Se a aplicação adicionar
-lógica própria em `configure_routes` (sobrescrevendo o default), este teste
-específico deixa de se aplicar a essa implementação — mas o teste do
-default no-op na trait/porta continua valendo.
+### 2.1. `Cargo.toml`
+```toml
+[package]
+name = "gerax-http"
+version = "0.1.0"
+edition = "2024"
 
-Outros testes úteis a considerar (nem sempre exigidos, use julgamento):
-- Encadeamento do builder produz a configuração esperada (middlewares/opções
-  na ordem correta).
-- `listen` retorna `Err(GeraxHttpError::Config(..))` quando a configuração é
-  inválida, sem chegar a bloquear.
-- Um adaptador concreto de teste (não-noop) realmente deriva as rotas do
-  estado passado (ex: uma rota só existe se um campo do estado permitir).
+[dependencies]
+thiserror = "1.0"
+```
 
-## Ao adicionar um adaptador concreto (axum, actix-web, etc.)
+### 2.2. `src/error.rs`
+```rust
+use thiserror::Error;
 
-1. Crie um crate/módulo separado que dependa do crate da porta.
-2. Implemente `HttpServer<S>` e, se fizer sentido, `HttpServerBuilder<S>`
-   usando os tipos do framework escolhido *apenas dentro deste adaptador*.
-3. Sobrescreva `configure_routes` só se o adaptador precisar registrar algo
-   além do que os handlers já fazem ao fechar sobre o estado.
-4. Implemente `listen` para: montar rotas via `self.configure_routes(&state)`,
-   iniciar o servidor real do framework, e bloquear até shutdown/erro,
-   convertendo os erros do framework para `GeraxHttpError` (nunca vazando o
-   tipo de erro original através da porta).
-5. Não exporte nada do framework subjacente na API pública do adaptador que
-   force o código da aplicação a importar aquele framework diretamente —
-   isso reintroduziria o acoplamento que a porta existe para evitar.
+#[derive(Debug, Error)]
+pub enum HttpServerError {
+    #[error("Falha ao iniciar o servidor: {0}")]
+    InitializationFailed(String),
+    
+    #[error("Erro durante a execução do servidor: {0}")]
+    RuntimeError(String),
+    
+    #[error("Erro de configuração: {0}")]
+    ConfigurationError(String),
+}
+
+pub type ServerResult<T = ()> = Result<T, HttpServerError>;
+```
+
+### 2.3. `src/middleware/mod.rs`
+```rust
+pub trait HttpMiddleware: Send + Sync {
+    fn name(&self) -> &str;
+}
+```
+
+### 2.4. `src/router/mod.rs`
+```rust
+use crate::error::ServerResult;
+
+/// Define como as rotas são construídas a partir do estado compartilhado.
+pub trait RouteConfigurator<S>: Send + Sync {
+    fn configure_routes(&self, _state: &S) -> ServerResult {
+        // Implementação padrão: no-op para garantir que o estado permaneça imutável
+        Ok(())
+    }
+}
+
+/// Implementação padrão no-op para uso como fallback automático.
+pub struct DefaultRouteConfigurator;
+impl<S> RouteConfigurator<S> for DefaultRouteConfigurator {}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[derive(Clone, Debug, PartialEq)]
+    struct AppState {
+        counter: i32,
+    }
+
+    #[test]
+    fn test_default_route_configurator_should_be_noop_and_not_mutate_state() {
+        let initial_state = AppState { counter: 42 };
+        let configurator = DefaultRouteConfigurator;
+        
+        let result = configurator.configure_routes(&initial_state);
+        
+        assert!(result.is_ok(), "A execução padrão deveria retornar Ok(())");
+        assert_eq!(
+            initial_state.counter, 42, 
+            "O estado compartilhado foi modificado ou violado pela implementação padrão"
+        );
+    }
+}
+```
+
+### 2.5. `src/server/mod.rs`
+```rust
+use std::future::Future;
+use std::pin::Pin;
+use crate::error::ServerResult;
+
+/// Interface do ciclo de vida do servidor HTTP.
+pub trait HttpServer: Send + Sync {
+    /// Inicia o servidor e bloqueia de forma assíncrona até o encerramento ou erro fatal.
+    fn run(self) -> Pin<Box<dyn Future<Output = ServerResult> + Send>>;
+}
+```
+
+### 2.6. `src/builder/mod.rs`
+```rust
+use crate::error::ServerResult;
+use crate::middleware::HttpMiddleware;
+use crate::router::RouteConfigurator;
+use crate::server::HttpServer;
+
+pub trait HttpServerBuilder<S>: Send + Sync 
+where
+    S: Send + Sync + 'static,
+{
+    type Server: HttpServer;
+
+    /// Cria uma nova instância do builder recebendo o estado compartilhado obrigatório.
+    fn new(state: S) -> Self;
+
+    /// Permite encadeamento de configuração para middlewares.
+    fn with_middleware(self, middleware: Box<dyn HttpMiddleware>) -> Self;
+
+    /// Permite configurar rotas customizadas.
+    fn with_routes(self, configurator: Box<dyn RouteConfigurator<S>>) -> Self;
+
+    /// Permite passar opções customizadas de configuração em formato chave-valor.
+    fn with_option(self, key: &str, value: &str) -> Self;
+
+    /// Consome o Builder e inicializa a estrutura do Servidor pronta para rodar.
+    fn build(self) -> ServerResult<Self::Server>;
+}
+```
+
+### 2.7. `src/lib.rs`
+```rust
+pub mod error;
+pub mod builder;
+pub mod middleware;
+pub mod router;
+pub mod server;
+
+// Re-exports para simplificar e expor a Facade de forma limpa
+pub use error::{HttpServerError, ServerResult};
+pub use builder::HttpServerBuilder;
+pub use middleware::HttpMiddleware;
+pub use router::{RouteConfigurator, DefaultRouteConfigurator};
+pub use server::HttpServer;
+```
+
+---
+
+## 3. Diretrizes de Coesão e Design
+
+1. **Inversão de Dependências:** Nenhum arquivo ou submódulo desta estrutura deve possuir dependências diretas de implementações concretas (ex: Axum, Actix ou Tokio). Toda a lógica técnica específica deve habitar em outro crate que implementará estas traits.
+2. **Encadeamento Fluído:** O comportamento do `HttpServerBuilder` deve impor um fluxo limpo de configurações opcionais, consumindo e devolvendo a propriedade (`self`) de maneira idiomática em Rust.
+3. **Imutabilidade nos Testes:** O teste contido em `src/router/mod.rs` serve como barreira de segurança contínua (CI/CD) para garantir que qualquer alteração de arquitetura respeite o contrato *no-op* padrão da skill.
+4. **Facade (Fachada):** Unifica a complexidade do ecossistema HTTP sob uma interface abstrata única, ocultando detalhes de transporte físico, gerenciamento de sockets e polling.
+5. **Builder Pattern:** Permite o encadeamento fluído de configurações opcionais (`with_middleware`, `with_option`, `with_routes`) antes da consolidação e inicialização do servidor.
+6. **Inversão de Dependência (IoC):** O motor HTTP concreto não conhece os domínios da aplicação; ele apenas gerencia o ciclo de vida do servidor e injeta o estado compartilhado fornecido.
+7. **Segurança de Concorrência:** O estado da aplicação (`AppState`) deve ser explicitamente seguro para tráfego multi-threaded, respeitando as garantias nativas de segurança em tempo de compilação do Rust.

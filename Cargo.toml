@@ -15,14 +15,18 @@ members = [
     "crates/gerax-actix",
     "crates/gerax-axum",
     "crates/gerax-poem",
+     "crates/gerax-salvo",
 
     "crates/gerax-mongodb",
     "crates/gerax-postgres",
+    "crates/gerax-turso",
+    "crates/gerax-ai",
+    "crates/gerax-mysql",
 
 
     "examples/myapp",
     "examples/app_postgres",
-    "examples/app-mongo"
+    "examples/app-mongo",
 ]
 
 [workspace.package]
@@ -53,10 +57,16 @@ gerax-macros = { path = "crates/gerax-macros" }
 gerax-actix = { path = "crates/gerax-actix" }
 gerax-axum = { path = "crates/gerax-axum" }
 gerax-poem = { path = "crates/gerax-poem" }
+gerax-salvo = { path = "crates/gerax-salvo" }
 
 # Banco de dados
 gerax-mongodb = { path = "crates/gerax-mongodb" }
 gerax-postgres = { path = "crates/gerax-postgres" }
+gerax-turso = { path = "crates/gerax-turso" }
+
+gerax-ai = { path = "crates/gerax-ai" }
+
+gerax-mysql = { path = "crates/gerax-mysql" }
 
 actix-web = { version = "4", features = ["macros"] }
 axum = { version = "0.8", features = ["macros"] }
@@ -70,3 +80,6 @@ futures = "0.3"
 mongodb = "3"
 tokio-postgres = { version = "0.7", features = ["with-chrono-0_4"] }
 bson = { version = "2", features = ["chrono-0_4"] }
+tokio = { version = "1", features = ["full"] }
+
+mysql_async = "0.31"

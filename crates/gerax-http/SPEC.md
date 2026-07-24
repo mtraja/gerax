@@ -21,6 +21,14 @@
 - Erros são representados por uma hierarquia própria.
 - Métodos são assíncronos quando a linguagem/plataforma suportar.
 - Permite configurar middlewares ou opções antes de rodar
+- Estrutura de Arquivos do Módulo segue a organização canônica e modular do ecossistema:
+   gerax-http
+    └── src
+        ├── error
+        ├── builder
+        ├── middleware
+        ├── router
+        └── server
 
 ## Testes Esperados
 
