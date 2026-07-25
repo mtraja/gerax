@@ -7,9 +7,9 @@
 - Rotas construídas a partir do estado compartilhado.
 - Configuração de rotas via encadeamento (builder pattern).
 - Inicialização padrão não altera o estado quando nenhuma rota configurada.
-- Dependências apenas de `gerax-core`, `gerax-http` e `actix-web`.
+- Dependências apenas de `gerax-core`, `gerax-config`, `gerax-http`  e `actix-web`.
 - Não vazar tipos específicos do Actix na API pública.
-- Porta configurável com padrão `0.0.0.0:8080`.
+- Porta configurável com os recursos da crate `gerax-config` com padrao `0.0.0.0:8080`.
 - Estado compartilhado seguro para concorrência.
 - Erros usam hierarquia de `gerax-http`.
 

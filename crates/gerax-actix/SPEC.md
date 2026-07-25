@@ -12,9 +12,9 @@ Implementa as abstrações de `gerax-http` para o framework **Actix Web**.
 
 ## Regras
 
-- Depende apenas de `gerax-core`, `gerax-http` e `actix-web`.
+- Depende apenas de `gerax-core`, `gerax-http`, `gerax-config` e `actix-web`.
 - Não deve vazar tipos específicos do Actix na API pública do crate.
-- A inicialização deve ocorrer em porta configurável, com padrão em `0.0.0.0:8080`.
+- A inicialização deve ocorrer em porta configurável com recursos da crate `gerax-config`, com padrão em `0.0.0.0:8080`.
 - O estado compartilhado deve ser seguro para uso concorrente.
 - Erros são representados pela hierarquia definida em `gerax-http`.
 - O método de inicialização é assíncrono.

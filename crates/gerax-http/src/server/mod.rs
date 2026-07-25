@@ -1,5 +1,5 @@
 //use std::future::Future;
-use crate::error::ServerResult;
+use crate::ServerResult;
 use async_trait::async_trait;
 
 /// Inicia o servidor HTTP.
