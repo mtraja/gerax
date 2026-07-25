@@ -2,12 +2,8 @@ use std::io;
 
 use thiserror::Error;
 
-
-
 /// Resultado padrão do gerax-config.
-pub type ConfigResult<T> =
-    Result<T, ConfigError>;
-
+pub type ConfigResult<T> = Result<T, ConfigError>;
 
 /// Representa os erros em Config
 #[derive(Debug, Error)]
