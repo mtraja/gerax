@@ -10,11 +10,17 @@ use gerax_http::{
     routing::{HttpMethod, Request, Router},
 };
 
+/// Representa um servidor HTTP implementado com Actix Web.
 pub struct ActixHttpServer<S> {
+    /// Estado compartilhado da aplicação.
     pub state: Arc<S>,
+    /// Rotas configuradas.
     pub router: Option<Arc<Router<S>>>,
+    /// Host de bind do servidor.
     pub host: String,
+    /// Porta de bind do servidor.
     pub port: u16,
+    /// Middlewares registrados.
     pub middlewares: Vec<Arc<dyn gerax_http::Middleware>>,
 }
 
@@ -23,6 +29,7 @@ impl<S> HttpServer for ActixHttpServer<S>
 where
     S: Send + Sync + 'static,
 {
+    /// Inicia o servidor Actix e aguarda encerramento ou erro.
     async fn run(self) -> ServerResult {
         let host = self.host;
         let port = self.port;

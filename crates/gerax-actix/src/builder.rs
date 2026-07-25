@@ -6,6 +6,7 @@ use crate::{ActixConfig, ActixHttpServer};
 
 use gerax_http::{HttpServerBuilder, Middleware, Router, ServerResult};
 
+/// Builder para construção fluida de servidores HTTP com Actix Web.
 pub struct ActixHttpServerBuilder<S> {
     state: S,
     router: Option<Arc<Router<S>>>,
@@ -17,6 +18,7 @@ impl<S> ActixHttpServerBuilder<S>
 where
     S: Send + Sync + 'static,
 {
+    /// Cria um novo builder a partir do estado compartilhado.
     pub fn new(state: S) -> Self {
         Self {
             state,
@@ -26,6 +28,7 @@ where
         }
     }
 
+    /// Cria um novo builder a partir do estado compartilhado e configuração inicial.
     pub fn from_config(state: S, config: ActixConfig) -> Self {
         Self {
             state,
@@ -35,16 +38,19 @@ where
         }
     }
 
+    /// Aplica uma configuração de servidor ao builder.
     pub fn config(mut self, config: ActixConfig) -> Self {
         self.config = config;
         self
     }
 
+    /// Define o roteador do servidor.
     pub fn route(mut self, router: Router<S>) -> Self {
         self.router = Some(Arc::new(router));
         self
     }
 
+    /// Adiciona um middleware ao servidor.
     pub fn middleware<M>(mut self, middleware: M) -> Self
     where
         M: Middleware,
@@ -60,15 +66,18 @@ where
 {
     type Server = ActixHttpServer<S>;
 
+    /// Cria um novo builder para o estado informado.
     fn new(state: S) -> Self {
         Self::new(state)
     }
 
+    /// Define o roteador do servidor.
     fn route(mut self, router: Router<S>) -> Self {
         self.router = Some(Arc::new(router));
         self
     }
 
+    /// Adiciona um middleware ao servidor.
     fn middleware<M>(mut self, middleware: M) -> Self
     where
         M: Middleware,
@@ -77,11 +86,13 @@ where
         self
     }
 
+    /// Aplica configuração carregada via `gerax-config`.
     fn config(self, cfg: ConfigBuilder) -> Self {
         let loaded = cfg.build::<ActixConfig>().unwrap_or_default();
         self.config(loaded)
     }
 
+    /// Constrói a instância de servidor Actix pronta para rodar.
     fn build(self) -> ServerResult<Self::Server> {
         Ok(ActixHttpServer {
             state: Arc::new(self.state),
