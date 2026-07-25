@@ -4,7 +4,7 @@
 //)]
 
 #![allow(unused_imports)]
-mod builder;
+pub mod builder;
 mod config;
 mod document;
 mod error;
