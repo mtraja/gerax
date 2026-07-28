@@ -2,15 +2,15 @@ use std::sync::Arc;
 
 use gerax_config::builder::ConfigBuilder;
 
-use crate::{ActixConfig, ActixHttpServer};
+use crate::ActixHttpServer;
 
-use gerax_http::{HttpServerBuilder, Middleware, Router, ServerResult};
+use gerax_http::{HttpServerBuilder, Middleware, Router, ServerResult, ServerConfig};
 
 /// Builder para construção fluida de servidores HTTP com Actix Web.
 pub struct ActixHttpServerBuilder<S> {
     state: S,
     router: Option<Arc<Router<S>>>,
-    config: ActixConfig,
+    config: ServerConfig,
     middlewares: Vec<Arc<dyn Middleware>>,
 }
 
@@ -23,13 +23,13 @@ where
         Self {
             state,
             router: None,
-            config: ActixConfig::default(),
+            config: ServerConfig::default(),
             middlewares: Vec::new(),
         }
     }
 
     /// Cria um novo builder a partir do estado compartilhado e configuração inicial.
-    pub fn from_config(state: S, config: ActixConfig) -> Self {
+    pub fn from_config(state: S, config: ServerConfig) -> Self {
         Self {
             state,
             router: None,
@@ -39,7 +39,7 @@ where
     }
 
     /// Aplica uma configuração de servidor ao builder.
-    pub fn config(mut self, config: ActixConfig) -> Self {
+    pub fn config(mut self, config: ServerConfig) -> Self {
         self.config = config;
         self
     }
@@ -88,7 +88,7 @@ where
 
     /// Aplica configuração carregada via `gerax-config`.
     fn config(self, cfg: ConfigBuilder) -> Self {
-        let loaded = cfg.build::<ActixConfig>().unwrap_or_default();
+        let loaded = cfg.build::<ServerConfig>().unwrap_or_default();
         self.config(loaded)
     }
 

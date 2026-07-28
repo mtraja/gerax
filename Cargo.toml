@@ -83,3 +83,5 @@ bson = { version = "2", features = ["chrono-0_4"] }
 tokio = { version = "1", features = ["full"] }
 
 mysql_async = "0.31"
+serde_urlencoded = "0.7"
+urlencoding = "2"

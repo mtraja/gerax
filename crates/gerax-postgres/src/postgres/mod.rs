@@ -1,26 +1,11 @@
 use async_trait::async_trait;
 use gerax_core::Entity;
-use gerax_db::{Connection, DbError, Repository};
+use gerax_db::{Connection, DbError, Repository, DatabaseConfig};
 use serde::{Deserialize, Serialize};
 use std::marker::PhantomData;
 use tokio_postgres::{Client, NoTls};
+use gerax_config::Config;
 
-#[derive(Debug, Clone)]
-pub struct PostgresConfig {
-    pub uri: String,
-    pub database: String,
-}
-
-impl PostgresConfig {
-    pub fn from_env() -> Result<Self, DbError> {
-        dotenv::dotenv().ok();
-        let uri = std::env::var("DATABASE_URL")
-            .map_err(|_| DbError::connection("DATABASE_URL not set in environment"))?;
-        let database = std::env::var("DATABASE_NAME")
-            .map_err(|_| DbError::connection("DATABASE_NAME not set in environment"))?;
-        Ok(Self { uri, database })
-    }
-}
 
 pub struct PostgresRepository<T> {
     client: Client,
@@ -56,8 +41,10 @@ where
     where
         Self: Sized,
     {
-        let config = PostgresConfig::from_env()?;
-        let (client, connection) = tokio_postgres::connect(&config.uri, NoTls)
+
+        let config = Config::builder().env().build::<DatabaseConfig>().expect("Deu erro");
+
+        let (client, connection) = tokio_postgres::connect(&config.url, NoTls)
             .await
             .map_err(|e| DbError::connection(e))?;
 

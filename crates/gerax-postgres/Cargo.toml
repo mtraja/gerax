@@ -13,6 +13,7 @@ description = "Suporte ao PostgreSQL"
 
 [dependencies]
 gerax-core.workspace = true
+gerax-config.workspace = true
 gerax-db.workspace = true
 
 tokio-postgres.workspace = true
