@@ -16,7 +16,7 @@ where
 
     fn middleware<M>(self, middleware: M) -> Self
     where
-        M: Middleware;
+        M: Middleware<State>;
 
     fn route(self, router: Router<State>) -> Self;
 

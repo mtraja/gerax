@@ -1,4 +1,6 @@
 use super::{Handler, HttpMethod, Route, Scope};
+use crate::routing::{Context, Response};
+use crate::{HttpServerError, ServerResult};
 use crate::Middleware;
 use std::sync::Arc;
 
@@ -20,7 +22,7 @@ use std::sync::Arc;
 pub struct Router<State> {
     routes: Vec<Route<State>>,
     scopes: Vec<Scope<State>>,
-    middlewares: Vec<Arc<dyn Middleware>>,
+    middlewares: Vec<Arc<dyn Middleware<State>>>,
 }
 
 impl<State> Router<State> {
@@ -108,7 +110,7 @@ impl<State> Router<State> {
 
     pub fn middleware<M>(mut self, middleware: M) -> Self
     where
-        M: Middleware,
+        M: Middleware<State>,
     {
         self.middlewares.push(Arc::new(middleware));
 
@@ -139,7 +141,43 @@ impl<State> Router<State> {
         &self.scopes
     }
 
-    pub fn middlewares(&self) -> &[Arc<dyn Middleware>] {
+    pub fn middlewares(&self) -> &[Arc<dyn Middleware<State>>] {
         &self.middlewares
+    }
+
+    // ---------------------------------------------------------
+    // Handle
+    // ---------------------------------------------------------
+
+    pub async fn handle(&self, ctx: Context<State>) -> ServerResult<Response>
+    where
+        State: Send + Sync + 'static,
+    {
+        let path = ctx.request().path();
+        let method = ctx.request().method();
+
+        if let Some(route) = self.routes.iter().find(|route| {
+            route.method() == *method && route.path() == path
+        }) {
+            return route.execute(ctx).await;
+        }
+
+        let mut scopes_to_try: Vec<_> = self.scopes.iter().collect();
+        while let Some(scope) = scopes_to_try.pop() {
+            let path = ctx.request().path();
+            let method = ctx.request().method();
+
+            if let Some(route) = scope.routes().iter().find(|route| {
+                route.method() == *method && route.path() == path
+            }) {
+                return route.execute(ctx.clone()).await;
+            }
+
+            for sub_scope in scope.scopes().iter() {
+                scopes_to_try.push(sub_scope);
+            }
+        }
+
+        Err(HttpServerError::HandlerError("Route not found".to_string()))
     }
 }

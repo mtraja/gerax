@@ -5,6 +5,7 @@ use urlencoding;
 use std::collections::HashMap;
 
 use super::{Request, ExtractError};
+#[derive(Clone)]
 pub struct PathParams {
     params: HashMap<String, String>,
 }
@@ -37,6 +38,7 @@ impl PathParams {
     }
 }
 
+#[derive(Clone)]
 pub struct Extensions;
 impl Extensions {
     pub fn new() -> Self {
@@ -49,6 +51,17 @@ pub struct Context<State> {
     pub request: Request,
     pub params: PathParams,
     pub extensions: Extensions,
+}
+
+impl<State> Clone for Context<State> {
+    fn clone(&self) -> Self {
+        Self {
+            state: Arc::clone(&self.state),
+            request: self.request.clone(),
+            params: self.params.clone(),
+            extensions: self.extensions.clone(),
+        }
+    }
 }
 
 impl<State> Context<State> {

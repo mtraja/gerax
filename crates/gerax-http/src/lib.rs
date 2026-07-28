@@ -10,6 +10,6 @@ pub mod server;
 pub use error::{HttpServerError, ServerResult};
 pub use config::ServerConfig;
 pub use builder::HttpServerBuilder;
-pub use middleware::Middleware;
+pub use middleware::{Middleware, Next};
 pub use server::HttpServer;
 pub use routing::router::Router;

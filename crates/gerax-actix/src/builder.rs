@@ -11,7 +11,7 @@ pub struct ActixHttpServerBuilder<S> {
     state: S,
     router: Option<Arc<Router<S>>>,
     config: ServerConfig,
-    middlewares: Vec<Arc<dyn Middleware>>,
+    middlewares: Vec<Arc<dyn Middleware<S>>>,
 }
 
 impl<S> ActixHttpServerBuilder<S>
@@ -53,7 +53,7 @@ where
     /// Adiciona um middleware ao servidor.
     pub fn middleware<M>(mut self, middleware: M) -> Self
     where
-        M: Middleware,
+        M: Middleware<S>,
     {
         self.middlewares.push(Arc::new(middleware));
         self
@@ -80,7 +80,7 @@ where
     /// Adiciona um middleware ao servidor.
     fn middleware<M>(mut self, middleware: M) -> Self
     where
-        M: Middleware,
+        M: Middleware<S>,
     {
         self.middlewares.push(Arc::new(middleware));
         self

@@ -1,12 +1,12 @@
 use std::sync::Arc;
 
 use actix_web::{
-    App, HttpResponse, HttpServer as ActixWebHttpServer, http::{Method, StatusCode}, web::{self, method},
+    App, HttpResponse, HttpServer as ActixWebHttpServer, http::{Method, StatusCode}, web,
 };
 use async_trait::async_trait;
 
 use gerax_http::{
-    HttpServer, HttpServerError, ServerResult, routing::{Context, Extensions, HttpMethod, PathParams, Request, Router},
+    HttpServer, HttpServerError, ServerResult, routing::{Context, HttpMethod, Request, Router},
 };
 
 
@@ -22,7 +22,7 @@ pub struct ActixHttpServer<S> {
     /// Porta de bind do servidor.
     pub port: u16,
     /// Middlewares registrados.
-    pub middlewares: Vec<Arc<dyn gerax_http::Middleware>>,
+    pub middlewares: Vec<Arc<dyn gerax_http::Middleware<S>>>,
 }
 
 #[async_trait]
@@ -143,7 +143,10 @@ where
     let context = Context::new(data, request);
 
     let response = handler.call(context).await;
-    HttpResponse::build(status_from_u16(response.status)).body(response.body)
+    match response {
+        Ok(response) => HttpResponse::build(status_from_u16(response.status)).body(response.body),
+        Err(e) => HttpResponse::InternalServerError().body(e.to_string()),
+    }
 }
 
 fn method_to_actix(method: HttpMethod) -> Method {

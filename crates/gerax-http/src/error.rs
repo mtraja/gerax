@@ -10,6 +10,9 @@ pub enum HttpServerError {
 
     #[error("Erro de configuração: {0}")]
     ConfigurationError(String),
+
+    #[error("Erro no handler: {0}")]
+    HandlerError(String),
 }
 
 pub type ServerResult<T = ()> = Result<T, HttpServerError>;

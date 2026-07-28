@@ -1,5 +1,7 @@
 use std::sync::Arc;
 
+use crate::routing::{Context, Response};
+use crate::{HttpServerError, ServerResult};
 use crate::Middleware;
 
 use super::{Handler, HttpMethod, Route};
@@ -8,7 +10,7 @@ pub struct Scope<State> {
     prefix: String,
     routes: Vec<Route<State>>,
     scopes: Vec<Scope<State>>,
-    middlewares: Vec<Arc<dyn Middleware>>,
+    middlewares: Vec<Arc<dyn Middleware<State>>>,
 }
 
 impl<State> Scope<State> {
@@ -101,7 +103,7 @@ impl<State> Scope<State> {
 
     pub fn middleware<M>(mut self, middleware: M) -> Self
     where
-        M: Middleware,
+        M: Middleware<State>,
     {
         self.middlewares.push(Arc::new(middleware));
 
@@ -120,7 +122,29 @@ impl<State> Scope<State> {
         &self.scopes
     }
 
-    pub fn middlewares(&self) -> &[Arc<dyn Middleware>] {
+    pub fn middlewares(&self) -> &[Arc<dyn Middleware<State>>] {
         &self.middlewares
+    }
+
+    // ---------------------------------------------------------
+    // Handle
+    // ---------------------------------------------------------
+
+    pub async fn handle(&self, ctx: Context<State>) -> ServerResult<Response>
+    where
+        State: Send + Sync + 'static,
+    {
+        let path = ctx.request().path();
+        let method = ctx.request().method();
+
+        if let Some(route) = self.routes.iter().find(|route| {
+            route.method() == *method && route.path() == path
+        }) {
+            route.execute(ctx).await
+        } else {
+            Err(HttpServerError::HandlerError(
+                "Route not found in scope".to_string(),
+            ))
+        }
     }
 }
