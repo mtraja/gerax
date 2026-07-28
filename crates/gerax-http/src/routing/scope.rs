@@ -1,3 +1,4 @@
+use matchit::Router as MatchitRouter;
 use std::sync::Arc;
 
 use crate::routing::{Context, Response};
@@ -6,9 +7,30 @@ use crate::Middleware;
 
 use super::{Handler, HttpMethod, Route};
 
+struct RouteData<State> {
+    method: HttpMethod,
+    path_pattern: String,
+    full_path: String,
+    handler: Arc<dyn Handler<State>>,
+    middlewares: Vec<Arc<dyn Middleware<State>>>,
+}
+
+impl<State> Clone for RouteData<State> {
+    fn clone(&self) -> Self {
+        Self {
+            method: self.method.clone(),
+            path_pattern: self.path_pattern.clone(),
+            full_path: self.full_path.clone(),
+            handler: Arc::clone(&self.handler),
+            middlewares: self.middlewares.clone(),
+        }
+    }
+}
+
 pub struct Scope<State> {
     prefix: String,
-    routes: Vec<Route<State>>,
+    router: MatchitRouter<RouteData<State>>,
+    routes_data: Vec<RouteData<State>>,
     scopes: Vec<Scope<State>>,
     middlewares: Vec<Arc<dyn Middleware<State>>>,
 }
@@ -17,7 +39,8 @@ impl<State> Scope<State> {
     pub fn new(prefix: impl Into<String>) -> Self {
         Self {
             prefix: prefix.into(),
-            routes: Vec::new(),
+            router: MatchitRouter::new(),
+            routes_data: Vec::new(),
             scopes: Vec::new(),
             middlewares: Vec::new(),
         }
@@ -35,7 +58,17 @@ impl<State> Scope<State> {
     where
         H: Handler<State>,
     {
-        self.routes.push(Route::new(method, path, handler));
+        let path_str = path.into();
+        let full_path = format!("{}{}", self.prefix, path_str);
+        let data = RouteData {
+            method,
+            path_pattern: path_str.clone(),
+            full_path: full_path.clone(),
+            handler: Arc::new(handler),
+            middlewares: Vec::new(),
+        };
+        self.router.insert(&full_path, data.clone()).expect("duplicate route");
+        self.routes_data.push(data);
         self
     }
 
@@ -114,8 +147,18 @@ impl<State> Scope<State> {
     // Accessors
     // ---------------------------------------------------------
 
-    pub fn routes(&self) -> &[Route<State>] {
-        &self.routes
+    pub fn routes(&self) -> Vec<Route<State>>
+    where
+        State: Send + Sync + 'static,
+    {
+        self.routes_data
+            .iter()
+            .map(|data| {
+                let mut route = Route::with_handler(data.method.clone(), data.path_pattern.clone(), Arc::clone(&data.handler));
+                route.set_middlewares(data.middlewares.clone());
+                route
+            })
+            .collect()
     }
 
     pub fn scopes(&self) -> &[Scope<State>] {
@@ -130,21 +173,31 @@ impl<State> Scope<State> {
     // Handle
     // ---------------------------------------------------------
 
-    pub async fn handle(&self, ctx: Context<State>) -> ServerResult<Response>
+    pub async fn handle(&self, mut ctx: Context<State>) -> ServerResult<Response>
     where
         State: Send + Sync + 'static,
     {
-        let path = ctx.request().path();
-        let method = ctx.request().method();
+        let path = ctx.request().path().to_string();
+        let method = ctx.request().method().clone();
 
-        if let Some(route) = self.routes.iter().find(|route| {
-            route.method() == *method && route.path() == path
-        }) {
-            route.execute(ctx).await
-        } else {
-            Err(HttpServerError::HandlerError(
-                "Route not found in scope".to_string(),
-            ))
+        let match_result = self.router.at(&path)
+            .map_err(|e| HttpServerError::HandlerError(e.to_string()))?;
+
+        let route_data = match_result.value;
+        if route_data.method.clone() != method {
+            return Err(HttpServerError::HandlerError("Method not allowed".to_string()));
         }
+
+        for (key, value) in match_result.params.iter() {
+            ctx.params_mut().insert(key.to_string(), value.to_string());
+        }
+
+        let mut route = Route::with_handler(
+            route_data.method.clone(),
+            route_data.path_pattern.clone(),
+            Arc::clone(&route_data.handler),
+        );
+        route.set_middlewares(route_data.middlewares.clone());
+        route.execute(ctx).await
     }
 }

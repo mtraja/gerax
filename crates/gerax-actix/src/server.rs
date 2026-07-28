@@ -158,6 +158,7 @@ fn method_to_actix(method: HttpMethod) -> Method {
         HttpMethod::Delete => Method::DELETE,
         HttpMethod::Head => Method::HEAD,
         HttpMethod::Options => Method::OPTIONS,
+        HttpMethod::Trace | HttpMethod::Connect | HttpMethod::Custom(_) => Method::GET,
     }
 }
 
@@ -170,7 +171,9 @@ fn converter_method(method: Method) -> HttpMethod {
         Method::DELETE => HttpMethod::Delete,
         Method::HEAD => HttpMethod::Head,
         Method::OPTIONS => HttpMethod::Options,
-        _ => todo!(),
+        Method::TRACE => HttpMethod::Trace,
+        Method::CONNECT => HttpMethod::Connect,
+        _ => HttpMethod::Custom(method.as_str().to_string()),
     }
 }
 

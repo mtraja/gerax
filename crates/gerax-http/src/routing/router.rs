@@ -2,6 +2,7 @@ use super::{Handler, HttpMethod, Route, Scope};
 use crate::routing::{Context, Response};
 use crate::{HttpServerError, ServerResult};
 use crate::Middleware;
+use matchit::Router as MatchitRouter;
 use std::sync::Arc;
 
 
@@ -20,6 +21,7 @@ use std::sync::Arc;
 ///
 
 pub struct Router<State> {
+    router: MatchitRouter<Route<State>>,
     routes: Vec<Route<State>>,
     scopes: Vec<Scope<State>>,
     middlewares: Vec<Arc<dyn Middleware<State>>>,
@@ -28,6 +30,7 @@ pub struct Router<State> {
 impl<State> Router<State> {
     pub fn new() -> Self {
         Self {
+            router: MatchitRouter::new(),
             routes: Vec::new(),
             scopes: Vec::new(),
             middlewares: Vec::new(),
@@ -42,7 +45,10 @@ impl<State> Router<State> {
     where
         H: Handler<State>,
     {
-        self.routes.push(Route::new(method, path, handler));
+        let path = path.into();
+        let route = Route::new(method, path.clone(), handler);
+        self.router.insert(&path, route.clone()).expect("duplicate route");
+        self.routes.push(route);
         self
     }
 
@@ -122,7 +128,11 @@ impl<State> Router<State> {
     // ---------------------------------------------------------
 
     pub fn merge(mut self, other: Router<State>) -> Self {
+        let start = self.routes.len();
         self.routes.extend(other.routes);
+        for route in &self.routes[start..] {
+            self.router.insert(route.path(), route.clone()).expect("duplicate route");
+        }
         self.scopes.extend(other.scopes);
         self.middlewares.extend(other.middlewares);
 
@@ -149,35 +159,44 @@ impl<State> Router<State> {
     // Handle
     // ---------------------------------------------------------
 
-    pub async fn handle(&self, ctx: Context<State>) -> ServerResult<Response>
+    pub async fn handle(&self, mut ctx: Context<State>) -> ServerResult<Response>
     where
         State: Send + Sync + 'static,
     {
-        let path = ctx.request().path();
-        let method = ctx.request().method();
+        let path = ctx.request().path().to_string();
+        let method = ctx.request().method().clone();
 
-        if let Some(route) = self.routes.iter().find(|route| {
-            route.method() == *method && route.path() == path
-        }) {
-            return route.execute(ctx).await;
-        }
+        let match_result = self.router.at(&path);
 
-        let mut scopes_to_try: Vec<_> = self.scopes.iter().collect();
-        while let Some(scope) = scopes_to_try.pop() {
-            let path = ctx.request().path();
-            let method = ctx.request().method();
+        match match_result {
+            Ok(m) => {
+                let route = m.value;
+                if route.method() != method {
+                    return Err(HttpServerError::HandlerError("Method not allowed".to_string()));
+                }
 
-            if let Some(route) = scope.routes().iter().find(|route| {
-                route.method() == *method && route.path() == path
-            }) {
-                return route.execute(ctx.clone()).await;
+                for (key, value) in m.params.iter() {
+                    ctx.params_mut().insert(key.to_string(), value.to_string());
+                }
+
+                route.execute(ctx).await
             }
+            Err(_) => {
+                let mut scopes_to_try: Vec<_> = self.scopes.iter().collect();
+                while let Some(scope) = scopes_to_try.pop() {
+                    for sub_scope in scope.scopes().iter() {
+                        scopes_to_try.push(sub_scope);
+                    }
 
-            for sub_scope in scope.scopes().iter() {
-                scopes_to_try.push(sub_scope);
+                    match scope.handle(ctx.clone()).await {
+                        Ok(response) => return Ok(response),
+                        Err(HttpServerError::HandlerError(_)) => {}
+                        Err(e) => return Err(e),
+                    }
+                }
+
+                Err(HttpServerError::HandlerError("Route not found".to_string()))
             }
         }
-
-        Err(HttpServerError::HandlerError("Route not found".to_string()))
     }
 }

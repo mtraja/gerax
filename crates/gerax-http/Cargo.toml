@@ -31,6 +31,8 @@ thiserror.workspace = true
 serde_json.workspace = true
 serde_urlencoded.workspace = true
 urlencoding.workspace = true
+matchit.workspace = true
+http.workspace = true
 
 [dev-dependencies]
 tokio = { version = "1", features = ["full"] }

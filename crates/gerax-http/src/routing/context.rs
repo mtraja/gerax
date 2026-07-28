@@ -5,6 +5,8 @@ use urlencoding;
 use std::collections::HashMap;
 
 use super::{Request, ExtractError};
+use serde::de::DeserializeOwned;
+use serde_urlencoded;
 #[derive(Clone)]
 pub struct PathParams {
     params: HashMap<String, String>,
@@ -15,9 +17,17 @@ impl PathParams {
         Self { params }
     }
 
+    pub fn get(&self, key: &str) -> Option<&str> {
+        self.params.get(key).map(|s| s.as_str())
+    }
+
+    pub fn insert(&mut self, key: String, value: String) {
+        self.params.insert(key, value);
+    }
+
     pub fn deserialize<T>(&self) -> Result<T, ExtractError>
     where
-        T: serde::de::DeserializeOwned,
+        T: DeserializeOwned,
     {
         serde_urlencoded::from_str(&self.to_query_string())
             .map_err(|err| ExtractError::Deserialize(err.to_string()))

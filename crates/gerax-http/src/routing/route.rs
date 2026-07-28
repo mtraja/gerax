@@ -1,17 +1,31 @@
 use super::{Handler, HttpMethod};
 use crate::middleware::Next;
-use crate::routing::{Context, Response};
+use crate::routing::{Context, PathParams, Response};
 use crate::ServerResult;
 use crate::Middleware;
+use std::collections::HashMap;
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::Arc;
 
 pub struct Route<State> {
     method: HttpMethod,
+    path_pattern: String,
     path: String,
     handler: Arc<dyn Handler<State>>,
     middlewares: Vec<Arc<dyn Middleware<State>>>,
+}
+
+impl<State> Clone for Route<State> {
+    fn clone(&self) -> Self {
+        Self {
+            method: self.method.clone(),
+            path_pattern: self.path_pattern.clone(),
+            path: self.path.clone(),
+            handler: Arc::clone(&self.handler),
+            middlewares: self.middlewares.clone(),
+        }
+    }
 }
 
 impl<State> Route<State> {
@@ -19,20 +33,26 @@ impl<State> Route<State> {
     where
         H: Handler<State>,
     {
+        let path_str = path.into();
         Self {
             method,
-            path: path.into(),
+            path_pattern: path_str.clone(),
+            path: path_str,
             handler: Arc::new(handler),
             middlewares: Vec::new(),
         }
     }
 
     pub fn method(&self) -> HttpMethod {
-        self.method
+        self.method.clone()
     }
 
     pub fn path(&self) -> &str {
         &self.path
+    }
+
+    pub fn path_pattern(&self) -> &str {
+        &self.path_pattern
     }
 
     pub fn handler(&self) -> &Arc<dyn Handler<State>> {
@@ -49,6 +69,32 @@ impl<State> Route<State> {
     {
         self.middlewares.push(Arc::new(middleware));
         self
+    }
+
+    pub fn with_handler(method: HttpMethod, path: impl Into<String>, handler: Arc<dyn Handler<State>>) -> Self
+    where
+        State: Send + Sync + 'static,
+    {
+        let path_str = path.into();
+        Self {
+            method,
+            path_pattern: path_str.clone(),
+            path: path_str,
+            handler,
+            middlewares: Vec::new(),
+        }
+    }
+
+    pub fn set_middlewares(&mut self, middlewares: Vec<Arc<dyn Middleware<State>>>) {
+        self.middlewares = middlewares;
+    }
+
+    pub fn extract_params<V>(&self, matched: &matchit::Match<'_, '_, V>) -> PathParams {
+        let mut params = HashMap::new();
+        for (key, value) in matched.params.iter() {
+            params.insert(key.to_string(), value.to_string());
+        }
+        PathParams::new(params)
     }
 
     pub async fn execute(&self, ctx: Context<State>) -> ServerResult<Response>
