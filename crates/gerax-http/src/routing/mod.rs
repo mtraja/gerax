@@ -7,7 +7,7 @@ pub mod route;
 pub mod router;
 pub mod scope;
 pub mod context;
-pub mod extrators;
+pub mod extractors;
 
 pub use handler::*;
 pub use method::*;
@@ -17,4 +17,4 @@ pub use route::*;
 pub use router::*;
 pub use scope::*;
 pub use context::*;
-pub use extrators::*;
+pub use extractors::*;

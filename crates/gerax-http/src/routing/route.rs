@@ -1,11 +1,9 @@
 use super::{Handler, HttpMethod};
-use crate::middleware::Next;
-use crate::routing::{Context, PathParams, Response};
-use crate::ServerResult;
 use crate::Middleware;
+use crate::ServerResult;
+use crate::middleware::{Next, NextFn};
+use crate::routing::{Context, PathParams, Response};
 use std::collections::HashMap;
-use std::future::Future;
-use std::pin::Pin;
 use std::sync::Arc;
 
 pub struct Route<State> {
@@ -71,7 +69,11 @@ impl<State> Route<State> {
         self
     }
 
-    pub fn with_handler(method: HttpMethod, path: impl Into<String>, handler: Arc<dyn Handler<State>>) -> Self
+    pub fn with_handler(
+        method: HttpMethod,
+        path: impl Into<String>,
+        handler: Arc<dyn Handler<State>>,
+    ) -> Self
     where
         State: Send + Sync + 'static,
     {
@@ -89,6 +91,36 @@ impl<State> Route<State> {
         self.middlewares = middlewares;
     }
 
+    pub(crate) fn with_parts(
+        method: HttpMethod,
+        path: String,
+        handler: Arc<dyn Handler<State>>,
+        middlewares: Vec<Arc<dyn Middleware<State>>>,
+    ) -> Self {
+        Self {
+            method,
+            path_pattern: path.clone(),
+            path,
+            handler,
+            middlewares,
+        }
+    }
+
+    pub(crate) fn with_prefix_and_middlewares(
+        &self,
+        prefix: &str,
+        inherited_middlewares: &[Arc<dyn Middleware<State>>],
+    ) -> Self {
+        let mut middlewares = inherited_middlewares.to_vec();
+        middlewares.extend(self.middlewares.clone());
+        Self::with_parts(
+            self.method.clone(),
+            join_paths(prefix, &self.path),
+            Arc::clone(&self.handler),
+            middlewares,
+        )
+    }
+
     pub fn extract_params<V>(&self, matched: &matchit::Match<'_, '_, V>) -> PathParams {
         let mut params = HashMap::new();
         for (key, value) in matched.params.iter() {
@@ -102,11 +134,7 @@ impl<State> Route<State> {
         State: Send + Sync + 'static,
     {
         let handler = Arc::clone(&self.handler);
-        let mut continuation: Box<
-            dyn FnOnce(Context<State>) -> Pin<Box<dyn Future<Output = ServerResult<Response>> + Send>>
-                + Send
-                + Sync,
-        > = Box::new(move |ctx| {
+        let mut continuation: Box<NextFn<State>> = Box::new(move |ctx| {
             let handler = Arc::clone(&handler);
             Box::pin(async move { handler.call(ctx).await })
         });
@@ -125,5 +153,17 @@ impl<State> Route<State> {
         }
 
         continuation(ctx).await
+    }
+}
+
+pub(crate) fn join_paths(prefix: &str, path: &str) -> String {
+    let prefix = prefix.trim_end_matches('/');
+    let path = path.trim_start_matches('/');
+
+    match (prefix, path) {
+        ("", "") => "/".to_string(),
+        ("", path) => format!("/{path}"),
+        (prefix, "") => prefix.to_string(),
+        (prefix, path) => format!("{prefix}/{path}"),
     }
 }

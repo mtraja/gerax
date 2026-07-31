@@ -27,6 +27,7 @@ members = [
     "examples/myapp",
     "examples/app_postgres",
     "examples/app-mongo",
+    "examples/urna-simulador",
 ]
 
 [workspace.package]
@@ -87,3 +88,4 @@ serde_urlencoded = "0.7"
 urlencoding = "2"
 matchit = "0.7"
 http = "1"
+bytes = "1"
