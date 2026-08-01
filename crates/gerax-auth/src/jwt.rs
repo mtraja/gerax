@@ -31,6 +31,20 @@ impl JwtAuthenticator {
         Self::new(Algorithm::RS256 { public_key: public_key.into() }, leeway)
     }
 
+    /// Carrega chave secreta HS256 de um arquivo.
+    pub fn hs256_from_file(path: impl AsRef<std::path::Path>, leeway: u64) -> AuthResult<Self> {
+        let secret = std::fs::read(path)
+            .map_err(|e| AuthError::Internal(format!("falha ao ler arquivo de secret HS256: {e}")))?;
+        Ok(Self::hs256(secret, leeway))
+    }
+
+    /// Carrega chave pública RS256 de um arquivo PEM.
+    pub fn rs256_from_file(path: impl AsRef<std::path::Path>, leeway: u64) -> AuthResult<Self> {
+        let public_key = std::fs::read(path)
+            .map_err(|e| AuthError::Internal(format!("falha ao ler arquivo de chave pública RS256: {e}")))?;
+        Ok(Self::rs256(public_key, leeway))
+    }
+
     pub fn decode_token(&self, token: &str) -> AuthResult<Claims> {
         let mut validation = jsonwebtoken::Validation::default();
         validation.validate_exp = true;

@@ -6,6 +6,7 @@ Autenticação e autorização para o ecossistema Gerax.
 - Handlers prontos para login e refresh
 - Refresh tokens rotacionáveis
 - Integração com `gerax-config`
+- `ScopeAuthorizer` para controle de acesso por scopes/roles
 
 ## Dependências
 
@@ -18,12 +19,13 @@ gerax-auth = { path = "../gerax-auth" }
 | Módulo | Responsabilidade |
 |--------|------------------|
 | `types` | `Claims`, `TokenPair`, `RefreshToken` |
-| `jwt` | `JwtAuthenticator` (HS256/RS256) |
+| `jwt` | `JwtAuthenticator` (HS256/RS256 + `from_file`) |
 | `refresh` | `RefreshTokenStore`, `TokenStorage`, `MemoryTokenStorage` |
-| `middleware` | `AuthMiddleware` com suporte a `public_paths` e `with_scope_resolver` |
+| `middleware` | `AuthMiddleware` com `public_paths` e `with_scope_resolver` |
 | `extractor` | `AuthenticatedUser` para handlers protegidos |
 | `routes` | `login`, `refresh`, trait `AuthState` |
 | `config` | `AuthConfig`, `ConfiguredAuthState` |
+| `scope_authorizer` | `ScopeAuthorizer` (any/all) |
 
 ## Quickstart
 
@@ -53,7 +55,7 @@ impl AuthState for AppState {
 
 ```rust
 use gerax_auth::{
-    login, refresh, AuthMiddleware, AuthState, JwtAuthenticator, MemoryTokenStorage,
+    login, refresh, AuthMiddleware, AuthState, JwtAuthenticator, MemoryTokenStorage, ScopeAuthorizer,
 };
 use gerax_http::routing::Router;
 
@@ -64,7 +66,7 @@ let state = Arc::new(AppState {
 
 let auth_middleware = AuthMiddleware::new(
     state.jwt.clone(),
-    None::<MyAuthorizer>,
+    Some(ScopeAuthorizer::any()),
     vec!["/auth/login".into(), "/health".into()],
 )
 .with_scope_resolver(|path| match path {
@@ -107,11 +109,17 @@ async fn protected_handler(
 ### `JwtAuthenticator`
 
 ```rust
-// HS256
+// HS256 a partir de string
 let authenticator = JwtAuthenticator::hs256("secret", 30);
 
-// RS256
+// HS256 a partir de arquivo
+let authenticator = JwtAuthenticator::hs256_from_file("secret.key", 30)?;
+
+// RS256 a partir de bytes PEM
 let authenticator = JwtAuthenticator::rs256(public_key_pem_bytes, 30);
+
+// RS256 a partir de arquivo PEM
+let authenticator = JwtAuthenticator::rs256_from_file("public.pem", 30)?;
 
 // Validação manual
 let claims = authenticator.decode_token("eyJ...")?;
@@ -120,13 +128,23 @@ let claims = authenticator.decode_token("eyJ...")?;
 let token = authenticator.encode_token(&claims)?;
 ```
 
+### `ScopeAuthorizer`
+
+```rust
+// Qualquer scope correspondente é suficiente
+let authorizer = ScopeAuthorizer::any();
+
+// Todos os scopes devem corresponder
+let authorizer = ScopeAuthorizer::all();
+```
+
 ### `AuthMiddleware`
 
 ```rust
 let middleware = AuthMiddleware::new(
     authenticator,
-    Some(authorizer),          // opcional
-    vec!["/health".into()],    // public paths
+    Some(ScopeAuthorizer::any()),
+    vec!["/health".into()], // public paths
 )
 .with_scope_resolver(|path| {
     // retorna os scopes exigidos para a rota
@@ -197,7 +215,6 @@ store.mark_rotated("rt-...").await?;
 
 ```rust
 use gerax_actix::ActixHttpServerBuilder;
-use gerax_auth::AuthState;
 
 let server = ActixHttpServerBuilder::new()
     .host("0.0.0.0")
@@ -223,6 +240,64 @@ let server = AxumHttpServerBuilder::new()
 ### Poem / Salvo / Rocket
 
 O middleware e os handlers são agnósticos ao framework. Use-os da mesma forma que nos exemplos acima.
+
+## Exemplos
+
+### Login com JSON body
+
+```rust
+router.post("/auth/login", login(|ctx| async move {
+    #[derive(serde::Deserialize)]
+    struct LoginRequest { email: String, password: String }
+    
+    let creds: LoginRequest = serde_json::from_slice(&ctx.request().body)?;
+    let user = user_service.find_by_email(&creds.email).await?;
+    
+    if !verify_password(&creds.password, &user.password_hash) {
+        return Err(gerax_auth::AuthError::InvalidCredentials);
+    }
+    
+    Ok(gerax_auth::Claims {
+        sub: user.id,
+        exp: u64::MAX,
+        iat: 0,
+        scope: vec!["user".into()],
+    })
+}));
+```
+
+### Refresh token com rotação
+
+```rust
+router.post("/auth/refresh", refresh);
+```
+
+### Rota protegida com scope
+
+```rust
+let middleware = AuthMiddleware::new(
+    authenticator,
+    Some(ScopeAuthorizer::any()),
+    vec!["/auth/login".into()],
+).with_scope_resolver(|path| {
+    if path.starts_with("/admin") {
+        vec!["admin".to_string()]
+    } else {
+        vec!["user".to_string()]
+    }
+});
+```
+
+### RS256 com chaves reais
+
+```rust
+// Carrega chave pública de arquivo PEM
+let authenticator = JwtAuthenticator::rs256_from_file("keys/public.pem", 30)?;
+
+// Ou use variáveis de ambiente
+let pem = std::env::var("JWT_PUBLIC_KEY")?;
+let authenticator = JwtAuthenticator::rs256(pem.into_bytes(), 30)?;
+```
 
 ## Tests
 
