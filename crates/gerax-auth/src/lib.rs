@@ -1,3 +1,4 @@
+pub mod config;
 pub mod error;
 pub mod extractor;
 pub mod jwt;
@@ -7,6 +8,7 @@ pub mod routes;
 pub mod traits;
 pub mod types;
 
+pub use config::{AlgorithmConfig, AuthConfig};
 pub use extractor::AuthenticatedUser;
 pub use jwt::{Algorithm, JwtAuthenticator};
 pub use middleware::AuthMiddleware;
