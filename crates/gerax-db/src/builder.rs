@@ -2,6 +2,8 @@ use async_trait::async_trait;
 use std::marker::PhantomData;
 use std::sync::Arc;
 
+use crate::DatabaseConfig;
+
 use crate::connection::Connection;
 use crate::repository::Repository;
 use crate::DbError;
@@ -41,17 +43,36 @@ where
 }
 
 /// Builder principal do banco de dados.
+///
+/// Utiliza `gerax-config::DatabaseConfig` como origem de configuração.
 pub struct DbBuilder {
-    connection: Arc<dyn Connection>,
+    config: DatabaseConfig,
+    connection: Option<Arc<dyn Connection>>,
 }
 
 impl DbBuilder {
-    pub fn new(connection: Arc<dyn Connection>) -> Self {
-        Self { connection }
+    /// Cria um builder a partir de uma configuração `gerax-config`.
+    pub fn from_config(config: DatabaseConfig) -> Self {
+        Self {
+            config,
+            connection: None,
+        }
     }
 
-    pub fn connection(&self) -> &Arc<dyn Connection> {
-        &self.connection
+    /// Define a conexão já estabelecida.
+    pub fn with_connection(mut self, connection: Arc<dyn Connection>) -> Self {
+        self.connection = Some(connection);
+        self
+    }
+
+    /// Acesso à configuração carregada.
+    pub fn config(&self) -> &DatabaseConfig {
+        &self.config
+    }
+
+    /// Acesso à conexão, se já foi definida.
+    pub fn connection(&self) -> Option<&Arc<dyn Connection>> {
+        self.connection.as_ref()
     }
 
     /// Cria um builder de repositório genérico.
@@ -130,7 +151,8 @@ mod tests {
     #[tokio::test]
     async fn generic_repository_builder_builds_repo() {
         let connection = Arc::new(MockConnection);
-        let builder = DbBuilder::new(connection);
+        let config = DatabaseConfig::default();
+        let builder = DbBuilder::from_config(config).with_connection(connection);
 
         let repo = builder
             .repository(|| MockUserRepo)
