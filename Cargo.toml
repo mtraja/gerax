@@ -27,7 +27,6 @@ members = [
     "examples/myapp",
     "examples/app_postgres",
     "examples/app-mongo",
-    "examples/urna-simulador",
 ]
 
 [workspace.package]
