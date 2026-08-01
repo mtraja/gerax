@@ -6,10 +6,23 @@ use actix_web::{
 use async_trait::async_trait;
 
 use gerax_http::{
-    HttpServer, HttpServerError, ServerResult, routing::{Context, HttpMethod, Request, Router},
+    HttpServer, HttpServerError, ServerResult, routing::{Context, HttpMethod, Request, Route, Router},
 };
 
 
+
+fn extend_route_middlewares<S>(
+    mut route: Route<S>,
+    middlewares: &[Arc<dyn gerax_http::Middleware<S>>],
+) -> Route<S>
+where
+    S: Send + Sync + 'static,
+{
+    let mut all_middlewares = route.middlewares().to_vec();
+    all_middlewares.extend(middlewares.iter().map(Arc::clone));
+    route.set_middlewares(all_middlewares);
+    route
+}
 
 /// Representa um servidor HTTP implementado com Actix Web.
 pub struct ActixHttpServer<S> {
@@ -36,6 +49,7 @@ where
         let port = self.port;
         let state = self.state;
         let router = self.router;
+        let server_middlewares = self.middlewares;
 
         actix_web::rt::System::new().block_on(async move {
             let server = ActixWebHttpServer::new(move || {
@@ -45,28 +59,30 @@ where
                     let router = router.clone();
 
                     for route in router.routes() {
-                        let handler = route.handler().clone();
+                        let route = extend_route_middlewares(route.clone(), router.middlewares());
+                        let route = extend_route_middlewares(route, &server_middlewares);
                         let path = route.path().to_string();
                         let method = method_to_actix(route.method());
+                        let route_arc = Arc::new(route);
 
                         app =
                             app.route(
                                 &path,
                                 match method {
                                     Method::GET => web::get()
-                                        .to(move |req| route_handler(req, handler.clone())),
+                                        .to(move |req| route_handler(req, route_arc.clone())),
                                     Method::POST => web::post()
-                                        .to(move |req| route_handler(req, handler.clone())),
+                                        .to(move |req| route_handler(req, route_arc.clone())),
                                     Method::PUT => web::put()
-                                        .to(move |req| route_handler(req, handler.clone())),
+                                        .to(move |req| route_handler(req, route_arc.clone())),
                                     Method::PATCH => web::patch()
-                                        .to(move |req| route_handler(req, handler.clone())),
+                                        .to(move |req| route_handler(req, route_arc.clone())),
                                     Method::DELETE => web::delete()
-                                        .to(move |req| route_handler(req, handler.clone())),
+                                        .to(move |req| route_handler(req, route_arc.clone())),
                                     Method::HEAD => web::head()
-                                        .to(move |req| route_handler(req, handler.clone())),
+                                        .to(move |req| route_handler(req, route_arc.clone())),
                                     _ => web::get()
-                                        .to(move |req| route_handler(req, handler.clone())),
+                                        .to(move |req| route_handler(req, route_arc.clone())),
                                 },
                             );
                     }
@@ -75,27 +91,30 @@ where
                         let mut scope_app = actix_web::Scope::new(scope.prefix());
 
                         for route in scope.routes() {
-                            let handler = route.handler().clone();
+                            let route = extend_route_middlewares(route.clone(), scope.middlewares());
+                            let route = extend_route_middlewares(route, router.middlewares());
+                            let route = extend_route_middlewares(route, &server_middlewares);
                             let path = route.path().to_string();
                             let method = method_to_actix(route.method());
+                            let route_arc = Arc::new(route);
 
                             scope_app = scope_app.route(
                                 &path,
                                 match method {
                                     Method::GET => web::get()
-                                        .to(move |req| route_handler(req, handler.clone())),
+                                        .to(move |req| route_handler(req, route_arc.clone())),
                                     Method::POST => web::post()
-                                        .to(move |req| route_handler(req, handler.clone())),
+                                        .to(move |req| route_handler(req, route_arc.clone())),
                                     Method::PUT => web::put()
-                                        .to(move |req| route_handler(req, handler.clone())),
+                                        .to(move |req| route_handler(req, route_arc.clone())),
                                     Method::PATCH => web::patch()
-                                        .to(move |req| route_handler(req, handler.clone())),
+                                        .to(move |req| route_handler(req, route_arc.clone())),
                                     Method::DELETE => web::delete()
-                                        .to(move |req| route_handler(req, handler.clone())),
+                                        .to(move |req| route_handler(req, route_arc.clone())),
                                     Method::HEAD => web::head()
-                                        .to(move |req| route_handler(req, handler.clone())),
+                                        .to(move |req| route_handler(req, route_arc.clone())),
                                     _ => web::get()
-                                        .to(move |req| route_handler(req, handler.clone())),
+                                        .to(move |req| route_handler(req, route_arc.clone())),
                                 },
                             );
                         }
@@ -119,17 +138,11 @@ where
 
 async fn route_handler<S>(
     req: actix_web::HttpRequest,
-    handler: Arc<dyn gerax_http::routing::Handler<S>>,
+    route: Arc<Route<S>>,
 ) -> HttpResponse
 where
     S: Send + Sync + 'static,
 {
-    //let data = req
-    //    .app_data::<web::Data<Arc<S>>>()
-    //    .expect("state not stored")
-    //    .get_ref()
-    //    .clone();
-
     let data = match req.app_data::<web::Data<Arc<S>>>() {
         Some(data) => data.get_ref().clone(),
         None => {
@@ -142,7 +155,7 @@ where
     let request = Request::new(method, req.path().to_string(), Vec::new());
     let context = Context::new(data, request);
 
-    let response = handler.call(context).await;
+    let response = route.execute(context).await;
     match response {
         Ok(response) => HttpResponse::build(status_from_u16(response.status)).body(response.body),
         Err(e) => HttpResponse::InternalServerError().body(e.to_string()),

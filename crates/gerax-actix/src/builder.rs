@@ -4,7 +4,9 @@ use gerax_config::builder::ConfigBuilder;
 
 use crate::ActixHttpServer;
 
-use gerax_http::{HttpServerBuilder, Middleware, Router, ServerResult, ServerConfig};
+use gerax_http::{HttpServerBuilder, Middleware, Router, ServerConfig, ServerResult};
+
+pub use gerax_http::ServerConfig as ActixConfig;
 
 /// Builder para construção fluida de servidores HTTP com Actix Web.
 pub struct ActixHttpServerBuilder<S> {
