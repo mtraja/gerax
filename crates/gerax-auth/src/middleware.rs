@@ -6,7 +6,6 @@ use gerax_http::ServerResult;
 
 use crate::traits::{Authenticator, Authorizer, AuthError};
 
-
 /// Middleware de autenticação/autorização plugável em qualquer adapter `gerax-http`.
 ///
 /// - Aplica o `Authenticator` em rotas protegidas.
@@ -17,6 +16,7 @@ pub struct AuthMiddleware<A, Z> {
     authenticator: Arc<A>,
     authorizer: Option<Arc<Z>>,
     public_paths: Vec<String>,
+    scope_resolver: Option<Arc<dyn Fn(&str) -> Vec<String> + Send + Sync + 'static>>,
 }
 
 impl<A, Z> AuthMiddleware<A, Z> {
@@ -25,7 +25,19 @@ impl<A, Z> AuthMiddleware<A, Z> {
             authenticator: Arc::new(authenticator),
             authorizer: authorizer.map(Arc::new),
             public_paths,
+            scope_resolver: None,
         }
+    }
+
+    /// Define uma closure customizada para mapear paths para scopes exigidos.
+    ///
+    /// Se não for chamado, o `Authorizer` não será acionado (comportamento padrão).
+    pub fn with_scope_resolver<F>(mut self, resolver: F) -> Self
+    where
+        F: Fn(&str) -> Vec<String> + Send + Sync + 'static,
+    {
+        self.scope_resolver = Some(Arc::new(resolver));
+        self
     }
 }
 
@@ -69,11 +81,13 @@ where
                 .await?
                 .ok_or(AuthError::MissingToken)?;
 
-            // 3) Autorizar se houver Authorizer configurado.
+            // 3) Autorizar se houver Authorizer configurado e resolver de scopes.
             if let Some(authorizer) = &self.authorizer {
-                let required_scope = extract_required_scope(&path);
-                if !authorizer.authorize(&ctx, &required_scope).await? {
-                    return Err(AuthError::Forbidden.into());
+                if let Some(resolver) = &self.scope_resolver {
+                    let required_scope = resolver(&path);
+                    if !authorizer.authorize(&ctx, &required_scope).await? {
+                        return Err(AuthError::Forbidden.into());
+                    }
                 }
             }
 
@@ -86,17 +100,12 @@ where
     }
 }
 
-fn extract_required_scope(_path: &str) -> Vec<String> {
-    // TODO: implementar mapeamento por path se necessário.
-    Vec::new()
-}
-
 #[cfg(test)]
 mod tests {
     use std::sync::Arc;
-    use crate::AuthResult;
 
     use super::*;
+    use crate::AuthResult;
     use crate::jwt::JwtAuthenticator;
     use crate::traits::Authorizer;
     use crate::types::Claims;
@@ -164,19 +173,46 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn middleware_injects_claims() {
+    async fn middleware_denies_insufficient_scope() {
         let authenticator = MockAuthenticator;
-        let middleware = AuthMiddleware::new(authenticator, None::<MockAuthorizer>, vec![]);
-        let ctx = build_context("/protected");
+        let authorizer = MockAuthorizer;
+        let middleware = AuthMiddleware::new(authenticator, Some(authorizer), vec![])
+            .with_scope_resolver(|_| vec!["admin".to_string()]);
+        let ctx = build_context("/admin");
 
-        let next = |ctx: Context<()>| {
-            Box::pin(async move {
-                let claims = ctx.extensions().get::<Claims>().expect("claims injected");
-                Ok(gerax_http::routing::Response::ok(claims.sub.clone()))
-            }) as std::pin::Pin<Box<dyn std::future::Future<Output = ServerResult<gerax_http::routing::Response>> + Send>>
-        };
+        let result = middleware
+            .handle(ctx, Next::new(|ctx| Box::pin(next_ok(ctx))))
+            .await;
 
-        let result = middleware.handle(ctx, Next::new(next)).await;
+        assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn middleware_allows_when_scope_matches() {
+        let authenticator = MockAuthenticator;
+        let authorizer = MockAuthorizer;
+        let middleware = AuthMiddleware::new(authenticator, Some(authorizer), vec![])
+            .with_scope_resolver(|_| vec!["read".to_string()]);
+        let ctx = build_context("/api/read");
+
+        let result = middleware
+            .handle(ctx, Next::new(|ctx| Box::pin(next_ok(ctx))))
+            .await;
+
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn middleware_skips_authorization_without_resolver() {
+        let authenticator = MockAuthenticator;
+        let authorizer = MockAuthorizer;
+        let middleware = AuthMiddleware::new(authenticator, Some(authorizer), vec![]);
+        let ctx = build_context("/any");
+
+        let result = middleware
+            .handle(ctx, Next::new(|ctx| Box::pin(next_ok(ctx))))
+            .await;
+
         assert!(result.is_ok());
     }
 }

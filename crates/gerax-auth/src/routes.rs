@@ -1,5 +1,9 @@
+use std::future::Future;
+use std::pin::Pin;
+use std::sync::Arc;
 
 use gerax_http::routing::{Context, Response};
+use gerax_http::routing::Handler;
 use gerax_http::ServerResult;
 
 use crate::traits::{AuthError, AuthResult};
@@ -22,14 +26,30 @@ pub trait AuthState: Send + Sync + 'static {
 /// Espera JSON no corpo com credenciais. A validação é delegada à closure
 /// `validate_credentials`, que retorna `Claims` em caso de sucesso.
 /// Gera e retorna um `TokenPair` (access_token + refresh_token).
-pub async fn login<State, V, Fut>(
-    ctx: Context<State>,
+pub fn login<State, V, Fut>(
     validate_credentials: V,
+) -> impl Handler<State>
+where
+    State: AuthState,
+    V: Fn(Context<State>) -> Fut + Send + Sync + 'static + Clone,
+    Fut: Future<Output = AuthResult<Claims>> + Send + 'static,
+{
+    let validator = Arc::new(validate_credentials);
+    move |ctx: Context<State>| {
+        let v = validator.clone();
+        Box::pin(async move { login_impl(ctx, v).await })
+            as Pin<Box<dyn Future<Output = ServerResult<Response>> + Send>>
+    }
+}
+
+async fn login_impl<State, V, Fut>(
+    ctx: Context<State>,
+    validate_credentials: Arc<V>,
 ) -> ServerResult<Response>
 where
     State: AuthState,
     V: Fn(Context<State>) -> Fut + Send + Sync + 'static,
-    Fut: std::future::Future<Output = AuthResult<Claims>> + Send + 'static,
+    Fut: Future<Output = AuthResult<Claims>> + Send + 'static,
 {
     let claims = validate_credentials(ctx.clone()).await?;
 
@@ -127,7 +147,6 @@ fn generate_refresh_token(claims: &Claims) -> String {
     format!("rt-{}-{}", claims.sub, uuid::Uuid::new_v4())
 }
 
-use std::sync::Arc;
 #[cfg(test)]
 mod tests {
     use std::sync::Arc;
@@ -172,19 +191,19 @@ mod tests {
     async fn login_handler_returns_token_pair() {
         let state = mock_state();
 
-        let result = login(
-            Context::new(Arc::new(state.clone()), {
+        let handler = login(|_ctx| async move { Ok(sample_claims()) });
+
+        let result = handler
+            .call(Context::new(Arc::new(state), {
                 let req = gerax_http::routing::Request::new(
                     gerax_http::routing::HttpMethod::Post,
                     "/auth/login".into(),
                     Vec::new(),
                 );
                 req
-            }),
-            |_ctx| async move { Ok(sample_claims()) },
-        )
-        .await
-        .unwrap();
+            }))
+            .await
+            .unwrap();
 
         let pair: TokenPair = serde_json::from_slice(&result.body).unwrap();
         assert!(!pair.access_token.is_empty());
