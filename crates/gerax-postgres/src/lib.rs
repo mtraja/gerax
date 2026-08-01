@@ -1,3 +1,5 @@
 pub mod postgres;
 
-pub use postgres::PostgresRepository;
+pub use postgres::{
+    PostgresConnection, PostgresError, PostgresRepository, PostgresRepositoryBuilder,
+};
