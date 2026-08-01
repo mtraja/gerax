@@ -23,5 +23,6 @@ serde_json.workspace = true
 jsonwebtoken = { workspace = true, features = ["use_pem"] }
 uuid = { workspace = true, features = ["v4"] }
 
+
 [dev-dependencies]
 tokio = { workspace = true, features = ["full"] }
