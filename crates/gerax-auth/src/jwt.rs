@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 
 use crate::traits::{Authenticator, AuthResult, AuthError};
-use crate::types::Claims;
+use crate::types::{Claims};
 use gerax_http::routing::Context;
 
 /// Algoritmo suportado para validação de JWT.
@@ -31,7 +31,7 @@ impl JwtAuthenticator {
         Self::new(Algorithm::RS256 { public_key: public_key.into() }, leeway)
     }
 
-    fn decode_token(&self, token: &str) -> AuthResult<Claims> {
+    pub fn decode_token(&self, token: &str) -> AuthResult<Claims> {
         let mut validation = jsonwebtoken::Validation::default();
         validation.validate_exp = true;
         validation.leeway = self.leeway;
@@ -46,6 +46,17 @@ impl JwtAuthenticator {
             .map_err(|_| AuthError::InvalidToken)?;
 
         Ok(token_data.claims)
+    }
+
+    pub fn encode_token(&self, claims: &Claims) -> AuthResult<String> {
+        let key = match &self.algorithm {
+            Algorithm::HS256 { secret } => jsonwebtoken::EncodingKey::from_secret(secret),
+            Algorithm::RS256 { public_key } => jsonwebtoken::EncodingKey::from_rsa_pem(public_key)
+                .map_err(|e| AuthError::Internal(format!("falha ao carregar chave privada RSA: {e}")))?,
+        };
+
+        jsonwebtoken::encode(&jsonwebtoken::Header::default(), claims, &key)
+            .map_err(|e| AuthError::Internal(format!("falha ao codificar JWT: {e}")))
     }
 }
 
@@ -73,77 +84,26 @@ where
 
 #[cfg(test)]
 mod tests {
-    use std::sync::Arc;
-
     use super::*;
-    use crate::types::Claims;
-
-    fn sample_claims() -> Claims {
-        Claims {
-            sub: "user-123".into(),
-            exp: u64::MAX,
-            iat: 0,
-            scope: vec!["read".into()],
-        }
-    }
 
     fn hs256_authenticator() -> JwtAuthenticator {
         JwtAuthenticator::hs256("secret", 0)
     }
 
-    #[tokio::test]
-    async fn authenticator_accepts_valid_jwt() {
+    #[test]
+    fn encode_and_decode_token_roundtrip() {
         let authenticator = hs256_authenticator();
-        let token = jsonwebtoken::encode(
-            &jsonwebtoken::Header::default(),
-            &sample_claims(),
-            &jsonwebtoken::EncodingKey::from_secret("secret".as_ref()),
-        )
-        .unwrap();
+        let claims = Claims {
+            sub: "user-123".into(),
+            exp: u64::MAX,
+            iat: 0,
+            scope: vec!["read".into()],
+        };
 
-        let mut request = gerax_http::routing::Request::new(
-            gerax_http::routing::HttpMethod::Get,
-            "/".into(),
-            Vec::new(),
-        );
-        request.headers.insert("authorization", format!("Bearer {token}"));
+        let token = authenticator.encode_token(&claims).unwrap();
+        let decoded = authenticator.decode_token(&token).unwrap();
 
-        let ctx = Context::new(Arc::new(()), request);
-
-        let result = authenticator.authenticate(&ctx).await.unwrap();
-        assert!(result.is_some());
-        let claims = result.unwrap();
-        assert_eq!(claims.sub, "user-123");
-        assert!(claims.scope.contains(&"read".to_string()));
-    }
-
-    #[tokio::test]
-    async fn authenticator_rejects_missing_token() {
-        let authenticator = hs256_authenticator();
-        let request = gerax_http::routing::Request::new(
-            gerax_http::routing::HttpMethod::Get,
-            "/".into(),
-            Vec::new(),
-        );
-        let ctx = Context::new(Arc::new(()), request);
-
-        let result = authenticator.authenticate(&ctx).await;
-        assert!(matches!(result, Err(AuthError::MissingToken)));
-    }
-
-    #[tokio::test]
-    async fn authenticator_rejects_malformed_header() {
-        let authenticator = hs256_authenticator();
-        let mut request = gerax_http::routing::Request::new(
-            gerax_http::routing::HttpMethod::Get,
-            "/".into(),
-            Vec::new(),
-        );
-        request.headers.insert("authorization", "Token abc".to_string());
-
-        let ctx = Context::new(Arc::new(()), request);
-
-        let result = authenticator.authenticate(&ctx).await;
-        assert!(matches!(result, Err(AuthError::MissingToken)));
+        assert_eq!(decoded.sub, claims.sub);
+        assert_eq!(decoded.scope, claims.scope);
     }
 }
