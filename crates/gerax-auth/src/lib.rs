@@ -13,6 +13,6 @@ pub use extractor::AuthenticatedUser;
 pub use jwt::{Algorithm, JwtAuthenticator};
 pub use middleware::AuthMiddleware;
 pub use refresh::{MemoryTokenStorage, RefreshTokenStore, RotationPolicy, TokenStorage};
-pub use routes::{LoginHandler, RefreshHandler};
+pub use routes::{login, refresh, AuthState};
 pub use traits::{Authenticator, Authorizer, AuthError, AuthResult};
 pub use types::{Claims, RefreshToken, TokenPair};
