@@ -8,7 +8,7 @@ pub mod routes;
 pub mod traits;
 pub mod types;
 
-pub use config::{AlgorithmConfig, AuthConfig};
+pub use config::{AlgorithmConfig, AuthConfig, ConfiguredAuthState};
 pub use extractor::AuthenticatedUser;
 pub use jwt::{Algorithm, JwtAuthenticator};
 pub use middleware::AuthMiddleware;

@@ -1,7 +1,9 @@
-
+use std::sync::Arc;
 
 use crate::jwt::Algorithm;
-use crate::{AuthMiddleware, Authenticator, Authorizer, JwtAuthenticator};
+use crate::routes::AuthState;
+use crate::traits::{Authenticator, Authorizer};
+use crate::{AuthMiddleware, JwtAuthenticator, TokenStorage};
 
 /// Configuração de autenticação carregada via `gerax-config`.
 ///
@@ -59,13 +61,44 @@ pub enum AlgorithmConfig {
 impl From<AlgorithmConfig> for Algorithm {
     fn from(config: AlgorithmConfig) -> Self {
         match config {
-            AlgorithmConfig::HS256 => Algorithm::HS256 {
-                secret: Vec::new(),
-            },
-            AlgorithmConfig::RS256 => Algorithm::RS256 {
-                public_key: Vec::new(),
-            },
+            AlgorithmConfig::HS256 => Algorithm::HS256 { secret: Vec::new() },
+            AlgorithmConfig::RS256 => Algorithm::RS256 { public_key: Vec::new() },
         }
+    }
+}
+
+/// Implementação concreta de `AuthState` construída a partir de `AuthConfig`.
+///
+/// Encapsula o `JwtAuthenticator` e o backend de refresh tokens, pronta para
+/// ser usada com os handlers `login` e `refresh`.
+
+pub struct ConfiguredAuthState {
+    jwt: JwtAuthenticator,
+    store: Arc<dyn TokenStorage>,
+}
+
+impl Clone for ConfiguredAuthState {
+    fn clone(&self) -> Self {
+        Self {
+            jwt: self.jwt.clone(),
+            store: Arc::clone(&self.store),
+        }
+    }
+}
+
+impl ConfiguredAuthState {
+    pub fn new(jwt: JwtAuthenticator, store: Arc<dyn TokenStorage>) -> Self {
+        Self { jwt, store }
+    }
+}
+
+impl AuthState for ConfiguredAuthState {
+    fn jwt(&self) -> &JwtAuthenticator {
+        &self.jwt
+    }
+
+    fn token_storage(&self) -> &dyn TokenStorage {
+        self.store.as_ref()
     }
 }
 
@@ -82,6 +115,12 @@ impl AuthConfig {
         };
 
         JwtAuthenticator::new(algorithm, self.leeway_seconds)
+    }
+
+    /// Cria uma implementação concreta de `AuthState` pronta para uso com
+    /// os handlers `login` e `refresh`.
+    pub fn build_state(&self, store: Arc<dyn TokenStorage>) -> ConfiguredAuthState {
+        ConfiguredAuthState::new(self.build_authenticator(), store)
     }
 
     /// Cria um `AuthMiddleware` a partir da configuração.
