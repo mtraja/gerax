@@ -1,9 +1,11 @@
-pub mod error;
+pub mod builder;
 pub mod config;
-pub mod repository;
 pub mod connection;
+pub mod error;
+pub mod repository;
 
-pub use error::DbError;
+pub use builder::{DbBuilder, GenericRepositoryBuilder, RepositoryBuilder};
 pub use config::DatabaseConfig;
-pub use repository::Repository;
 pub use connection::Connection;
+pub use error::DbError;
+pub use repository::Repository;
