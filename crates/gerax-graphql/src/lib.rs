@@ -22,8 +22,10 @@ pub mod schema;
 pub mod request;
 pub mod response;
 pub mod error;
+pub mod executor;
 
 pub use schema::{Schema, SchemaBuilder};
 pub use request::GraphqlRequest;
 pub use response::GraphqlResponse;
 pub use error::GraphqlError;
+pub use executor::{Executor, DefaultExecutor};
