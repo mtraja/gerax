@@ -1,3 +1,5 @@
 pub mod mysql;
 
-pub use mysql::{MySqlConfig, MySqlRepository};
+pub use mysql::{
+    MySqlConfig, MySqlConnection, MySqlError, MySqlRepository, MySqlRepositoryBuilder,
+};
