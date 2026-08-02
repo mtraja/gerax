@@ -28,6 +28,7 @@ pub mod context;
 pub mod handler;
 pub mod middleware;
 pub mod subscription;
+pub mod ui;
 
 pub use schema::{Schema, SchemaBuilder};
 pub use request::GraphqlRequest;
@@ -39,3 +40,4 @@ pub use context::{GraphqlContext, GraphqlExtensions};
 pub use handler::GraphqlHandler;
 pub use middleware::{GraphqlMiddleware, LoggingMiddleware, MetricsMiddleware, AuthMiddleware, CacheMiddleware};
 pub use subscription::{Subscription, SubscriptionManager, WebSocketSubscriptionAdapter};
+pub use ui::{GraphiQL, Playground};
