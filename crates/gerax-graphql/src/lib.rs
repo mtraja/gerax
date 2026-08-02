@@ -26,6 +26,7 @@ pub mod executor;
 pub mod resolver;
 pub mod context;
 pub mod handler;
+pub mod middleware;
 
 pub use schema::{Schema, SchemaBuilder};
 pub use request::GraphqlRequest;
@@ -35,3 +36,4 @@ pub use executor::{Executor, DefaultExecutor};
 pub use resolver::{Resolver, QueryResolver, MutationResolver, SubscriptionResolver};
 pub use context::{GraphqlContext, GraphqlExtensions};
 pub use handler::GraphqlHandler;
+pub use middleware::{GraphqlMiddleware, LoggingMiddleware, MetricsMiddleware, AuthMiddleware, CacheMiddleware};
