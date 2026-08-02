@@ -47,3 +47,4 @@ pub use extensions::validation::{
     SchemaValidator, QueryValidator, ArgumentsValidator, Validator,
 };
 pub use extensions::complexity_depth::{ComplexityLimiter, DepthLimiter};
+pub use extensions::introspection::IntrospectionController;
