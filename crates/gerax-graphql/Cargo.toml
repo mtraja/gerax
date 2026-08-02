@@ -23,3 +23,6 @@ thiserror.workspace = true
 futures.workspace = true
 
 async-graphql = { workspace = true }
+
+gerax-websocket.workspace = true
+tokio.workspace = true
