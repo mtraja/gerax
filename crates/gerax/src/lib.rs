@@ -35,3 +35,12 @@ pub use gerax_auth::*;
 
 #[cfg(feature = "config")]
 pub use gerax_config::*;
+
+#[cfg(feature = "capnp")]
+pub use gerax_capnp::*;
+
+#[cfg(feature = "websocket")]
+pub use gerax_websocket::*;
+
+#[cfg(feature = "openapi")]
+pub use gerax_openapi::*;

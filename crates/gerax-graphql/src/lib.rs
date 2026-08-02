@@ -8,25 +8,19 @@
 //! - Integração com `gerax-db` para resolver dados
 //! - Integração com `gerax-http` para expor endpoint GraphQL
 //!
-//! ## Exemplo futuro
+//! ## Exemplo
 //!
 //! ```rust
-//! use gerax_graphql::{GraphQLExecutor, SchemaBuilder};
-//! use gerax_core::Entity;
+//! use gerax_graphql::{GraphqlRequest, GraphqlResponse, GraphqlError};
 //!
-//! #[derive(Entity)]
-//! struct User { ... }
-//!
-//! let schema = SchemaBuilder::new()
-//!     .entity::<User>()
-//!     .build();
-//!
-//! let executor = GraphQLExecutor::new(schema);
-//! let result = executor.execute(query).await?;
+//! let request = GraphqlRequest::new("{ health }");
+//! let response = GraphqlResponse::ok(serde_json::json!({"health": "ok"}));
 //! ```
 
-pub mod schema;
-pub mod executor;
+pub mod request;
+pub mod response;
 pub mod error;
 
-pub use error::GraphQLError;
+pub use request::GraphqlRequest;
+pub use response::GraphqlResponse;
+pub use error::GraphqlError;

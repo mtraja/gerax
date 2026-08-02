@@ -1,5 +1,5 @@
 use gerax_core::Entity;
-use gerax_db::{Connection, RepositoryBuilder};
+use gerax_db::{Connection, DatabaseConfig, RepositoryBuilder};
 use gerax_mongodb::MongoDbRepositoryBuilder;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
@@ -34,8 +34,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     connection.ping().await?;
     println!("Conexao com MongoDB estabelecida!");
 
+    let config = gerax_config::Config::builder()
+    .env()
+    .build::<DatabaseConfig>()?;
+
     // Usa o builder para criar o repositório
-    let repo = MongoDbRepositoryBuilder::<User>::new(gerax_mongodb::MongoDbConfig::from_env()?)
+    let repo = MongoDbRepositoryBuilder::<User>::new(config)
         .with_connection(connection)
         .build()
         .await?;

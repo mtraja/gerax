@@ -1,20 +1,20 @@
 use std::marker::PhantomData;
 use std::sync::Arc;
 
-use gerax_db::{Connection, DbError, Repository, RepositoryBuilder};
+use gerax_db::{Connection, DatabaseConfig, DbError, Repository, RepositoryBuilder};
 use gerax_core::Entity;
 
 use crate::mongodb::{MongoDbConnection, MongoDbRepository, MongoDbConfig};
 
 /// Builder concreto para repositórios MongoDB.
 pub struct MongoDbRepositoryBuilder<T> {
-    config: MongoDbConfig,
+    config: DatabaseConfig,
     connection: Option<Arc<MongoDbConnection>>,
     _marker: PhantomData<T>,
 }
 
 impl<T: Entity + Send + Sync + 'static> MongoDbRepositoryBuilder<T> {
-    pub fn new(config: MongoDbConfig) -> Self {
+    pub fn new(config: DatabaseConfig) -> Self {
         Self {
             config,
             connection: None,
@@ -27,7 +27,7 @@ impl<T: Entity + Send + Sync + 'static> MongoDbRepositoryBuilder<T> {
         self
     }
 
-    pub fn config(&self) -> &MongoDbConfig {
+    pub fn config(&self) -> &DatabaseConfig {
         &self.config
     }
 }
@@ -72,13 +72,13 @@ mod tests {
 
     #[tokio::test]
     async fn mongodb_builder_can_be_created() {
-        let config = MongoDbConfig {
-            uri: "mongodb://localhost:27017".into(),
+        let config = DatabaseConfig {
+            url: "mongodb://localhost:27017".into(),
             database: "test_db".into(),
         };
         let builder = MongoDbRepositoryBuilder::<User>::new(config);
 
-        assert_eq!(builder.config().uri, "mongodb://localhost:27017");
+        assert_eq!(builder.config().url, "mongodb://localhost:27017");
         assert_eq!(builder.config().database, "test_db");
     }
 }

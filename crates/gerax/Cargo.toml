@@ -33,6 +33,10 @@ gerax-mysql = { workspace = true, optional = true }
 gerax-auth = { workspace = true, optional = true }
 gerax-config = { workspace = true, optional = true }
 
+gerax-capnp = { workspace = true, optional = true }
+gerax-websocket = { workspace = true, optional = true }
+gerax-openapi = { workspace = true, optional = true }
+
 [features]
 default = ["actix", "mongodb"]
 
@@ -50,3 +54,7 @@ mysql = ["dep:gerax-mysql"]
 
 auth = ["dep:gerax-auth"]
 config = ["dep:gerax-config"]
+
+capnp = ["dep:gerax-capnp"]
+websocket = ["dep:gerax-websocket"]
+openapi = ["dep:gerax-openapi"]

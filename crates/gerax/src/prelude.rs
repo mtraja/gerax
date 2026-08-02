@@ -34,5 +34,20 @@ pub use gerax_mysql::{
 
 #[cfg(feature = "actix")]
 pub use gerax_actix::{
-    
+
+};
+
+#[cfg(feature = "capnp")]
+pub use gerax_capnp::{
+
+};
+
+#[cfg(feature = "websocket")]
+pub use gerax_websocket::{
+
+};
+
+#[cfg(feature = "openapi")]
+pub use gerax_openapi::{
+
 };

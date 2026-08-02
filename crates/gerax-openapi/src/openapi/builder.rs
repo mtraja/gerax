@@ -1,13 +1,14 @@
 use gerax_core::Entity;
 
-/// Builder para construção de schema GraphQL.
+/// Builder para geração de especificação OpenAPI a partir de entidades Gerax.
 ///
-/// Permite registrar entidades do `gerax-core` para gerar tipos e resolvers automaticamente.
-pub struct SchemaBuilder {
+/// Registra entidades e produz definições OpenAPI (Swagger) para documentação
+/// automática da API.
+pub struct OpenApiBuilder {
     entities: Vec<String>,
 }
 
-impl SchemaBuilder {
+impl OpenApiBuilder {
     /// Cria um novo builder vazio.
     pub fn new() -> Self {
         Self {
@@ -15,10 +16,10 @@ impl SchemaBuilder {
         }
     }
 
-    /// Registra uma entidade no schema.
+    /// Registra uma entidade no schema OpenAPI.
     ///
     /// A entidade deve implementar `gerax_core::Entity`.
-    /// O nome da coleção será usado como tipo no GraphQL.
+    /// O nome da coleção será usado como nome do endpoint e do schema.
     pub fn entity<T: Entity + Send + Sync + 'static>(mut self) -> Self {
         self.entities.push(T::collection_name().to_string());
         self

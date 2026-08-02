@@ -24,6 +24,9 @@ members = [
     "crates/gerax-mysql",
     "crates/gerax-graphql",
     "crates/gerax-grpc",
+    "crates/gerax-capnp",
+    "crates/gerax-websocket",
+    "crates/gerax-openapi",
 
 
     "examples/myapp",
@@ -69,6 +72,10 @@ gerax-turso = { path = "crates/gerax-turso" }
 gerax-ai = { path = "crates/gerax-ai" }
 
 gerax-mysql = { path = "crates/gerax-mysql" }
+
+gerax-capnp = { path = "crates/gerax-capnp" }
+gerax-websocket = { path = "crates/gerax-websocket" }
+gerax-openapi = { path = "crates/gerax-openapi" }
 
 actix-web = { version = "4", features = ["macros"] }
 axum = { version = "0.8", features = ["macros"] }

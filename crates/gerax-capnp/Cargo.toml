@@ -1,5 +1,5 @@
 [package]
-name = "gerax-graphql"
+name = "gerax-capnp"
 
 version.workspace = true
 edition.workspace = true
@@ -9,15 +9,11 @@ repository.workspace = true
 rust-version.workspace = true
 publish.workspace = true
 
-description = "Suporte a GraphQL no Gerax"
+description = "Integração do Gerax com capnp"
 
 [dependencies]
 gerax-core.workspace = true
-gerax-http.workspace = true
 gerax-db.workspace = true
 
-async-trait.workspace = true
 serde.workspace = true
 serde_json.workspace = true
-thiserror.workspace = true
-futures.workspace = true

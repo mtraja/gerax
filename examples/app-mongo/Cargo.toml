@@ -7,6 +7,7 @@ edition.workspace = true
 gerax-mongodb = { path = "../../crates/gerax-mongodb" }
 gerax-core = { path = "../../crates/gerax-core" }
 gerax-db = { path = "../../crates/gerax-db" }
+gerax-config = { path = "../../crates/gerax-config" }
 
 tokio = { version = "1", features = ["full"] }
 dotenv = "0.15"
