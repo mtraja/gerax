@@ -11,16 +11,19 @@
 //! ## Exemplo
 //!
 //! ```rust
-//! use gerax_graphql::{GraphqlRequest, GraphqlResponse, GraphqlError};
+//! use gerax_graphql::{Schema, GraphqlRequest, GraphqlResponse, GraphqlError};
 //!
-//! let request = GraphqlRequest::new("{ health }");
-//! let response = GraphqlResponse::ok(serde_json::json!({"health": "ok"}));
+//! let schema = Schema::builder()
+//!     .query(QueryRoot)
+//!     .finish()?;
 //! ```
 
+pub mod schema;
 pub mod request;
 pub mod response;
 pub mod error;
 
+pub use schema::{Schema, SchemaBuilder};
 pub use request::GraphqlRequest;
 pub use response::GraphqlResponse;
 pub use error::GraphqlError;

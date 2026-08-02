@@ -100,3 +100,4 @@ matchit = "0.7"
 http = "1"
 bytes = "1"
 libsql = "0.9"
+async-graphql = { version = "7", features = ["chrono"] }
