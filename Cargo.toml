@@ -23,6 +23,7 @@ members = [
     "crates/gerax-ai",
     "crates/gerax-mysql",
     "crates/gerax-graphql",
+    "crates/gerax-grpc",
 
 
     "examples/myapp",
