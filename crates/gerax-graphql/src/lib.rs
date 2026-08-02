@@ -25,6 +25,7 @@ pub mod error;
 pub mod executor;
 pub mod resolver;
 pub mod context;
+pub mod handler;
 
 pub use schema::{Schema, SchemaBuilder};
 pub use request::GraphqlRequest;
@@ -33,3 +34,4 @@ pub use error::GraphqlError;
 pub use executor::{Executor, DefaultExecutor};
 pub use resolver::{Resolver, QueryResolver, MutationResolver, SubscriptionResolver};
 pub use context::{GraphqlContext, GraphqlExtensions};
+pub use handler::GraphqlHandler;
