@@ -43,3 +43,6 @@ pub use middleware::{GraphqlMiddleware, LoggingMiddleware, MetricsMiddleware, Au
 pub use subscription::{Subscription, SubscriptionManager, WebSocketSubscriptionAdapter};
 pub use ui::{GraphiQL, Playground};
 pub use extensions::persisted_query::{PersistedQueryManager, PersistedQueryCache};
+pub use extensions::validation::{
+    SchemaValidator, QueryValidator, ArgumentsValidator, Validator,
+};
