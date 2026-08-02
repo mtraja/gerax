@@ -1,7 +1,8 @@
 use gerax_core::Entity;
-use gerax_db::{Connection, Repository};
-use gerax_mongodb::MongoDbRepository;
+use gerax_db::{Connection, RepositoryBuilder};
+use gerax_mongodb::MongoDbRepositoryBuilder;
 use serde::{Deserialize, Serialize};
+use std::sync::Arc;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 struct User {
@@ -28,9 +29,16 @@ impl Entity for User {
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenv::dotenv().ok();
 
-    let repo = MongoDbRepository::<User>::connect().await?;
-    repo.ping().await?;
+    // Estabelece conexão
+    let connection = Arc::new(gerax_mongodb::MongoDbConnection::connect().await?);
+    connection.ping().await?;
     println!("Conexao com MongoDB estabelecida!");
+
+    // Usa o builder para criar o repositório
+    let repo = MongoDbRepositoryBuilder::<User>::new(gerax_mongodb::MongoDbConfig::from_env()?)
+        .with_connection(connection)
+        .build()
+        .await?;
 
     let user = User {
         id: None,
