@@ -20,6 +20,10 @@ crates/gerax-graphql/
         └── mod.rs
 ```
 
+## Documentação
+
+Use `cargo doc --open -p gerax-graphql` para ver a documentação gerada.
+
 ## Uso futuro
 
 Este crate fornecerá:

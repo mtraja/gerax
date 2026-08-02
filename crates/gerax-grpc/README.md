@@ -23,10 +23,14 @@ crates/gerax-grpc/
         └── mod.rs
 ```
 
+## Documentação
+
+Use `cargo doc --open -p gerax-grpc` para ver a documentação gerada.
+
 ## Uso futuro
 
 Este crate fornecerá:
-- Geração de schemas protobuf a partir de entidades `gerax-core`
+- Geração de schemas Protobuf a partir de entidades `gerax-core`
 - Servidor gRPC genérico
 - Cliente gRPC genérico
 - Integração com `gerax-db` para resolver dados
