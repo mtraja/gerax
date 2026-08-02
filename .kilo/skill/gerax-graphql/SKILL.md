@@ -155,8 +155,8 @@ Implementação compatível com `Context<State>` para batch loading.
 
 ## Módulos
 
-| Módulo | Descrição |
-|--------|-----------|
+| Módulo       | Descrição |
+|--------------|-----------|
 | `builder.rs` | Builder de schema |
 | `schema.rs` | Tipos de schema |
 | `request.rs` | `GraphqlRequest` |
