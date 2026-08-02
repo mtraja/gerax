@@ -1,6 +1,6 @@
 use std::marker::PhantomData;
 use std::sync::Arc;
-
+use async_trait::async_trait;
 use gerax_db::{Connection, DatabaseConfig, DbError, Repository, RepositoryBuilder};
 use gerax_core::Entity;
 
@@ -14,7 +14,10 @@ pub struct PostgresRepositoryBuilder<T> {
     _marker: PhantomData<T>,
 }
 
-impl<T: Entity + Send + Sync + 'static> PostgresRepositoryBuilder<T> {
+impl<T:> PostgresRepositoryBuilder<T> 
+where 
+    T:Entity + Send + Sync + 'static {
+
     pub fn new(config: DatabaseConfig) -> Self {
         Self {
             config,
@@ -33,8 +36,10 @@ impl<T: Entity + Send + Sync + 'static> PostgresRepositoryBuilder<T> {
     }
 }
 
-#[async_trait::async_trait]
-impl<T: Entity + Send + Sync + 'static> RepositoryBuilder<T> for PostgresRepositoryBuilder<T> {
+#[async_trait]
+impl<T> RepositoryBuilder<T> for PostgresRepositoryBuilder<T> 
+where T: Entity + Send + Sync + 'static {
+    
     async fn build(&self) -> Result<Box<dyn Repository<T>>, DbError> {
         let connection = if let Some(ref conn) = self.connection {
             conn.clone()
