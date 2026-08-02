@@ -46,3 +46,4 @@ pub use extensions::persisted_query::{PersistedQueryManager, PersistedQueryCache
 pub use extensions::validation::{
     SchemaValidator, QueryValidator, ArgumentsValidator, Validator,
 };
+pub use extensions::complexity_depth::{ComplexityLimiter, DepthLimiter};
