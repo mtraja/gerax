@@ -49,4 +49,4 @@ pub use extensions::validation::{
 };
 pub use extensions::complexity_depth::{ComplexityLimiter, DepthLimiter};
 pub use extensions::introspection::IntrospectionController;
-pub use dataloader::{DataLoader, ContextDataLoader};
+pub use dataloader::{BatchLoader, DataLoader};
