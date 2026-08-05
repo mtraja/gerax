@@ -1,5 +1,5 @@
+use crate::{Executor, GraphqlError, Resolver};
 use async_trait::async_trait;
-use crate::{GraphqlError, Executor, Resolver};
 use std::sync::Arc;
 
 /// Trait de abstração para subscriptions GraphQL.
@@ -15,11 +15,7 @@ pub trait Subscription<State>: Send + Sync + 'static {
     async fn stop(&self) -> Result<(), GraphqlError>;
 
     /// Registra um resolver para um campo de subscription.
-    fn register_resolver(
-        &self,
-        field_name: &str,
-        resolver: Arc<dyn Resolver<State>>,
-    );
+    fn register_resolver(&self, field_name: &str, resolver: Arc<dyn Resolver<State>>);
 }
 
 /// Gerenciador de subscriptions ativas.
@@ -43,11 +39,7 @@ impl<State: 'static> SubscriptionManager<State> {
     }
 
     /// Registra uma subscription com um resolver.
-    pub async fn register(
-        &self,
-        field_name: String,
-        resolver: Arc<dyn Resolver<State>>,
-    ) {
+    pub async fn register(&self, field_name: String, resolver: Arc<dyn Resolver<State>>) {
         let mut subs = self.subscriptions.write().await;
         subs.push(ActiveSubscription {
             field_name,
@@ -66,9 +58,10 @@ impl<State: 'static> SubscriptionManager<State> {
         if let Some(sub) = subs.iter().find(|s| s.field_name == field_name) {
             sub.resolver.resolve(state, args).await
         } else {
-            Err(GraphqlError::Execution(
-                format!("subscription field '{}' not found", field_name),
-            ))
+            Err(GraphqlError::Execution(format!(
+                "subscription field '{}' not found",
+                field_name
+            )))
         }
     }
 }
@@ -86,9 +79,7 @@ impl<State: 'static> WebSocketSubscriptionAdapter<State> {
 }
 
 #[async_trait]
-impl<State: Send + Sync + 'static> Subscription<State>
-    for WebSocketSubscriptionAdapter<State>
-{
+impl<State: Send + Sync + 'static> Subscription<State> for WebSocketSubscriptionAdapter<State> {
     async fn start(&self, _addr: &str) -> Result<(), GraphqlError> {
         Ok(())
     }
@@ -97,11 +88,7 @@ impl<State: Send + Sync + 'static> Subscription<State>
         Ok(())
     }
 
-    fn register_resolver(
-        &self,
-        field_name: &str,
-        resolver: Arc<dyn Resolver<State>>,
-    ) {
+    fn register_resolver(&self, field_name: &str, resolver: Arc<dyn Resolver<State>>) {
         let manager = self.manager.clone();
         let field_name = field_name.to_string();
         tokio::spawn(async move {

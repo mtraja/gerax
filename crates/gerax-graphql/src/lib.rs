@@ -31,6 +31,7 @@ pub mod subscription;
 pub mod ui;
 pub mod extensions;
 pub mod dataloader;
+pub mod auth;
 
 pub use schema::{Schema, SchemaBuilder};
 pub use request::GraphqlRequest;
@@ -50,3 +51,4 @@ pub use extensions::validation::{
 pub use extensions::complexity_depth::{ComplexityLimiter, DepthLimiter};
 pub use extensions::introspection::IntrospectionController;
 pub use dataloader::{BatchLoader, DataLoader};
+pub use auth::{AuthClaims, AuthExtractor, AuthIntegration};

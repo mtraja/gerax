@@ -1,7 +1,7 @@
 //! Erros específicos do crate `gerax-graphql`.
 
-use thiserror::Error;
 use serde::{Deserialize, Serialize};
+use thiserror::Error;
 
 /// Erros de execução e validação GraphQL.
 #[derive(Debug, Clone, Error, Serialize, Deserialize, PartialEq)]

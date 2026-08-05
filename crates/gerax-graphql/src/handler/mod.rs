@@ -1,9 +1,9 @@
+use crate::{Executor, GraphqlError, GraphqlRequest, GraphqlResponse};
 use async_trait::async_trait;
-use gerax_http::routing::handler::Handler;
-use gerax_http::routing::context::Context as HttpContext;
-use gerax_http::{ServerResult, HttpServerError};
 use gerax_http::routing::Response;
-use crate::{Executor, GraphqlRequest, GraphqlResponse, GraphqlError};
+use gerax_http::routing::context::Context as HttpContext;
+use gerax_http::routing::handler::Handler;
+use gerax_http::{HttpServerError, ServerResult};
 
 /// Handler GraphQL que implementa `Handler<State>` do `gerax-http`.
 ///
@@ -36,10 +36,13 @@ impl<State> GraphqlHandler<State> {
     }
 
     /// Extrai a requisição GraphQL do contexto HTTP.
-    fn extract_request(&self, context: &HttpContext<State>) -> Result<GraphqlRequest, GraphqlError> {
+    fn extract_request(
+        &self,
+        context: &HttpContext<State>,
+    ) -> Result<GraphqlRequest, GraphqlError> {
         let body = context.request().body();
-        let request: GraphqlRequest = serde_json::from_slice(body)
-            .map_err(|e| GraphqlError::Validation(e.to_string()))?;
+        let request: GraphqlRequest =
+            serde_json::from_slice(body).map_err(|e| GraphqlError::Validation(e.to_string()))?;
         Ok(request)
     }
 
@@ -59,10 +62,7 @@ impl<State> GraphqlHandler<State> {
                 };
                 let body = serde_json::to_vec(&error_response)
                     .map_err(|e| HttpServerError::RuntimeError(e.to_string()))?;
-                Ok(Response {
-                    status: 400,
-                    body,
-                })
+                Ok(Response { status: 400, body })
             }
         }
     }

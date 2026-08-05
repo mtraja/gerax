@@ -1,4 +1,4 @@
-use crate::{GraphqlRequest, GraphqlError};
+use crate::{GraphqlError, GraphqlRequest};
 
 /// Validador de schemas GraphQL.
 ///
@@ -60,10 +60,7 @@ impl ArgumentsValidator {
     /// Valida os argumentos de uma requisição GraphQL.
     ///
     /// Verifica se os argumentos estão no formato correto.
-    pub fn validate_arguments(
-        &self,
-        request: &GraphqlRequest,
-    ) -> Result<(), GraphqlError> {
+    pub fn validate_arguments(&self, request: &GraphqlRequest) -> Result<(), GraphqlError> {
         if let Some(variables) = &request.variables {
             for (key, value) in variables {
                 if key.is_empty() {
@@ -72,9 +69,10 @@ impl ArgumentsValidator {
                     ));
                 }
                 if value.is_null() {
-                    return Err(GraphqlError::Validation(
-                        format!("variable '{}' cannot be null", key),
-                    ));
+                    return Err(GraphqlError::Validation(format!(
+                        "variable '{}' cannot be null",
+                        key
+                    )));
                 }
             }
         }

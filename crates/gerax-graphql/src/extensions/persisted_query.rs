@@ -1,8 +1,8 @@
-use sha2::{Sha256, Digest};
+use crate::GraphqlError;
+use sha2::{Digest, Sha256};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use crate::GraphqlError;
 
 /// Cache interno para queries persistidas.
 pub struct PersistedQueryCache {
@@ -89,11 +89,7 @@ impl PersistedQueryManager {
     ///
     /// Retorna a query original se encontrada no cache,
     /// ou um erro se a query não existir.
-    pub async fn validate(
-        &self,
-        hash: &str,
-        query: Option<&str>,
-    ) -> Result<String, GraphqlError> {
+    pub async fn validate(&self, hash: &str, query: Option<&str>) -> Result<String, GraphqlError> {
         let cached_query = self.cache.get(hash).await;
 
         match (cached_query, query) {

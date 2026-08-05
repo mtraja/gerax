@@ -1,6 +1,6 @@
+use crate::GraphqlError;
 use async_trait::async_trait;
 use serde_json::Value;
-use crate::GraphqlError;
 
 /// Trait responsável por resolver campos GraphQL.
 ///
@@ -9,11 +9,7 @@ use crate::GraphqlError;
 #[async_trait]
 pub trait Resolver<State>: Send + Sync + 'static {
     /// Resolve um campo GraphQL.
-    async fn resolve(
-        &self,
-        state: &State,
-        args: Option<&Value>,
-    ) -> Result<Value, GraphqlError>;
+    async fn resolve(&self, state: &State, args: Option<&Value>) -> Result<Value, GraphqlError>;
 }
 
 /// Resolver para campos de query.
@@ -35,11 +31,7 @@ impl<State> Resolver<State> for QueryResolver<State>
 where
     State: Send + Sync + 'static,
 {
-    async fn resolve(
-        &self,
-        _state: &State,
-        _args: Option<&Value>,
-    ) -> Result<Value, GraphqlError> {
+    async fn resolve(&self, _state: &State, _args: Option<&Value>) -> Result<Value, GraphqlError> {
         Ok(Value::Null)
     }
 }
@@ -63,11 +55,7 @@ impl<State> Resolver<State> for MutationResolver<State>
 where
     State: Send + Sync + 'static,
 {
-    async fn resolve(
-        &self,
-        _state: &State,
-        _args: Option<&Value>,
-    ) -> Result<Value, GraphqlError> {
+    async fn resolve(&self, _state: &State, _args: Option<&Value>) -> Result<Value, GraphqlError> {
         Ok(Value::Null)
     }
 }
@@ -91,11 +79,7 @@ impl<State> Resolver<State> for SubscriptionResolver<State>
 where
     State: Send + Sync + 'static,
 {
-    async fn resolve(
-        &self,
-        _state: &State,
-        _args: Option<&Value>,
-    ) -> Result<Value, GraphqlError> {
+    async fn resolve(&self, _state: &State, _args: Option<&Value>) -> Result<Value, GraphqlError> {
         Ok(Value::Null)
     }
 }

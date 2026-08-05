@@ -36,6 +36,7 @@ gerax-config = { workspace = true, optional = true }
 gerax-capnp = { workspace = true, optional = true }
 gerax-websocket = { workspace = true, optional = true }
 gerax-openapi = { workspace = true, optional = true }
+gerax-codec = { workspace = true, optional = true }
 
 [features]
 default = ["actix", "mongodb"]

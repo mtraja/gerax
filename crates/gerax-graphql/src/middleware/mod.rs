@@ -1,6 +1,6 @@
+use crate::{GraphqlError, GraphqlRequest, GraphqlResponse};
 use async_trait::async_trait;
 use gerax_http::routing::context::Context as HttpContext;
-use crate::{GraphqlRequest, GraphqlResponse, GraphqlError};
 
 /// Trait de middleware específico para GraphQL.
 ///

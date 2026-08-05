@@ -1,7 +1,7 @@
 //! Tipo de resposta GraphQL.
 
-use serde::{Deserialize, Serialize};
 use crate::error::GraphqlError;
+use serde::{Deserialize, Serialize};
 
 /// Representa uma resposta GraphQL.
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]

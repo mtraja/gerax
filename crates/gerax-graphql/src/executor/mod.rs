@@ -1,5 +1,5 @@
+use crate::{GraphqlError, GraphqlRequest, GraphqlResponse, Schema};
 use async_trait::async_trait;
-use crate::{GraphqlRequest, GraphqlResponse, GraphqlError, Schema};
 
 /// Trait responsável por executar operações GraphQL.
 ///

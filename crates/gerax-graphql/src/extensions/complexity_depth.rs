@@ -24,11 +24,7 @@ impl ComplexityLimiter {
     /// A complexidade é estimada pelo número de campos
     /// na query.
     pub fn calculate_complexity(&self, query: &str) -> usize {
-        query
-            .chars()
-            .filter(|c| c.is_alphabetic())
-            .count()
-            / 4
+        query.chars().filter(|c| c.is_alphabetic()).count() / 4
     }
 
     /// Verifica se a complexidade da query excede o limite.

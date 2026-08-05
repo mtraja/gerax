@@ -1,8 +1,6 @@
-use async_graphql::{
-    Schema as AsyncSchema, ObjectType, SubscriptionType, Variables,
-};
-use serde_json::{Map, Value};
 use crate::GraphqlError;
+use async_graphql::{ObjectType, Schema as AsyncSchema, SubscriptionType, Variables};
+use serde_json::{Map, Value};
 
 /// Schema GraphQL encapsulado.
 ///
@@ -28,8 +26,7 @@ impl<Q: 'static, M: 'static, S: 'static> Schema<Q, M, S> {
         M: ObjectType + Send + Sync,
         S: SubscriptionType + Send + Sync,
     {
-        let vars = variables
-            .map(|m| Variables::from_json(Value::Object(m)));
+        let vars = variables.map(|m| Variables::from_json(Value::Object(m)));
         let request = async_graphql::Request::new(query).variables(vars.unwrap_or_default());
         let response = self.inner.execute(request).await;
 
@@ -37,8 +34,7 @@ impl<Q: 'static, M: 'static, S: 'static> Schema<Q, M, S> {
             return Err(GraphqlError::Execution(errors.to_string()));
         }
 
-        serde_json::to_value(response.data)
-            .map_err(|e| GraphqlError::Execution(e.to_string()))
+        serde_json::to_value(response.data).map_err(|e| GraphqlError::Execution(e.to_string()))
     }
 }
 
@@ -81,9 +77,7 @@ impl<Q, M, S> SchemaBuilder<Q, M, S> {
     }
 
     /// Constrói o schema GraphQL.
-    pub fn finish(
-        self,
-    ) -> Result<Schema<Q, M, S>, GraphqlError>
+    pub fn finish(self) -> Result<Schema<Q, M, S>, GraphqlError>
     where
         Q: ObjectType + Send + Sync + 'static,
         M: ObjectType + Send + Sync + 'static,
@@ -93,13 +87,13 @@ impl<Q, M, S> SchemaBuilder<Q, M, S> {
             .query
             .ok_or_else(|| GraphqlError::Validation("query root type is required".to_string()))?;
 
-        let mutation = self
-            .mutation
-            .ok_or_else(|| GraphqlError::Validation("mutation root type is required".to_string()))?;
+        let mutation = self.mutation.ok_or_else(|| {
+            GraphqlError::Validation("mutation root type is required".to_string())
+        })?;
 
-        let subscription = self
-            .subscription
-            .ok_or_else(|| GraphqlError::Validation("subscription root type is required".to_string()))?;
+        let subscription = self.subscription.ok_or_else(|| {
+            GraphqlError::Validation("subscription root type is required".to_string())
+        })?;
 
         let schema = AsyncSchema::build(query, mutation, subscription).finish();
 
