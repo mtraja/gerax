@@ -29,6 +29,7 @@ pub mod middleware;
 pub mod request;
 pub mod resolver;
 pub mod response;
+pub mod scalar;
 pub mod schema;
 pub mod subscription;
 pub mod ui;
@@ -50,6 +51,7 @@ pub use middleware::{
 pub use request::GraphqlRequest;
 pub use resolver::{MutationResolver, QueryResolver, Resolver, SubscriptionResolver};
 pub use response::GraphqlResponse;
+pub use scalar::{DateTimeScalar, EmailScalar, UuidScalar};
 pub use schema::{Schema, SchemaBuilder};
 pub use subscription::{Subscription, SubscriptionManager, WebSocketSubscriptionAdapter};
 pub use ui::{GraphiQL, Playground};
