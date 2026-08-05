@@ -122,6 +122,11 @@ impl PersistedQueryManager {
     pub async fn len(&self) -> usize {
         self.cache.len().await
     }
+
+    /// Verifica se não há queries persistidas no cache.
+    pub async fn is_empty(&self) -> bool {
+        self.cache.is_empty().await
+    }
 }
 
 impl Default for PersistedQueryManager {

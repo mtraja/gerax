@@ -1,5 +1,6 @@
-use crate::{GraphqlError, GraphqlRequest, GraphqlResponse};
+use crate::{GraphqlAuthContext, GraphqlError, GraphqlRequest, GraphqlResponse};
 use async_trait::async_trait;
+use gerax_auth::Claims;
 use gerax_http::routing::context::Context as HttpContext;
 
 /// Trait de middleware específico para GraphQL.
@@ -49,6 +50,12 @@ impl LoggingMiddleware {
     }
 }
 
+impl Default for LoggingMiddleware {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[async_trait]
 impl<State> GraphqlMiddleware<State> for LoggingMiddleware
 where
@@ -82,6 +89,12 @@ impl MetricsMiddleware {
     }
 }
 
+impl Default for MetricsMiddleware {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[async_trait]
 impl<State> GraphqlMiddleware<State> for MetricsMiddleware
 where
@@ -105,13 +118,28 @@ where
     }
 }
 
-/// Middleware de autorização para GraphQL.
-pub struct AuthMiddleware;
+/// Middleware de autenticação e autorização para GraphQL.
+///
+/// Este middleware deve ser usado após `gerax_auth::AuthMiddleware`, que
+/// valida o token e adiciona [`Claims`] às extensões do contexto. Por padrão
+/// uma operação só prossegue quando há claims. Use [`Self::require_scope`] para
+/// exigir escopos adicionais.
+pub struct AuthMiddleware {
+    required_scopes: Vec<String>,
+}
 
 impl AuthMiddleware {
     /// Cria um novo middleware de autorização.
     pub fn new() -> Self {
-        Self
+        Self {
+            required_scopes: Vec::new(),
+        }
+    }
+
+    /// Exige um escopo para executar uma operação GraphQL.
+    pub fn require_scope(mut self, scope: impl Into<String>) -> Self {
+        self.required_scopes.push(scope.into());
+        self
     }
 }
 
@@ -122,10 +150,22 @@ where
 {
     async fn before_execute(
         &self,
-        _context: &HttpContext<State>,
-        _request: &GraphqlRequest,
+        context: &HttpContext<State>,
+        request: &GraphqlRequest,
     ) -> Result<Option<GraphqlRequest>, GraphqlError> {
-        Ok(Some(_request.clone()))
+        let claims = context.auth::<Claims>()?;
+        let missing_scope = self
+            .required_scopes
+            .iter()
+            .find(|scope| !claims.scope.iter().any(|candidate| candidate == *scope));
+
+        if let Some(scope) = missing_scope {
+            return Err(GraphqlError::Forbidden(format!(
+                "missing required scope: {scope}"
+            )));
+        }
+
+        Ok(Some(request.clone()))
     }
 
     async fn after_execute(
@@ -138,6 +178,12 @@ where
     }
 }
 
+impl Default for AuthMiddleware {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 /// Middleware de cache para GraphQL.
 pub struct CacheMiddleware;
 
@@ -145,6 +191,12 @@ impl CacheMiddleware {
     /// Cria um novo middleware de cache.
     pub fn new() -> Self {
         Self
+    }
+}
+
+impl Default for CacheMiddleware {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -168,5 +220,78 @@ where
         _response: &GraphqlResponse,
     ) -> Result<GraphqlResponse, GraphqlError> {
         Ok(_response.clone())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::sync::Arc;
+
+    use gerax_auth::Claims;
+    use gerax_http::routing::{Context, HttpMethod, Request};
+
+    use super::{AuthMiddleware, GraphqlMiddleware};
+    use crate::{GraphqlError, GraphqlRequest};
+
+    fn context() -> Context<()> {
+        Context::new(
+            Arc::new(()),
+            Request::new(HttpMethod::Post, "/graphql".to_string(), Vec::new()),
+        )
+    }
+
+    fn request() -> GraphqlRequest {
+        GraphqlRequest {
+            query: "query { viewer { id } }".to_string(),
+            ..GraphqlRequest::default()
+        }
+    }
+
+    fn claims(scopes: Vec<&str>) -> Claims {
+        Claims {
+            sub: "user-42".to_string(),
+            exp: u64::MAX,
+            iat: 0,
+            scope: scopes.into_iter().map(str::to_string).collect(),
+        }
+    }
+
+    #[tokio::test]
+    async fn auth_middleware_rejects_anonymous_operations() {
+        let result = AuthMiddleware::new()
+            .before_execute(&context(), &request())
+            .await;
+
+        assert!(matches!(result, Err(GraphqlError::Unauthorized(_))));
+    }
+
+    #[tokio::test]
+    async fn auth_middleware_allows_authenticated_operations() {
+        let context = context();
+        context.extensions().insert(claims(Vec::new()));
+
+        let result = AuthMiddleware::new()
+            .before_execute(&context, &request())
+            .await;
+
+        assert!(matches!(result, Ok(Some(_))));
+    }
+
+    #[tokio::test]
+    async fn auth_middleware_enforces_required_scopes() {
+        let context = context();
+        context.extensions().insert(claims(vec!["posts:read"]));
+
+        let allowed = AuthMiddleware::new()
+            .require_scope("posts:read")
+            .before_execute(&context, &request())
+            .await;
+        let denied = AuthMiddleware::new()
+            .require_scope("posts:write")
+            .before_execute(&context, &request())
+            .await;
+
+        assert!(matches!(allowed, Ok(Some(_))));
+        assert!(matches!(denied, Err(GraphqlError::Forbidden(_))));
     }
 }

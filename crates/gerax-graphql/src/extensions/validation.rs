@@ -13,6 +13,12 @@ impl SchemaValidator {
     }
 }
 
+impl Default for SchemaValidator {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 /// Validador de queries GraphQL.
 ///
 /// Responsável por validar a sintaxe e a estrutura
@@ -42,6 +48,12 @@ impl QueryValidator {
         }
 
         Ok(())
+    }
+}
+
+impl Default for QueryValidator {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -80,6 +92,12 @@ impl ArgumentsValidator {
     }
 }
 
+impl Default for ArgumentsValidator {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 /// Validador completo para operações GraphQL.
 ///
 /// Combina validação de query e argumentos
@@ -103,5 +121,11 @@ impl Validator {
         args_validator.validate_arguments(request)?;
 
         Ok(())
+    }
+}
+
+impl Default for Validator {
+    fn default() -> Self {
+        Self::new()
     }
 }

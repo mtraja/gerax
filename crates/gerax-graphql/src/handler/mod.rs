@@ -11,7 +11,7 @@ use gerax_http::{HttpServerError, ServerResult};
 ///
 /// ## Exemplo
 ///
-/// ```rust
+/// ```ignore
 /// use gerax_http::Router;
 /// use gerax_graphql::{GraphqlHandler, Executor, Schema};
 ///

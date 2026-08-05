@@ -26,6 +26,12 @@ impl<State> QueryResolver<State> {
     }
 }
 
+impl<State> Default for QueryResolver<State> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[async_trait]
 impl<State> Resolver<State> for QueryResolver<State>
 where
@@ -50,6 +56,12 @@ impl<State> MutationResolver<State> {
     }
 }
 
+impl<State> Default for MutationResolver<State> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[async_trait]
 impl<State> Resolver<State> for MutationResolver<State>
 where
@@ -71,6 +83,12 @@ impl<State> SubscriptionResolver<State> {
         Self {
             _marker: std::marker::PhantomData,
         }
+    }
+}
+
+impl<State> Default for SubscriptionResolver<State> {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

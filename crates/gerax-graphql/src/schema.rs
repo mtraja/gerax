@@ -100,3 +100,9 @@ impl<Q, M, S> SchemaBuilder<Q, M, S> {
         Ok(Schema { inner: schema })
     }
 }
+
+impl<Q, M, S> Default for SchemaBuilder<Q, M, S> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
