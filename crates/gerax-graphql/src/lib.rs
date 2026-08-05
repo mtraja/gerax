@@ -2,21 +2,26 @@
 //!
 //! Suporte a GraphQL no ecossistema Gerax.
 //!
-//! Este crate fornece:
-//! - Construção de schema GraphQL a partir de entidades `gerax-core`
-//! - Execução de queries e mutations
-//! - Integração com `gerax-db` para resolver dados
-//! - Integração com `gerax-http` para expor endpoint GraphQL
+//! Este crate fornece construção de schema, execução, resolvers, DataLoader,
+//! subscriptions e integração com `gerax-http` e `gerax-auth`.
+//!
+//! As extensões incluem validação, limites de complexidade e profundidade,
+//! introspection, queries persistidas e cache de respostas. Os escalares
+//! [`UuidScalar`], [`DateTimeScalar`] e [`EmailScalar`] validam tipos comuns.
 //!
 //! ## Exemplo
 //!
 //! ```ignore
-//! use gerax_graphql::{Schema, GraphqlRequest, GraphqlResponse, GraphqlError};
+//! use gerax_graphql::Schema;
 //!
 //! let schema = Schema::builder()
 //!     .query(QueryRoot)
 //!     .finish()?;
 //! ```
+//!
+//! Para expor um endpoint HTTP, use [`GraphqlHandler`] com uma implementação
+//! de [`Executor`]. Para recuperar claims previamente autenticadas pelo
+//! `gerax-auth`, importe [`GraphqlAuthContext`] e chame `ctx.auth::<Claims>()`.
 
 pub mod auth;
 pub mod context;
