@@ -31,3 +31,7 @@ hex.workspace = true
 gerax-auth.workspace = true
 uuid.workspace = true
 chrono.workspace = true
+
+[[bench]]
+name = "graphql_components"
+harness = false
