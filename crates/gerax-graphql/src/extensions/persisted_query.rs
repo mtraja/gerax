@@ -140,3 +140,34 @@ impl Default for PersistedQueryCache {
         Self::new()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::{PersistedQueryCache, PersistedQueryManager};
+    use crate::GraphqlError;
+
+    #[tokio::test]
+    async fn persisted_queries_can_be_registered_and_resolved() {
+        let manager = PersistedQueryManager::new();
+        let query = "{ viewer { id } }";
+        let hash = manager.register(query).await;
+
+        assert_eq!(manager.validate(&hash, None).await, Ok(query.to_string()));
+        assert!(matches!(
+            manager.validate(&hash, Some("{ other { id } }")).await,
+            Err(GraphqlError::PersistedQuery(_))
+        ));
+    }
+
+    #[tokio::test]
+    async fn cache_can_be_cleared() {
+        let cache = PersistedQueryCache::new();
+        cache
+            .register("key".to_string(), "{ viewer { id } }".to_string())
+            .await;
+
+        assert!(!cache.is_empty().await);
+        cache.clear().await;
+        assert!(cache.is_empty().await);
+    }
+}

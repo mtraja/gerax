@@ -61,3 +61,20 @@ impl Default for IntrospectionController {
         Self::new()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::IntrospectionController;
+    use crate::GraphqlError;
+
+    #[test]
+    fn disabled_controller_rejects_introspection_only() {
+        let controller = IntrospectionController::with_state(false);
+
+        assert!(matches!(
+            controller.validate("{ __schema { queryType { name } } }"),
+            Err(GraphqlError::Validation(_))
+        ));
+        assert!(controller.validate("{ viewer { id } }").is_ok());
+    }
+}

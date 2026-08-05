@@ -38,6 +38,7 @@ pub use context::{GraphqlContext, GraphqlExtensions};
 pub use dataloader::{BatchLoader, DataLoader};
 pub use error::GraphqlError;
 pub use executor::{DefaultExecutor, Executor};
+pub use extensions::cache::ResponseCache;
 pub use extensions::complexity_depth::{ComplexityLimiter, DepthLimiter};
 pub use extensions::introspection::IntrospectionController;
 pub use extensions::persisted_query::{PersistedQueryCache, PersistedQueryManager};

@@ -129,3 +129,45 @@ impl Default for Validator {
         Self::new()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use serde_json::Value;
+
+    use super::Validator;
+    use crate::{GraphqlError, GraphqlRequest};
+
+    #[test]
+    fn validator_rejects_invalid_queries_and_arguments() {
+        let validator = Validator::new();
+        let invalid_query = GraphqlRequest::default();
+        let invalid_argument = GraphqlRequest {
+            query: "{ viewer { id } }".to_string(),
+            variables: Some(serde_json::Map::from_iter([("".to_string(), Value::Null)])),
+            ..GraphqlRequest::default()
+        };
+
+        assert!(matches!(
+            validator.validate(&invalid_query),
+            Err(GraphqlError::Validation(_))
+        ));
+        assert!(matches!(
+            validator.validate(&invalid_argument),
+            Err(GraphqlError::Validation(_))
+        ));
+    }
+
+    #[test]
+    fn validator_accepts_a_query_with_non_null_variables() {
+        let request = GraphqlRequest {
+            query: "query User($id: Int!) { user(id: $id) { id } }".to_string(),
+            variables: Some(serde_json::Map::from_iter([(
+                "id".to_string(),
+                Value::from(7),
+            )])),
+            ..GraphqlRequest::default()
+        };
+
+        assert!(Validator::new().validate(&request).is_ok());
+    }
+}

@@ -79,3 +79,30 @@ impl DepthLimiter {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::{ComplexityLimiter, DepthLimiter};
+    use crate::GraphqlError;
+
+    #[test]
+    fn complexity_limiter_rejects_queries_above_its_limit() {
+        let limiter = ComplexityLimiter::new(1);
+
+        assert!(matches!(
+            limiter.check("{ firstField secondField thirdField fourthField fifthField }"),
+            Err(GraphqlError::ComplexityExceeded(_))
+        ));
+    }
+
+    #[test]
+    fn depth_limiter_accepts_and_rejects_expected_depths() {
+        let limiter = DepthLimiter::new(2);
+
+        assert!(limiter.check("{ user { id } }").is_ok());
+        assert!(matches!(
+            limiter.check("{ user { profile { id } } }"),
+            Err(GraphqlError::DepthExceeded(_))
+        ));
+    }
+}
