@@ -106,3 +106,45 @@ impl<Q, M, S> Default for SchemaBuilder<Q, M, S> {
         Self::new()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use async_graphql::{EmptyMutation, EmptySubscription, Object};
+    use serde_json::json;
+
+    use super::{Schema, SchemaBuilder};
+    use crate::GraphqlError;
+
+    struct QueryRoot;
+
+    #[Object]
+    impl QueryRoot {
+        async fn answer(&self) -> i32 {
+            42
+        }
+    }
+
+    #[tokio::test]
+    async fn schema_builder_executes_valid_queries() {
+        let schema = Schema::builder()
+            .query(QueryRoot)
+            .mutation(EmptyMutation)
+            .subscription(EmptySubscription)
+            .finish();
+
+        assert!(schema.is_ok());
+        if let Ok(schema) = schema {
+            assert_eq!(
+                schema.execute("{ answer }", None).await,
+                Ok(json!({ "answer": 42 }))
+            );
+        }
+    }
+
+    #[test]
+    fn schema_builder_reports_missing_roots() {
+        let result = SchemaBuilder::<QueryRoot, EmptyMutation, EmptySubscription>::new().finish();
+
+        assert!(matches!(result, Err(GraphqlError::Validation(_))));
+    }
+}

@@ -96,3 +96,62 @@ impl<State: Send + Sync + 'static> Subscription<State> for WebSocketSubscription
         });
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::sync::Arc;
+
+    use async_trait::async_trait;
+    use serde_json::{Value, json};
+
+    use super::{SubscriptionManager, WebSocketSubscriptionAdapter};
+    use crate::{Executor, GraphqlError, GraphqlRequest, GraphqlResponse, Resolver, Subscription};
+
+    struct NoopExecutor;
+
+    #[async_trait]
+    impl Executor<()> for NoopExecutor {
+        async fn execute(
+            &self,
+            _request: GraphqlRequest,
+            _state: &(),
+        ) -> Result<GraphqlResponse, GraphqlError> {
+            Ok(GraphqlResponse::default())
+        }
+    }
+
+    struct ValueResolver;
+
+    #[async_trait]
+    impl Resolver<()> for ValueResolver {
+        async fn resolve(&self, _state: &(), _args: Option<&Value>) -> Result<Value, GraphqlError> {
+            Ok(json!({ "id": "event-1" }))
+        }
+    }
+
+    #[tokio::test]
+    async fn manager_resolves_registered_subscriptions() {
+        let manager = SubscriptionManager::new(Arc::new(NoopExecutor));
+        manager
+            .register("eventCreated".to_string(), Arc::new(ValueResolver))
+            .await;
+
+        assert_eq!(
+            manager.resolve("eventCreated", &(), None).await,
+            Ok(json!({ "id": "event-1" }))
+        );
+        assert!(matches!(
+            manager.resolve("missing", &(), None).await,
+            Err(GraphqlError::Execution(_))
+        ));
+    }
+
+    #[tokio::test]
+    async fn websocket_adapter_starts_and_stops() {
+        let manager = Arc::new(SubscriptionManager::new(Arc::new(NoopExecutor)));
+        let adapter = WebSocketSubscriptionAdapter::new(manager);
+
+        assert!(adapter.start("127.0.0.1:0").await.is_ok());
+        assert!(adapter.stop().await.is_ok());
+    }
+}

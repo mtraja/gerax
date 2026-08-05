@@ -95,3 +95,16 @@ impl Playground {
         )
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::{GraphiQL, Playground};
+
+    #[test]
+    fn development_uis_render_the_configured_endpoint() {
+        let endpoint = "/api/graphql";
+
+        assert!(GraphiQL::new(endpoint).render().contains(endpoint));
+        assert!(Playground::new(endpoint).render().contains(endpoint));
+    }
+}

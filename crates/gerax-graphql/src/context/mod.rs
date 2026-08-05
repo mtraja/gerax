@@ -60,3 +60,24 @@ impl Default for GraphqlExtensions {
         Self::new()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use serde_json::json;
+
+    use super::GraphqlExtensions;
+
+    #[test]
+    fn extensions_builder_configures_all_supported_values() {
+        let extensions = GraphqlExtensions::new()
+            .with_auth_claims(json!({ "sub": "user-42" }))
+            .with_introspection(false)
+            .with_complexity_limit(50)
+            .with_depth_limit(4);
+
+        assert_eq!(extensions.auth_claims, Some(json!({ "sub": "user-42" })));
+        assert!(!extensions.introspection_enabled);
+        assert_eq!(extensions.complexity_limit, Some(50));
+        assert_eq!(extensions.depth_limit, Some(4));
+    }
+}

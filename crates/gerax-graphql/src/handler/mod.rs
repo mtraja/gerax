@@ -83,3 +83,79 @@ where
         Self::to_response(result)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::sync::Arc;
+
+    use async_trait::async_trait;
+    use serde_json::json;
+
+    use super::GraphqlHandler;
+    use crate::{Executor, GraphqlError, GraphqlRequest, GraphqlResponse};
+    use gerax_http::routing::{Context, Handler, HttpMethod, Request};
+
+    struct SuccessExecutor;
+
+    #[async_trait]
+    impl Executor<()> for SuccessExecutor {
+        async fn execute(
+            &self,
+            request: GraphqlRequest,
+            _state: &(),
+        ) -> Result<GraphqlResponse, GraphqlError> {
+            Ok(GraphqlResponse {
+                data: Some(json!({ "query": request.query })),
+                ..GraphqlResponse::default()
+            })
+        }
+    }
+
+    struct FailingExecutor;
+
+    #[async_trait]
+    impl Executor<()> for FailingExecutor {
+        async fn execute(
+            &self,
+            _request: GraphqlRequest,
+            _state: &(),
+        ) -> Result<GraphqlResponse, GraphqlError> {
+            Err(GraphqlError::Execution("resolver failed".to_string()))
+        }
+    }
+
+    fn context(body: &[u8]) -> Context<()> {
+        Context::new(
+            Arc::new(()),
+            Request::new(HttpMethod::Post, "/graphql".to_string(), body.to_vec()),
+        )
+    }
+
+    #[tokio::test]
+    async fn handler_serializes_executor_responses() {
+        let handler = GraphqlHandler::new(SuccessExecutor);
+        let response = handler
+            .call(context(br#"{"query":"{ viewer { id } }"}"#))
+            .await;
+
+        assert!(response.is_ok());
+        if let Ok(response) = response {
+            assert_eq!(response.status, 200);
+            assert!(String::from_utf8_lossy(&response.body).contains("viewer"));
+        }
+    }
+
+    #[tokio::test]
+    async fn handler_returns_bad_request_for_executor_errors() {
+        let handler = GraphqlHandler::new(FailingExecutor);
+        let response = handler
+            .call(context(br#"{"query":"{ viewer { id } }"}"#))
+            .await;
+
+        assert!(response.is_ok());
+        if let Ok(response) = response {
+            assert_eq!(response.status, 400);
+            assert!(String::from_utf8_lossy(&response.body).contains("resolver failed"));
+        }
+    }
+}

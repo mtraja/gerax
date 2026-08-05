@@ -57,3 +57,49 @@ where
         })
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use async_graphql::{EmptyMutation, EmptySubscription, Object};
+    use serde_json::json;
+
+    use super::{DefaultExecutor, Executor};
+    use crate::{GraphqlRequest, Schema};
+
+    struct QueryRoot;
+
+    #[Object]
+    impl QueryRoot {
+        async fn greeting(&self) -> &str {
+            "hello"
+        }
+    }
+
+    #[tokio::test]
+    async fn default_executor_converts_schema_results_to_responses() {
+        let schema = Schema::builder()
+            .query(QueryRoot)
+            .mutation(EmptyMutation)
+            .subscription(EmptySubscription)
+            .finish();
+
+        assert!(schema.is_ok());
+        if let Ok(schema) = schema {
+            let executor = DefaultExecutor::<(), _, _, _>::new(schema);
+            let response = executor
+                .execute(
+                    GraphqlRequest {
+                        query: "{ greeting }".to_string(),
+                        ..GraphqlRequest::default()
+                    },
+                    &(),
+                )
+                .await;
+
+            assert_eq!(
+                response.map(|value| value.data),
+                Ok(Some(json!({ "greeting": "hello" })))
+            );
+        }
+    }
+}

@@ -101,3 +101,21 @@ where
         Ok(Value::Null)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use serde_json::Value;
+
+    use super::{MutationResolver, QueryResolver, Resolver, SubscriptionResolver};
+
+    #[tokio::test]
+    async fn default_resolvers_return_null() {
+        let query = QueryResolver::<()>::new().resolve(&(), None).await;
+        let mutation = MutationResolver::<()>::new().resolve(&(), None).await;
+        let subscription = SubscriptionResolver::<()>::new().resolve(&(), None).await;
+
+        assert_eq!(query, Ok(Value::Null));
+        assert_eq!(mutation, Ok(Value::Null));
+        assert_eq!(subscription, Ok(Value::Null));
+    }
+}

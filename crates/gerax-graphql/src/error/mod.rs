@@ -38,3 +38,29 @@ pub enum GraphqlError {
     #[error("internal error: {0}")]
     Internal(String),
 }
+
+#[cfg(test)]
+mod tests {
+    use super::GraphqlError;
+
+    #[test]
+    fn every_error_variant_is_displayable_and_serializable() {
+        let errors = [
+            GraphqlError::Validation("validation".to_string()),
+            GraphqlError::Execution("execution".to_string()),
+            GraphqlError::Unauthorized("unauthorized".to_string()),
+            GraphqlError::Forbidden("forbidden".to_string()),
+            GraphqlError::PersistedQuery("persisted".to_string()),
+            GraphqlError::ComplexityExceeded("complexity".to_string()),
+            GraphqlError::DepthExceeded("depth".to_string()),
+            GraphqlError::Internal("internal".to_string()),
+        ];
+
+        assert!(errors.iter().all(|error| !error.to_string().is_empty()));
+        assert!(
+            errors
+                .iter()
+                .all(|error| serde_json::to_string(error).is_ok())
+        );
+    }
+}
