@@ -19,5 +19,5 @@ serde_json.workspace = true
 serde_yml.workspace = true
 prost.workspace = true
 capnp.workspace = true
-bytes.workspace = true
 toml.workspace = true
+wincode.workspace = true

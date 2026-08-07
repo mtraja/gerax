@@ -3,6 +3,8 @@ use capnp::message::{Allocator, Builder, HeapAllocator, ReaderOptions,};
 use capnp::serialize;
 use capnp::serialize::OwnedSegments;
 
+/// Stub. Requer integração com capnpc ou gerador Rust customizado.
+/// Trait `CapnpSerializable` é placeholder até schema/compiler estar disponível.
 pub trait CapnpSerializable: Sized {
     /// Pega os dados da struct Rust e preenche o Builder do Cap'n Proto.
     fn build_capnp_message(
@@ -43,7 +45,7 @@ impl CapnpCodec {
 // Exemplo adaptando para o tipo que você define no esquema Cap'n Proto
 impl<T> Codec<T> for CapnpCodec
 where
-    T: CapnpSerializable, // Trait fictícia para ponte entre o gerador capnp e o Codec
+    T: CapnpSerializable,
 {
     fn serialize(&self, value: &T) -> Result<Vec<u8>, CodecError> {
         let mut message = Builder::new_default();
