@@ -9,3 +9,10 @@
 //! - Integração com `gerax-http` para expor endpoints WebSocket
 
 pub mod websocket;
+
+pub use websocket::client::WebSocketClient;
+pub use websocket::handler::{ServerError, WsContext, WsHandler, WsResult};
+pub use websocket::message::WsMessage;
+pub use websocket::repository::{RepositoryResolver, WsRepository};
+pub use websocket::upgrade::WsUpgradeHandler;
+pub use websocket::websocket::WebSocketServer;

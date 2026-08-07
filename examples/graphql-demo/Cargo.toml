@@ -1,0 +1,19 @@
+[package]
+name = "graphql-demo"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+gerax-graphql = { path = "../../crates/gerax-graphql" }
+gerax-actix = { path = "../../crates/gerax-actix" }
+gerax-http = { path = "../../crates/gerax-http" }
+actix-web = { workspace = true, features = ["macros"] }
+
+tokio = { version = "1", features = ["full"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+async-graphql = { workspace = true, features = ["chrono"] }
+async-stream = "0.3"
+uuid = { version = "1", features = ["v4", "serde"] }
+chrono = { version = "0.4", features = ["serde"] }
+futures = "0.3"

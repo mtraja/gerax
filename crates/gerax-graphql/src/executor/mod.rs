@@ -1,4 +1,7 @@
-use crate::{GraphqlError, GraphqlRequest, GraphqlResponse, Schema};
+use crate::{
+    GraphqlError, GraphqlMutationRoot, GraphqlQueryRoot, GraphqlRequest, GraphqlResponse,
+    GraphqlSubscriptionRoot, Schema,
+};
 use async_trait::async_trait;
 
 /// Trait responsável por executar operações GraphQL.
@@ -36,9 +39,9 @@ impl<State, Q, M, S> DefaultExecutor<State, Q, M, S> {
 impl<State, Q, M, S> Executor<State> for DefaultExecutor<State, Q, M, S>
 where
     State: Send + Sync + 'static,
-    Q: async_graphql::ObjectType + Send + Sync + 'static,
-    M: async_graphql::ObjectType + Send + Sync + 'static,
-    S: async_graphql::SubscriptionType + Send + Sync + 'static,
+    Q: GraphqlQueryRoot,
+    M: GraphqlMutationRoot,
+    S: GraphqlSubscriptionRoot,
 {
     async fn execute(
         &self,

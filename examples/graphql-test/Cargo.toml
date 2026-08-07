@@ -1,0 +1,9 @@
+[package]
+name = "graphql-test"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+gerax-graphql = { path = "../../crates/gerax-graphql" }
+actix-web = { workspace = true, features = ["macros"] }
+async-graphql = { workspace = true }

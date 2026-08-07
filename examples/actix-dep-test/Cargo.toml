@@ -1,0 +1,9 @@
+[package]
+name = "actix-dep-test"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+gerax-actix = { path = "../../crates/gerax-actix" }
+gerax-http = { path = "../../crates/gerax-http" }
+actix-web = { workspace = true, features = ["macros"] }

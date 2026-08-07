@@ -44,7 +44,8 @@ pub use gerax_capnp::{
 
 #[cfg(feature = "websocket")]
 pub use gerax_websocket::{
-
+    RepositoryResolver, ServerError, WebSocketClient, WebSocketServer, WsContext, WsHandler,
+    WsMessage, WsResult, WsUpgradeHandler, WsRepository,
 };
 
 #[cfg(feature = "openapi")]

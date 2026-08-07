@@ -18,3 +18,10 @@ gerax-db.workspace = true
 
 serde.workspace = true
 serde_json.workspace = true
+futures-util.workspace = true
+tokio-tungstenite.workspace = true
+tungstenite.workspace = true
+
+async-trait.workspace = true
+thiserror.workspace = true
+tokio.workspace = true

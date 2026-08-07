@@ -1,0 +1,7 @@
+[package]
+name = "actix-test"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+actix-web = { workspace = true, features = ["macros"] }

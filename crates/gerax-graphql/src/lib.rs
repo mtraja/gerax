@@ -57,6 +57,8 @@ pub use request::GraphqlRequest;
 pub use resolver::{MutationResolver, QueryResolver, Resolver, SubscriptionResolver};
 pub use response::GraphqlResponse;
 pub use scalar::{DateTimeScalar, EmailScalar, UuidScalar};
-pub use schema::{Schema, SchemaBuilder};
+pub use schema::{
+    GraphqlMutationRoot, GraphqlQueryRoot, GraphqlSubscriptionRoot, Schema, SchemaBuilder,
+};
 pub use subscription::{Subscription, SubscriptionManager, WebSocketSubscriptionAdapter};
 pub use ui::{GraphiQL, Playground};

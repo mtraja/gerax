@@ -1,6 +1,50 @@
 use crate::GraphqlError;
-use async_graphql::{ObjectType, Schema as AsyncSchema, SubscriptionType, Variables};
+use async_graphql::{Schema as AsyncSchema, Variables};
 use serde_json::{Map, Value};
+
+#[doc(hidden)]
+pub mod private {
+    use async_graphql::{ObjectType, SubscriptionType};
+
+    /// Contrato interno que liga uma raiz de query ao executor GraphQL.
+    pub trait QueryRoot: ObjectType + Send + Sync + 'static {}
+
+    impl<T> QueryRoot for T where T: ObjectType + Send + Sync + 'static {}
+
+    /// Contrato interno que liga uma raiz de mutation ao executor GraphQL.
+    pub trait MutationRoot: ObjectType + Send + Sync + 'static {}
+
+    impl<T> MutationRoot for T where T: ObjectType + Send + Sync + 'static {}
+
+    /// Contrato interno que liga uma raiz de subscription ao executor GraphQL.
+    pub trait SubscriptionRoot: SubscriptionType + Send + Sync + 'static {}
+
+    impl<T> SubscriptionRoot for T where T: SubscriptionType + Send + Sync + 'static {}
+}
+
+/// Tipo raiz de queries aceito por um [`Schema`].
+///
+/// Tipos compatíveis com o motor GraphQL interno recebem esta implementação
+/// automaticamente; a API pública não exige seus traits diretamente.
+pub trait GraphqlQueryRoot: private::QueryRoot {}
+
+impl<T> GraphqlQueryRoot for T where T: private::QueryRoot {}
+
+/// Tipo raiz de mutations aceito por um [`Schema`].
+///
+/// Tipos compatíveis com o motor GraphQL interno recebem esta implementação
+/// automaticamente; a API pública não exige seus traits diretamente.
+pub trait GraphqlMutationRoot: private::MutationRoot {}
+
+impl<T> GraphqlMutationRoot for T where T: private::MutationRoot {}
+
+/// Tipo raiz de subscriptions aceito por um [`Schema`].
+///
+/// Tipos compatíveis com o motor GraphQL interno recebem esta implementação
+/// automaticamente; a API pública não exige seus traits diretamente.
+pub trait GraphqlSubscriptionRoot: private::SubscriptionRoot {}
+
+impl<T> GraphqlSubscriptionRoot for T where T: private::SubscriptionRoot {}
 
 /// Schema GraphQL encapsulado.
 ///
@@ -22,12 +66,30 @@ impl<Q: 'static, M: 'static, S: 'static> Schema<Q, M, S> {
         variables: Option<Map<String, Value>>,
     ) -> Result<Value, GraphqlError>
     where
-        Q: ObjectType + Send + Sync,
-        M: ObjectType + Send + Sync,
-        S: SubscriptionType + Send + Sync,
+        Q: GraphqlQueryRoot,
+        M: GraphqlMutationRoot,
+        S: GraphqlSubscriptionRoot,
+    {
+        self.execute_with_state(query, variables, std::sync::Arc::new(())).await
+    }
+
+    /// Executa uma query GraphQL com acesso ao estado da aplicação.
+    pub async fn execute_with_state<State: Send + Sync + 'static>(
+        &self,
+        query: &str,
+        variables: Option<Map<String, Value>>,
+        state: std::sync::Arc<State>,
+    ) -> Result<Value, GraphqlError>
+    where
+        Q: GraphqlQueryRoot,
+        M: GraphqlMutationRoot,
+        S: GraphqlSubscriptionRoot,
     {
         let vars = variables.map(|m| Variables::from_json(Value::Object(m)));
-        let request = async_graphql::Request::new(query).variables(vars.unwrap_or_default());
+        let request =
+            async_graphql::Request::new(query)
+                .data(state)
+                .variables(vars.unwrap_or_default());
         let response = self.inner.execute(request).await;
 
         if let Some(errors) = response.errors.first() {
@@ -79,9 +141,9 @@ impl<Q, M, S> SchemaBuilder<Q, M, S> {
     /// Constrói o schema GraphQL.
     pub fn finish(self) -> Result<Schema<Q, M, S>, GraphqlError>
     where
-        Q: ObjectType + Send + Sync + 'static,
-        M: ObjectType + Send + Sync + 'static,
-        S: SubscriptionType + Send + Sync + 'static,
+        Q: GraphqlQueryRoot,
+        M: GraphqlMutationRoot,
+        S: GraphqlSubscriptionRoot,
     {
         let query = self
             .query

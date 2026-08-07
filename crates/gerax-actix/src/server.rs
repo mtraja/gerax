@@ -51,93 +51,112 @@ where
         let router = self.router;
         let server_middlewares = self.middlewares;
 
-        actix_web::rt::System::new().block_on(async move {
-            let server = ActixWebHttpServer::new(move || {
-                let mut app = App::new().app_data(web::Data::new(state.clone()));
+        let result = tokio::task::spawn_blocking(move || {
+            actix_web::rt::System::new().block_on(async move {
+                ActixWebHttpServer::new(move || {
+                    let mut app = App::new().app_data(web::Data::new(state.clone()));
 
-                if let Some(ref router) = router {
-                    let router = router.clone();
+                    if let Some(ref router) = router {
+                        let router = router.clone();
 
-                    for route in router.routes() {
-                        let route = extend_route_middlewares(route.clone(), router.middlewares());
-                        let route = extend_route_middlewares(route, &server_middlewares);
-                        let path = route.path().to_string();
-                        let method = method_to_actix(route.method());
-                        let route_arc = Arc::new(route);
-
-                        app =
-                            app.route(
-                                &path,
-                                match method {
-                                    Method::GET => web::get()
-                                        .to(move |req| route_handler(req, route_arc.clone())),
-                                    Method::POST => web::post()
-                                        .to(move |req| route_handler(req, route_arc.clone())),
-                                    Method::PUT => web::put()
-                                        .to(move |req| route_handler(req, route_arc.clone())),
-                                    Method::PATCH => web::patch()
-                                        .to(move |req| route_handler(req, route_arc.clone())),
-                                    Method::DELETE => web::delete()
-                                        .to(move |req| route_handler(req, route_arc.clone())),
-                                    Method::HEAD => web::head()
-                                        .to(move |req| route_handler(req, route_arc.clone())),
-                                    _ => web::get()
-                                        .to(move |req| route_handler(req, route_arc.clone())),
-                                },
-                            );
-                    }
-
-                    for scope in router.scopes() {
-                        let mut scope_app = actix_web::Scope::new(scope.prefix());
-
-                        for route in scope.routes() {
-                            let route = extend_route_middlewares(route.clone(), scope.middlewares());
-                            let route = extend_route_middlewares(route, router.middlewares());
+                        for route in router.routes() {
+                            let route = extend_route_middlewares(route.clone(), router.middlewares());
                             let route = extend_route_middlewares(route, &server_middlewares);
                             let path = route.path().to_string();
                             let method = method_to_actix(route.method());
                             let route_arc = Arc::new(route);
 
-                            scope_app = scope_app.route(
+                        app =
+                            app.route(
                                 &path,
                                 match method {
-                                    Method::GET => web::get()
-                                        .to(move |req| route_handler(req, route_arc.clone())),
-                                    Method::POST => web::post()
-                                        .to(move |req| route_handler(req, route_arc.clone())),
-                                    Method::PUT => web::put()
-                                        .to(move |req| route_handler(req, route_arc.clone())),
-                                    Method::PATCH => web::patch()
-                                        .to(move |req| route_handler(req, route_arc.clone())),
-                                    Method::DELETE => web::delete()
-                                        .to(move |req| route_handler(req, route_arc.clone())),
-                                    Method::HEAD => web::head()
-                                        .to(move |req| route_handler(req, route_arc.clone())),
-                                    _ => web::get()
-                                        .to(move |req| route_handler(req, route_arc.clone())),
+                                    Method::GET => web::get().to(move |req, body| {
+                                        route_handler(req, body, route_arc.clone())
+                                    }),
+                                    Method::POST => web::post().to(move |req, body| {
+                                        route_handler(req, body, route_arc.clone())
+                                    }),
+                                    Method::PUT => web::put().to(move |req, body| {
+                                        route_handler(req, body, route_arc.clone())
+                                    }),
+                                    Method::PATCH => web::patch().to(move |req, body| {
+                                        route_handler(req, body, route_arc.clone())
+                                    }),
+                                    Method::DELETE => web::delete().to(move |req, body| {
+                                        route_handler(req, body, route_arc.clone())
+                                    }),
+                                    Method::HEAD => web::head().to(move |req, body| {
+                                        route_handler(req, body, route_arc.clone())
+                                    }),
+                                    _ => web::get().to(move |req, body| {
+                                        route_handler(req, body, route_arc.clone())
+                                    }),
                                 },
                             );
                         }
 
-                        app = app.service(scope_app);
+                        for scope in router.scopes() {
+                            let mut scope_app = actix_web::Scope::new(scope.prefix());
+
+                            for route in scope.routes() {
+                                let route = extend_route_middlewares(route.clone(), scope.middlewares());
+                                let route = extend_route_middlewares(route, router.middlewares());
+                                let route = extend_route_middlewares(route, &server_middlewares);
+                                let path = route.path().to_string();
+                                let method = method_to_actix(route.method());
+                                let route_arc = Arc::new(route);
+
+                            scope_app = scope_app.route(
+                                &path,
+                                match method {
+                                    Method::GET => web::get().to(move |req, body| {
+                                        route_handler(req, body, route_arc.clone())
+                                    }),
+                                    Method::POST => web::post().to(move |req, body| {
+                                        route_handler(req, body, route_arc.clone())
+                                    }),
+                                    Method::PUT => web::put().to(move |req, body| {
+                                        route_handler(req, body, route_arc.clone())
+                                    }),
+                                    Method::PATCH => web::patch().to(move |req, body| {
+                                        route_handler(req, body, route_arc.clone())
+                                    }),
+                                    Method::DELETE => web::delete().to(move |req, body| {
+                                        route_handler(req, body, route_arc.clone())
+                                    }),
+                                    Method::HEAD => web::head().to(move |req, body| {
+                                        route_handler(req, body, route_arc.clone())
+                                    }),
+                                    _ => web::get().to(move |req, body| {
+                                        route_handler(req, body, route_arc.clone())
+                                    }),
+                                },
+                            );
+                            }
+
+                            app = app.service(scope_app);
+                        }
                     }
-                }
 
-                app
-            });
-
-            server
+                    app
+                })
                 .bind(format!("{}:{}", host, port))
                 .map_err(|e| HttpServerError::InitializationFailed(e.to_string()))?
                 .run()
                 .await
                 .map_err(|e| HttpServerError::RuntimeError(e.to_string()))
+            })
         })
+        .await
+        .map_err(|e| HttpServerError::RuntimeError(e.to_string()))??;
+
+        Ok(result)
     }
 }
 
 async fn route_handler<S>(
     req: actix_web::HttpRequest,
+    body: web::Bytes,
     route: Arc<Route<S>>,
 ) -> HttpResponse
 where
@@ -152,7 +171,7 @@ where
     };
 
     let method = converter_method(req.method().clone());
-    let request = Request::new(method, req.path().to_string(), Vec::new());
+    let request = Request::new(method, req.path().to_string(), body.to_vec());
     let context = Context::new(data, request);
 
     let response = route.execute(context).await;
