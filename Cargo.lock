@@ -1839,6 +1839,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "gerax-rpc"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "futures",
+ "gerax-core",
+ "thiserror 2.0.18",
+]
+
+[[package]]
 name = "gerax-salvo"
 version = "0.1.0"
 dependencies = [

@@ -1,0 +1,48 @@
+//! # gerax-rpc
+//!
+//! Abstrações RPC protocol-agnósticas para o ecossistema Gerax.
+//!
+//! Este crate define os contratos, modelos e abstrações para RPC
+//! reutilizadas por todas as implementações do Gerax, incluindo
+//! `gerax-grpc` e `gerax-capnp`.
+//!
+//! ## Abstrações
+//!
+//! - `RpcRequest<T>` - Requisição RPC genérica
+//! - `RpcResponse<T>` - Resposta RPC genérica
+//! - `RpcStatus` - Status de resposta RPC
+//! - `RpcMetadata` - Metadados RPC
+//! - `RpcContext` - Contexto de execução RPC
+//! - `RpcExtensions` - Extensões opcionais
+//! - `RpcMethod` - Método RPC
+//! - `RpcService` - Serviço RPC
+//! - `RpcServer` - Servidor RPC
+//! - `RpcClient` - Cliente RPC
+//! - `RpcTransport` - Transporte RPC
+//! - `RpcStream` - Stream RPC
+//! - `RpcError` - Erros RPC
+//!
+//! ## Dependências
+//!
+//! - `gerax-core` - Entidades e tipos base
+//!
+//! Não depende de:
+//! - `tonic`, `prost` (gRPC)
+//! - `capnp` (Cap'n Proto)
+//! - `hyper`, `http` (HTTP)
+//! - `tokio` (runtime assíncrono)
+//! - `serde` (serialização)
+
+pub mod client;
+pub mod context;
+pub mod error;
+pub mod extensions;
+pub mod metadata;
+pub mod method;
+pub mod request;
+pub mod response;
+pub mod server;
+pub mod service;
+pub mod status;
+pub mod stream;
+pub mod transport;

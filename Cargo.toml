@@ -28,6 +28,7 @@ members = [
     "crates/gerax-websocket",
     "crates/gerax-openapi",
     "crates/gerax-codec",
+    "crates/gerax-rpc",
 
 
     "examples/myapp",
@@ -83,6 +84,7 @@ gerax-capnp = { path = "crates/gerax-capnp" }
 gerax-websocket = { path = "crates/gerax-websocket" }
 gerax-openapi = { path = "crates/gerax-openapi" }
 gerax-codec = { path = "crates/gerax-codec" }
+gerax-rpc = { path = "crates/gerax-rpc" }
 
 actix-web = { version = "4", features = ["macros"] }
 axum = { version = "0.8", features = ["macros"] }

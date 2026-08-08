@@ -1,0 +1,19 @@
+[package]
+name = "gerax-rpc"
+
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+description = "Abstrações RPC protocol-agnósticas para o Gerax"
+
+[dependencies]
+gerax-core.workspace = true
+
+async-trait.workspace = true
+thiserror.workspace = true
+futures.workspace = true
