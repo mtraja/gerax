@@ -6,17 +6,46 @@ subscriptions, DataLoader e extensões de execução.
 
 ## Componentes
 
-- `Schema` e `SchemaBuilder` encapsulam a execução GraphQL.
+### Core
+- `Schema` e `SchemaBuilder` encapsulam a construção e execução GraphQL.
+- `Executor` e `DefaultExecutor` definem a trait de execução e implementação padrão.
 - `GraphqlHandler` implementa o handler do `gerax-http`.
 - `GraphqlRequest`, `GraphqlResponse` e `GraphqlError` definem a API de transporte.
+
+### Autenticação
 - `GraphqlAuthContext` e `AuthMiddleware` usam as claims produzidas pelo
   `gerax-auth` e permitem exigir escopos.
-- `DataLoader` agrupa carregamentos assíncronos e mantém cache por contexto.
+- `AuthClaims`, `AuthExtractor` e `AuthIntegration` para integração customizada.
+
+### DataLoader
+- `DataLoader` e `BatchLoader` agrupam carregamentos assíncronos e mantêm cache por contexto.
+
+### Subscriptions
 - `SubscriptionManager` e `WebSocketSubscriptionAdapter` oferecem a abstração de
-  subscriptions.
-- As extensões incluem validação, limites de complexidade e profundidade,
-  introspection, queries persistidas e cache de respostas.
-- Os escalares `UUID`, `DateTime` (RFC 3339) e `Email` validam valores de entrada.
+  subscriptions via WebSocket.
+- `Subscription` trait para definir subscription roots.
+
+### Extensões
+- **Validação:** `Validator`, `QueryValidator`, `SchemaValidator`, `ArgumentsValidator`.
+- **Limites:** `ComplexityLimiter`, `DepthLimiter`.
+- **Introspection:** `IntrospectionController`.
+- **Queries persistidas:** `PersistedQueryManager`, `PersistedQueryCache`.
+- **Cache:** `ResponseCache` via `CacheMiddleware`.
+
+### Middlewares
+- `AuthMiddleware` — autenticação e escopos.
+- `CacheMiddleware` — cache de respostas.
+- `LoggingMiddleware` — logging de requisições.
+- `MetricsMiddleware` — coleta de métricas.
+- `GraphqlMiddleware` — trait base para middlewares GraphQL.
+
+### Escalares
+- `UuidScalar` — valida e serializa `Uuid`.
+- `DateTimeScalar` — RFC 3339.
+- `EmailScalar` — valida emails.
+
+### UI
+- `GraphiQL` e `Playground` para interfaces de desenvolvimento.
 
 ## Uso
 
@@ -24,11 +53,22 @@ Um schema é construído com os tipos raiz da aplicação. `async-graphql` é us
 internamente pelo crate para definir os tipos raiz e executar a operação.
 
 ```rust,ignore
+use gerax_graphql::{Schema, GraphqlQueryRoot, GraphqlMutationRoot};
+
 let schema = Schema::builder()
     .query(QueryRoot)
     .mutation(MutationRoot)
     .subscription(SubscriptionRoot)
     .finish()?;
+```
+
+Para expor um endpoint HTTP, use `GraphqlHandler` com uma implementação
+de `Executor`:
+
+```rust,ignore
+use gerax_graphql::{GraphqlHandler, DefaultExecutor};
+
+let handler = GraphqlHandler::new(schema, DefaultExecutor);
 ```
 
 Para recuperar credenciais autenticadas em código GraphQL, importe o trait de
