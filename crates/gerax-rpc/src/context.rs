@@ -53,3 +53,49 @@ impl Default for RpcContext {
         Self::new()
     }
 }
+
+/// Builder de `RpcContext`.
+#[derive(Debug, Clone, Default)]
+pub struct RpcContextBuilder {
+    metadata: RpcMetadata,
+    deadline: Option<Duration>,
+    trace_id: Option<String>,
+}
+
+impl RpcContextBuilder {
+    /// Cria um novo builder vazio.
+    pub fn new() -> Self {
+        Self {
+            metadata: RpcMetadata::new(),
+            deadline: None,
+            trace_id: None,
+        }
+    }
+
+    /// Define os metadados.
+    pub fn metadata(mut self, metadata: RpcMetadata) -> Self {
+        self.metadata = metadata;
+        self
+    }
+
+    /// Define o tempo limite.
+    pub fn deadline(mut self, deadline: Duration) -> Self {
+        self.deadline = Some(deadline);
+        self
+    }
+
+    /// Define o ID de tracing.
+    pub fn trace_id(mut self, trace_id: impl Into<String>) -> Self {
+        self.trace_id = Some(trace_id.into());
+        self
+    }
+
+    /// Constrói o `RpcContext`.
+    pub fn build(self) -> RpcContext {
+        RpcContext {
+            metadata: self.metadata,
+            deadline: self.deadline,
+            trace_id: self.trace_id,
+        }
+    }
+}

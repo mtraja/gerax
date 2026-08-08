@@ -53,3 +53,58 @@ impl<T> RpcResponse<T> {
         self.status != RpcStatus::Ok
     }
 }
+
+/// Builder de `RpcResponse<T>`.
+#[derive(Debug, Clone, Default)]
+pub struct RpcResponseBuilder<T> {
+    payload: Option<T>,
+    status: RpcStatus,
+    message: Option<String>,
+    metadata: RpcMetadata,
+}
+
+impl<T> RpcResponseBuilder<T> {
+    /// Cria um novo builder com status `Ok`.
+    pub fn new() -> Self {
+        Self {
+            payload: None,
+            status: RpcStatus::Ok,
+            message: None,
+            metadata: RpcMetadata::new(),
+        }
+    }
+
+    /// Define o payload.
+    pub fn payload(mut self, payload: T) -> Self {
+        self.payload = Some(payload);
+        self
+    }
+
+    /// Define o status.
+    pub fn status(mut self, status: RpcStatus) -> Self {
+        self.status = status;
+        self
+    }
+
+    /// Define a mensagem.
+    pub fn message(mut self, message: impl Into<String>) -> Self {
+        self.message = Some(message.into());
+        self
+    }
+
+    /// Define os metadados.
+    pub fn metadata(mut self, metadata: RpcMetadata) -> Self {
+        self.metadata = metadata;
+        self
+    }
+
+    /// Constrói a resposta.
+    pub fn build(self) -> RpcResponse<T> {
+        RpcResponse {
+            payload: self.payload,
+            status: self.status,
+            message: self.message,
+            metadata: self.metadata,
+        }
+    }
+}

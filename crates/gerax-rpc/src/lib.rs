@@ -46,3 +46,17 @@ pub mod service;
 pub mod status;
 pub mod stream;
 pub mod transport;
+
+pub use client::{RpcClient, TransportRpcClient};
+pub use context::{RpcContext, RpcContextBuilder};
+pub use error::RpcError;
+pub use extensions::RpcExtensions;
+pub use metadata::{RpcMetadata, RpcMetadataBuilder};
+pub use method::RpcMethod;
+pub use request::{RpcRequest, RpcRequestBuilder};
+pub use response::{RpcResponse, RpcResponseBuilder};
+pub use server::{RpcServer, TransportRpcServer};
+pub use service::{RpcService, RpcServiceBuilder, SimpleRpcService};
+pub use status::RpcStatus;
+pub use stream::{RpcResponseStream, RpcStream};
+pub use transport::RpcTransport;

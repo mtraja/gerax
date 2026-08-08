@@ -3,8 +3,9 @@
 /// Status de resposta RPC.
 ///
 /// Segue a semântica do gRPC status codes, mas é independente de protocolo.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum RpcStatus {
+    #[default]
     /// Operação concluída com sucesso.
     Ok,
 

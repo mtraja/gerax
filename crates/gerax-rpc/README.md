@@ -51,11 +51,37 @@ Métodos:
 - `with_metadata(self, metadata: RpcMetadata) -> Self` — define os metadados
 - `with_context(self, context: RpcContext) -> Self` — define o contexto
 
+#### `RpcRequestBuilder<T>`
+
+Builder fluente para `RpcRequest<T>`.
+
+```rust
+RpcRequestBuilder::new(payload)
+    .insert_metadata("key", "value")
+    .context(ctx)
+    .build()
+```
+
+Métodos:
+
+- `new(payload: T) -> Self` — cria um builder com payload
+- `metadata(self, metadata: RpcMetadata) -> Self` — define os metadados
+- `insert_metadata(self, key, value) -> Self` — insere um metadado
+- `context(self, context: RpcContext) -> Self` — define o contexto
+- `build(self) -> RpcRequest<T>` — constrói a requisição
+
 ---
 
 ### RpcResponse\<T\>
 
 Resposta RPC genérica, independente de protocolo e serialização.
+
+```rust
+use gerax_rpc::{RpcResponse, RpcStatus};
+
+let ok = RpcResponse::success("pong".to_string());
+let err = RpcResponse::error(RpcStatus::NotFound, "missing");
+```
 
 Campos públicos:
 
@@ -70,6 +96,26 @@ Métodos:
 - `RpcResponse::error(status: RpcStatus, message: impl Into<String>) -> Self` — cria uma resposta de erro
 - `with_metadata(self, metadata: RpcMetadata) -> Self` — define os metadados
 - `is_error(&self) -> bool` — verifica se a resposta é um erro
+
+#### `RpcResponseBuilder<T>`
+
+Builder fluente para `RpcResponse<T>`.
+
+```rust
+RpcResponseBuilder::<String>::new()
+    .status(RpcStatus::AlreadyExists)
+    .message("dup")
+    .build()
+```
+
+Métodos:
+
+- `new() -> Self` — cria um builder com status `Ok`
+- `payload(self, payload: T) -> Self` — define o payload
+- `status(self, status: RpcStatus) -> Self` — define o status
+- `message(self, message: impl Into<String>) -> Self` — define a mensagem
+- `metadata(self, metadata: RpcMetadata) -> Self` — define os metadados
+- `build(self) -> RpcResponse<T>` — constrói a resposta
 
 ---
 
@@ -116,6 +162,8 @@ meta.insert("trace-id", "abc123");
 assert!(meta.contains_key("trace-id"));
 ```
 
+Campos públicos: nenhum (acesso via métodos).
+
 Métodos:
 
 - `new() -> Self` — cria um `RpcMetadata` vazio
@@ -128,6 +176,23 @@ Métodos:
 Conversões:
 
 - `From<HashMap<String, String>> for RpcMetadata`
+
+#### `RpcMetadataBuilder`
+
+Builder fluente para `RpcMetadata`.
+
+```rust
+RpcMetadataBuilder::new()
+    .insert("authorization", "Bearer token")
+    .insert("trace-id", "abc123")
+    .build()
+```
+
+Métodos:
+
+- `new() -> Self` — cria um builder vazio
+- `insert(self, key, value) -> Self` — insere um par chave-valor
+- `build(self) -> RpcMetadata` — constrói o metadado
 
 ---
 
@@ -157,6 +222,25 @@ Métodos:
 - `with_metadata(self, metadata: RpcMetadata) -> Self` — define os metadados
 - `with_deadline(self, deadline: Duration) -> Self` — define o tempo limite
 - `with_trace_id(self, trace_id: impl Into<String>) -> Self` — define o ID de tracing
+
+#### `RpcContextBuilder`
+
+Builder fluente para `RpcContext`.
+
+```rust
+RpcContextBuilder::new()
+    .deadline(Duration::from_secs(30))
+    .trace_id("abc-123")
+    .build()
+```
+
+Métodos:
+
+- `new() -> Self` — cria um builder vazio
+- `metadata(self, metadata: RpcMetadata) -> Self` — define os metadados
+- `deadline(self, deadline: Duration) -> Self` — define o tempo limite
+- `trace_id(self, trace_id: impl Into<String>) -> Self` — define o ID de tracing
+- `build(self) -> RpcContext` — constrói o contexto
 
 ---
 
@@ -215,7 +299,7 @@ Trait que representa um serviço RPC. Agrupa métodos e faz o despacho de requis
 ```rust
 pub trait RpcService: Send + Sync + 'static {
     fn name(&self) -> &str;
-    fn register<M: RpcMethod + 'static>(&mut self, method: M);
+    fn register<M: RpcMethod<Request = Vec<u8>, Response = Vec<u8>> + 'static>(&mut self, method: M);
     async fn call(&self, method: &str, request: RpcRequest<Vec<u8>>) -> RpcResponse<Vec<u8>>;
 }
 ```
@@ -223,25 +307,48 @@ pub trait RpcService: Send + Sync + 'static {
 Métodos obrigatórios:
 
 - `name(&self) -> &str` — nome do serviço
-- `register<M: RpcMethod + 'static>(&mut self, method: M)` — registra um método
+- `register<M: RpcMethod<Request = Vec<u8>, Response = Vec<u8>> + 'static>(&mut self, method: M)` — registra um método
 - `call(&self, method: &str, request: RpcRequest<Vec<u8>>) -> RpcResponse<Vec<u8>>` — invoca um método pelo nome
 
 ---
 
 ### SimpleRpcService
 
-Implementação simplificada de `RpcService`.
+Implementação de `RpcService` com despacho real de métodos.
 
 ```rust
-use gerax_rpc::SimpleRpcService;
+use gerax_rpc::{RpcMethod, RpcRequest, RpcResponse, RpcService, SimpleRpcService};
 
-let service = SimpleRpcService::new("my-service");
-assert_eq!(service.name(), "my-service");
+struct Echo;
+// implementar RpcMethod<Request=Vec<u8>, Response=Vec<u8>> para Echo ...
+
+let mut service = SimpleRpcService::new("demo");
+service.register(Echo);
 ```
 
 Métodos:
 
 - `new(name: impl Into<String>) -> Self` — cria um novo serviço simples
+
+---
+
+### RpcServiceBuilder
+
+Builder de serviço RPC que registra métodos e constrói um `SimpleRpcService`.
+
+```rust
+use gerax_rpc::{RpcServiceBuilder, Echo};
+
+let service = RpcServiceBuilder::new("demo")
+    .method(Echo)
+    .build();
+```
+
+Métodos:
+
+- `new(name: impl Into<String>) -> Self` — cria um novo builder
+- `method<M: RpcMethod<Request = Vec<u8>, Response = Vec<u8>> + 'static>(self, method: M) -> Self` — registra um método
+- `build(self) -> SimpleRpcService` — constrói o serviço
 
 ---
 
@@ -396,54 +503,104 @@ Variações de `RpcError`:
 
 ## Exemplos
 
-### Serviço RPC mínimo
+### Retaguarda Síncrona
 
 ```rust
 use gerax_rpc::{
-    RpcMethod, RpcService, SimpleRpcService,
-    RpcRequest, RpcResponse,
+    RpcContextBuilder, RpcExtensions, RpcMetadataBuilder, RpcRequestBuilder,
+    RpcResponse, RpcResponseBuilder, RpcStatus,
 };
-use async_trait::async_trait;
 
-struct EchoMethod;
+fn main() {
+    let metadata = RpcMetadataBuilder::new()
+        .insert("authorization", "Bearer token")
+        .insert("trace-id", "abc123")
+        .build();
+
+    let context = RpcContextBuilder::new()
+        .metadata(metadata.clone())
+        .trace_id("abc123")
+        .build();
+
+    let request = RpcRequestBuilder::new("ping".to_string())
+        .metadata(metadata)
+        .context(context)
+        .build();
+
+    println!("payload: {}", request.payload);
+
+    let ok: RpcResponse<String> = RpcResponse::success("pong".to_string());
+    assert!(!ok.is_error());
+
+    let error = RpcResponseBuilder::<String>::new()
+        .status(RpcStatus::NotFound)
+        .message("recurso não encontrado")
+        .build();
+    assert!(error.is_error());
+}
+```
+
+### Serviço RPC
+
+```rust
+use async_trait::async_trait;
+use futures::executor::block_on;
+use gerax_rpc::{RpcMethod, RpcRequest, RpcResponse, RpcService, RpcServiceBuilder};
+
+struct Echo;
 
 #[async_trait]
-impl RpcMethod for EchoMethod {
-    type Request = String;
-    type Response = String;
+impl RpcMethod for Echo {
+    type Request = Vec<u8>;
+    type Response = Vec<u8>;
 
-    fn name(&self) -> &str {
-        "echo"
-    }
+    fn name(&self) -> &str { "echo" }
 
-    async fn call(&self, request: RpcRequest<Self::Request>) -> RpcResponse<Self::Response> {
-        RpcResponse::success(format!("echo: {}", request.payload))
+    async fn call(&self, request: RpcRequest<Vec<u8>>) -> RpcResponse<Vec<u8>> {
+        RpcResponse::success(request.payload)
     }
 }
 
 fn main() {
-    let mut service = SimpleRpcService::new("demo");
-    service.register(EchoMethod);
+    let service = RpcServiceBuilder::new("demo")
+        .method(Echo)
+        .build();
+
+    let resp = block_on(service.call("echo", RpcRequest::new(b"hello".to_vec())));
+    println!("{:?}", resp.payload);
 }
 ```
 
-### Requisição e resposta com erros
+### Cliente RPC
 
 ```rust
-use gerax_rpc::{RpcRequest, RpcResponse, RpcStatus, RpcMetadata};
+use async_trait::async_trait;
+use futures::executor::block_on;
+use gerax_rpc::{RpcClient, RpcError, RpcRequest, RpcResponse, RpcTransport, TransportRpcClient};
 
-let request = RpcRequest::new(vec![1, 2, 3])
-    .with_metadata({
-        let mut meta = RpcMetadata::new();
-        meta.insert("content-type", "application/octet-stream");
-        meta
-    });
+#[derive(Clone)]
+struct EchoTransport;
 
-let response = RpcResponse::error(
-    RpcStatus::Unimplemented,
-    "echo ainda não está disponível",
-);
+#[async_trait]
+impl RpcTransport for EchoTransport {
+    type Connection = ();
 
-assert!(response.is_error());
-assert_eq!(response.status, RpcStatus::Unimplemented);
+    async fn connect(&self) -> Result<(), RpcError> { Ok(()) }
+
+    async fn send(
+        &self,
+        _conn: &mut (),
+        request: RpcRequest<Vec<u8>>,
+    ) -> Result<RpcResponse<Vec<u8>>, RpcError> {
+        Ok(RpcResponse::success(request.payload))
+    }
+
+    async fn close(&self, _conn: ()) -> Result<(), RpcError> { Ok(()) }
+}
+
+fn main() {
+    let client = TransportRpcClient::new(EchoTransport);
+    let resp = block_on(client.call("echo", RpcRequest::new(b"ping".to_vec())));
+    println!("{:?}", resp.payload);
+}
 ```
