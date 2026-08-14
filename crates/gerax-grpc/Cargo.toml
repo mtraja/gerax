@@ -15,10 +15,24 @@ description = "Suporte a gRPC no Gerax"
 gerax-core.workspace = true
 gerax-http.workspace = true
 gerax-db.workspace = true
+gerax-codec.workspace = true
+gerax-config.workspace = true
+gerax-rpc.workspace = true
+gerax-macros.workspace = true
 
 async-trait.workspace = true
 serde.workspace = true
+serde_json.workspace = true
 thiserror.workspace = true
+tonic.workspace = true
+tonic-prost = "0.14"
+prost.workspace = true
+prost-types.workspace = true
 
-tonic = { version = "0.12", features = ["tls"] }
-prost = "0.13"
+[build-dependencies]
+tonic-build.workspace = true
+tonic-prost-build = "0.14"
+
+[dev-dependencies]
+tokio = { version = "1", features = ["full"] }
+

@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package gerax;
+
+service GeraxRpc {
+  rpc Call(RpcCallRequest) returns (RpcCallResponse);
+}
+
+message RpcCallRequest {
+  string method = 1;
+  bytes payload = 2;
+  map<string, string> metadata = 3;
+}
+
+message RpcCallResponse {
+  bytes payload = 1;
+  int32 status = 2;
+  string message = 3;
+}

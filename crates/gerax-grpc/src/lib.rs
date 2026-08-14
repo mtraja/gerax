@@ -12,19 +12,27 @@
 //! ## Exemplo futuro
 //!
 //! ```rust
-//! use gerax_grpc::{GrpcServer, ProtoBuilder};
-//! use gerax_core::Entity;
-//!
-//! #[derive(Entity)]
-//! struct User { ... }
-//!
-//! let server = GrpcServer::<User>::new();
-//! server.serve("[::1]:50051").await?;
+//! use gerax_grpc::GrpcServer;
+//! # Ok::<(), gerax_grpc::GrpcError>(())
 //! ```
 
+pub mod client;
+pub mod config;
+pub mod error;
+pub mod handler;
+pub mod method;
 pub mod proto;
 pub mod server;
-pub mod client;
-pub mod error;
+pub mod transport;
 
+pub use client::GrpcClient;
+pub use config::GrpcConfig;
 pub use error::GrpcError;
+pub use handler::GrpcHandler;
+pub use method::GrpcService;
+pub use proto::{ProtoSchema, builder::ProtoBuilder};
+pub use server::GrpcServer;
+pub use transport::{
+    GrpcCodecHandler, GrpcCodecInvoker, GrpcInvoker, GrpcRequestHandler, TonicClientTransport,
+    TonicServerConnection, TonicServerTransport,
+};

@@ -4,7 +4,7 @@ use gerax_core::Entity;
 use crate::DbError;
 
 #[async_trait]
-pub trait Repository<T: Entity + Send + Sync + 'static> {
+pub trait Repository<T: Entity + Send + Sync + 'static>: Send + Sync + 'static {
     async fn find_by_id(&self, id: &str) -> Result<Option<T>, DbError>;
     async fn find_all(&self) -> Result<Vec<T>, DbError>;
     async fn insert(&self, entity: T) -> Result<T, DbError>;
