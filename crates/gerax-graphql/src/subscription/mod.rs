@@ -1,21 +1,21 @@
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use gerax_websocket::websocket::websocket::WebSocketServer;
-use gerax_websocket::websocket::handler::{WsHandler, ServerError, WsContext};
+use gerax_websocket::websocket::graphql::{
+    GraphQLClientMessage, GraphQLDataPayload, GraphQLErrorPayload, GraphQLServerMessage,
+};
+use gerax_websocket::websocket::handler::{ServerError, WsContext, WsHandler};
 use gerax_websocket::websocket::message::WsMessage;
-use gerax_websocket::websocket::graphql::{GraphQLClientMessage, GraphQLDataPayload, GraphQLErrorPayload, GraphQLServerMessage};
+use gerax_websocket::websocket::websocket::WebSocketServer;
 use serde_json::Value;
 use tokio::sync::Mutex;
 
-use crate::{
-    Executor, GraphqlError, GraphqlRequest, Resolver,
-};
+use crate::{Executor, GraphqlError, GraphqlRequest, Resolver, context::GraphqlContext};
 
 pub type WsResult<T = ()> = Result<T, ServerError>;
 
 struct GraphQLWsHandler<State> {
-    manager: Arc<SubscriptionManager<State>>,
+    executor: Arc<dyn Executor<State>>,
 }
 
 #[async_trait]
@@ -32,7 +32,8 @@ where
 {
     async fn on_open(&self, ctx: WsContext<State>) -> WsResult<()> {
         let ack = GraphQLServerMessage::ConnectionAck;
-        let text = serde_json::to_string(&ack).map_err(|e| ServerError::HandlerError(e.to_string()))?;
+        let text =
+            serde_json::to_string(&ack).map_err(|e| ServerError::HandlerError(e.to_string()))?;
         ctx.send(WsMessage::Text(text)).await?;
         Ok(())
     }
@@ -43,13 +44,14 @@ where
             _ => return Ok(()),
         };
 
-        let client_msg: GraphQLClientMessage = serde_json::from_str(&text)
-            .map_err(|e| ServerError::HandlerError(e.to_string()))?;
+        let client_msg: GraphQLClientMessage =
+            serde_json::from_str(&text).map_err(|e| ServerError::HandlerError(e.to_string()))?;
 
         match client_msg {
             GraphQLClientMessage::ConnectionInit => {
                 let ack = GraphQLServerMessage::ConnectionAck;
-                let text = serde_json::to_string(&ack).map_err(|e| ServerError::HandlerError(e.to_string()))?;
+                let text = serde_json::to_string(&ack)
+                    .map_err(|e| ServerError::HandlerError(e.to_string()))?;
                 ctx.send(WsMessage::Text(text)).await?;
             }
             GraphQLClientMessage::Start { id, payload } => {
@@ -59,7 +61,7 @@ where
                     _ => None,
                 };
 
-                let executor = self.manager.executor();
+                let executor = &self.executor;
                 let request = GraphqlRequest {
                     query: payload.query,
                     variables,
@@ -74,7 +76,8 @@ where
                             id: id.clone(),
                             payload: GraphQLDataPayload { data },
                         };
-                        let text = serde_json::to_string(&server_msg).map_err(|e| ServerError::HandlerError(e.to_string()))?;
+                        let text = serde_json::to_string(&server_msg)
+                            .map_err(|e| ServerError::HandlerError(e.to_string()))?;
                         ctx.send(WsMessage::Text(text)).await?;
                     }
                     Err(err) => {
@@ -84,14 +87,16 @@ where
                                 errors: vec![Value::String(err.to_string())],
                             },
                         };
-                        let text = serde_json::to_string(&server_msg).map_err(|e| ServerError::HandlerError(e.to_string()))?;
+                        let text = serde_json::to_string(&server_msg)
+                            .map_err(|e| ServerError::HandlerError(e.to_string()))?;
                         ctx.send(WsMessage::Text(text)).await?;
                     }
                 }
             }
             GraphQLClientMessage::Stop { id } => {
                 let server_msg = GraphQLServerMessage::Complete { id };
-                let text = serde_json::to_string(&server_msg).map_err(|e| ServerError::HandlerError(e.to_string()))?;
+                let text = serde_json::to_string(&server_msg)
+                    .map_err(|e| ServerError::HandlerError(e.to_string()))?;
                 ctx.send(WsMessage::Text(text)).await?;
             }
         }
@@ -103,7 +108,6 @@ where
 /// Gerenciador de subscriptions ativas.
 pub struct SubscriptionManager<State> {
     subscriptions: Arc<tokio::sync::RwLock<Vec<ActiveSubscription<State>>>>,
-    _executor: Arc<dyn Executor<State>>,
 }
 
 struct ActiveSubscription<State> {
@@ -113,16 +117,10 @@ struct ActiveSubscription<State> {
 
 impl<State: 'static> SubscriptionManager<State> {
     /// Cria um novo gerenciador de subscriptions.
-    pub fn new(executor: Arc<dyn Executor<State>>) -> Self {
+    pub fn new() -> Self {
         Self {
             subscriptions: Arc::new(tokio::sync::RwLock::new(Vec::new())),
-            _executor: executor,
         }
-    }
-
-    /// Acesso ao executor GraphQL.
-    pub fn executor(&self) -> &Arc<dyn Executor<State>> {
-        &self._executor
     }
 
     /// Registra uma subscription com um resolver.
@@ -138,12 +136,11 @@ impl<State: 'static> SubscriptionManager<State> {
     pub async fn resolve(
         &self,
         field_name: &str,
-        state: &State,
-        args: Option<&serde_json::Value>,
-    ) -> Result<serde_json::Value, GraphqlError> {
+        context: &GraphqlContext<State>,
+    ) -> Result<Value, GraphqlError> {
         let subs = self.subscriptions.read().await;
         if let Some(sub) = subs.iter().find(|s| s.field_name == field_name) {
-            sub.resolver.resolve(state, args).await
+            sub.resolver.resolve(context).await
         } else {
             Err(GraphqlError::Execution(format!(
                 "subscription field '{}' not found",
@@ -153,19 +150,31 @@ impl<State: 'static> SubscriptionManager<State> {
     }
 }
 
+impl<State: 'static> Default for SubscriptionManager<State> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 /// Adapter WebSocket para subscriptions GraphQL.
 pub struct WebSocketSubscriptionAdapter<State> {
     manager: Arc<SubscriptionManager<State>>,
     state: Arc<State>,
+    executor: Arc<dyn Executor<State>>,
     server: Arc<Mutex<Option<WebSocketServer<State>>>>,
 }
 
 impl<State: 'static> WebSocketSubscriptionAdapter<State> {
     /// Cria um novo adapter WebSocket para subscriptions.
-    pub fn new(manager: Arc<SubscriptionManager<State>>, state: Arc<State>) -> Self {
+    pub fn new(
+        manager: Arc<SubscriptionManager<State>>,
+        state: Arc<State>,
+        executor: Arc<dyn Executor<State>>,
+    ) -> Self {
         Self {
             manager,
             state,
+            executor,
             server: Arc::new(Mutex::new(None)),
         }
     }
@@ -175,11 +184,12 @@ impl<State: 'static> WebSocketSubscriptionAdapter<State> {
 impl<State: Send + Sync + 'static> Subscription<State> for WebSocketSubscriptionAdapter<State> {
     async fn start(&self, addr: &str) -> Result<(), GraphqlError> {
         let handler = Arc::new(GraphQLWsHandler {
-            manager: Arc::clone(&self.manager),
+            executor: Arc::clone(&self.executor),
         });
 
         let server = WebSocketServer::new(
-            addr.parse::<std::net::SocketAddr>().map_err(|e| GraphqlError::Execution(e.to_string()))?,
+            addr.parse::<std::net::SocketAddr>()
+                .map_err(|e| GraphqlError::Execution(e.to_string()))?,
             Arc::clone(&self.state),
             handler,
         );
@@ -198,7 +208,10 @@ impl<State: Send + Sync + 'static> Subscription<State> for WebSocketSubscription
     async fn stop(&self) -> Result<(), GraphqlError> {
         let guard = self.server.lock().await;
         if let Some(ref server) = *guard {
-            server.stop().await.map_err(|e| GraphqlError::Execution(e.to_string()))?;
+            server
+                .stop()
+                .await
+                .map_err(|e| GraphqlError::Execution(e.to_string()))?;
         }
         Ok(())
     }
@@ -220,7 +233,10 @@ mod tests {
     use serde_json::{Value, json};
 
     use super::{Subscription, SubscriptionManager, WebSocketSubscriptionAdapter};
-    use crate::{Executor, GraphqlError, GraphqlRequest, GraphqlResponse, Resolver};
+    use crate::{
+        Executor, GraphqlError, GraphqlRequest, GraphqlResponse, Resolver, context::GraphqlContext,
+    };
+    use gerax_http::routing::{Context, HttpMethod, Request};
 
     struct NoopExecutor;
 
@@ -239,32 +255,38 @@ mod tests {
 
     #[async_trait]
     impl Resolver<()> for ValueResolver {
-        async fn resolve(&self, _state: &(), _args: Option<&Value>) -> Result<Value, GraphqlError> {
+        async fn resolve(&self, _context: &GraphqlContext<()>) -> Result<Value, GraphqlError> {
             Ok(json!({ "id": "event-1" }))
         }
     }
 
     #[tokio::test]
     async fn manager_resolves_registered_subscriptions() {
-        let manager = SubscriptionManager::new(Arc::new(NoopExecutor));
+        let manager = SubscriptionManager::new();
         manager
             .register("eventCreated".to_string(), Arc::new(ValueResolver))
             .await;
 
+        let context: GraphqlContext<()> = Context::new(
+            Arc::new(()),
+            Request::new(HttpMethod::Get, "/graphql".into(), Vec::new()),
+        );
+
         assert_eq!(
-            manager.resolve("eventCreated", &(), None).await,
+            manager.resolve("eventCreated", &context).await,
             Ok(json!({ "id": "event-1" }))
         );
         assert!(matches!(
-            manager.resolve("missing", &(), None).await,
+            manager.resolve("missing", &context).await,
             Err(GraphqlError::Execution(_))
         ));
     }
 
     #[tokio::test]
     async fn websocket_adapter_starts_and_stops() {
-        let manager = Arc::new(SubscriptionManager::new(Arc::new(NoopExecutor)));
-        let adapter = WebSocketSubscriptionAdapter::new(manager, Arc::new(()));
+        let manager = Arc::new(SubscriptionManager::new());
+        let adapter =
+            WebSocketSubscriptionAdapter::new(manager, Arc::new(()), Arc::new(NoopExecutor));
 
         assert!(adapter.start("127.0.0.1:0").await.is_ok());
         assert!(adapter.stop().await.is_ok());

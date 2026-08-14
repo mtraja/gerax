@@ -2,8 +2,8 @@ use crate::GraphqlError;
 
 /// Limite configurável de complexidade para queries GraphQL.
 ///
-/// A complexidade é calculada com base no número de campos
-/// e na profundidade da query.
+/// A complexidade é calculada com base no número de campos selecionados
+/// na query, incluindo campos aninhados.
 pub struct ComplexityLimiter {
     max_complexity: usize,
 }
@@ -21,10 +21,56 @@ impl ComplexityLimiter {
 
     /// Calcula a complexidade de uma query.
     ///
-    /// A complexidade é estimada pelo número de campos
-    /// na query.
+    /// A complexidade é estimada pelo número de seletores de campo
+    /// encontrados na query.
     pub fn calculate_complexity(&self, query: &str) -> usize {
-        query.chars().filter(|c| c.is_alphabetic()).count() / 4
+        let mut complexity = 0;
+
+        for token in query.split_whitespace() {
+            let trimmed = token.trim_matches(|c| {
+                c == '{' || c == '}' || c == '(' || c == ')' || c == ',' || c == ':'
+            });
+
+            if trimmed.is_empty() {
+                continue;
+            }
+
+            if trimmed == "{" || trimmed == "}" {
+                continue;
+            }
+
+            if trimmed.starts_with("__") {
+                continue;
+            }
+
+            if matches!(
+                trimmed,
+                "query"
+                    | "mutation"
+                    | "subscription"
+                    | "fragment"
+                    | "on"
+                    | "True"
+                    | "False"
+                    | "Null"
+                    | "true"
+                    | "false"
+                    | "null"
+            ) {
+                continue;
+            }
+
+            if trimmed
+                .chars()
+                .all(|c| c.is_ascii_punctuation() || c.is_ascii_digit())
+            {
+                continue;
+            }
+
+            complexity += 1;
+        }
+
+        complexity
     }
 
     /// Verifica se a complexidade da query excede o limite.
@@ -87,12 +133,30 @@ mod tests {
 
     #[test]
     fn complexity_limiter_rejects_queries_above_its_limit() {
-        let limiter = ComplexityLimiter::new(1);
+        let limiter = ComplexityLimiter::new(2);
 
         assert!(matches!(
-            limiter.check("{ firstField secondField thirdField fourthField fifthField }"),
+            limiter.check("{ firstField secondField thirdField }"),
             Err(GraphqlError::ComplexityExceeded(_))
         ));
+    }
+
+    #[test]
+    fn complexity_limiter_counts_nested_fields() {
+        let limiter = ComplexityLimiter::new(2);
+
+        assert!(matches!(
+            limiter.check("{ user { name email } }"),
+            Err(GraphqlError::ComplexityExceeded(_))
+        ));
+    }
+
+    #[test]
+    fn complexity_limiter_ignores_introspection_and_keywords() {
+        let limiter = ComplexityLimiter::new(3);
+
+        assert!(limiter.check("{ __schema { queryType { name } } }").is_ok());
+        assert!(limiter.check("query User { user { id } }").is_ok());
     }
 
     #[test]

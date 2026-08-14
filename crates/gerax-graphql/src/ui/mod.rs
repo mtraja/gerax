@@ -25,8 +25,8 @@ impl GraphiQL {
 </head>
 <body>
     <div id="graphiql">Loading...</div>
-    <script src="https://unpkg.com/graphiql/graphiql.min.js"></script>
-    <link rel="stylesheet" href="https://unpkg.com/graphiql/graphiql.min.css"/>
+    <script src="https://cdn.jsdelivr.net/npm/graphiql/graphiql.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/graphiql/graphiql.min.css"/>
     <script>
         const root = document.getElementById('graphiql');
         const fetcher = GraphiQL.createFetcher({{ url: '{}' }});
@@ -82,8 +82,8 @@ impl Playground {
 </head>
 <body>
     <div id="playground">Loading...</div>
-    <script src="https://unpkg.com/graphql-playground-react@1.7/build/static/js/index.js"></script>
-    <link rel="stylesheet" href="https://unpkg.com/graphql-playground-react@1.7/build/static/css/index.css"/>
+    <script src="https://cdn.jsdelivr.net/npm/graphql-playground-react@1.7/build/static/js/index.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/graphql-playground-react@1.7/build/static/css/index.css"/>
     <script>
         const root = document.getElementById('playground');
         const endpoint = '{}';

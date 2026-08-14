@@ -48,16 +48,12 @@ where
         request: GraphqlRequest,
         _state: &State,
     ) -> Result<GraphqlResponse, GraphqlError> {
-        let data = self
+        let executed = self
             .schema
             .execute(&request.query, request.variables)
             .await?;
 
-        Ok(GraphqlResponse {
-            data: Some(data),
-            errors: None,
-            extensions: None,
-        })
+        Ok(executed.into_response())
     }
 }
 

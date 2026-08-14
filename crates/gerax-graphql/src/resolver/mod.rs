@@ -1,4 +1,4 @@
-use crate::GraphqlError;
+use crate::{GraphqlError, context::GraphqlContext};
 use async_trait::async_trait;
 use serde_json::Value;
 
@@ -9,7 +9,7 @@ use serde_json::Value;
 #[async_trait]
 pub trait Resolver<State>: Send + Sync + 'static {
     /// Resolve um campo GraphQL.
-    async fn resolve(&self, state: &State, args: Option<&Value>) -> Result<Value, GraphqlError>;
+    async fn resolve(&self, context: &GraphqlContext<State>) -> Result<Value, GraphqlError>;
 }
 
 /// Resolver para campos de query.
@@ -37,7 +37,7 @@ impl<State> Resolver<State> for QueryResolver<State>
 where
     State: Send + Sync + 'static,
 {
-    async fn resolve(&self, _state: &State, _args: Option<&Value>) -> Result<Value, GraphqlError> {
+    async fn resolve(&self, _context: &GraphqlContext<State>) -> Result<Value, GraphqlError> {
         Ok(Value::Null)
     }
 }
@@ -67,7 +67,7 @@ impl<State> Resolver<State> for MutationResolver<State>
 where
     State: Send + Sync + 'static,
 {
-    async fn resolve(&self, _state: &State, _args: Option<&Value>) -> Result<Value, GraphqlError> {
+    async fn resolve(&self, _context: &GraphqlContext<State>) -> Result<Value, GraphqlError> {
         Ok(Value::Null)
     }
 }
@@ -97,25 +97,31 @@ impl<State> Resolver<State> for SubscriptionResolver<State>
 where
     State: Send + Sync + 'static,
 {
-    async fn resolve(&self, _state: &State, _args: Option<&Value>) -> Result<Value, GraphqlError> {
+    async fn resolve(&self, _context: &GraphqlContext<State>) -> Result<Value, GraphqlError> {
         Ok(Value::Null)
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use serde_json::Value;
+    use gerax_http::routing::{Context, HttpMethod, Request};
 
     use super::{MutationResolver, QueryResolver, Resolver, SubscriptionResolver};
+    use crate::context::GraphqlContext;
 
     #[tokio::test]
     async fn default_resolvers_return_null() {
-        let query = QueryResolver::<()>::new().resolve(&(), None).await;
-        let mutation = MutationResolver::<()>::new().resolve(&(), None).await;
-        let subscription = SubscriptionResolver::<()>::new().resolve(&(), None).await;
+        let context: GraphqlContext<()> = Context::new(
+            std::sync::Arc::new(()),
+            Request::new(HttpMethod::Get, "/graphql".into(), Vec::new()),
+        );
 
-        assert_eq!(query, Ok(Value::Null));
-        assert_eq!(mutation, Ok(Value::Null));
-        assert_eq!(subscription, Ok(Value::Null));
+        let query = QueryResolver::<()>::new().resolve(&context).await;
+        let mutation = MutationResolver::<()>::new().resolve(&context).await;
+        let subscription = SubscriptionResolver::<()>::new().resolve(&context).await;
+
+        assert_eq!(query, Ok(serde_json::Value::Null));
+        assert_eq!(mutation, Ok(serde_json::Value::Null));
+        assert_eq!(subscription, Ok(serde_json::Value::Null));
     }
 }

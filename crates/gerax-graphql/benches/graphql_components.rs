@@ -40,27 +40,13 @@ impl BatchLoader<(), u64, u64> for PassthroughLoader {
     }
 }
 
-struct NoopExecutor;
-
-#[async_trait]
-impl Executor<()> for NoopExecutor {
-    async fn execute(
-        &self,
-        _request: GraphqlRequest,
-        _state: &(),
-    ) -> Result<gerax_graphql::GraphqlResponse, GraphqlError> {
-        Ok(gerax_graphql::GraphqlResponse::default())
-    }
-}
-
 struct SubscriptionResolver;
 
 #[async_trait]
 impl Resolver<()> for SubscriptionResolver {
     async fn resolve(
         &self,
-        _state: &(),
-        _args: Option<&serde_json::Value>,
+        _context: &gerax_graphql::context::GraphqlContext<()>,
     ) -> Result<serde_json::Value, GraphqlError> {
         Ok(serde_json::Value::Null)
     }
@@ -127,13 +113,21 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let resolver = QueryResolver::<()>::new();
     measure("resolver_resolve", iterations, || {
-        consume_result(runtime.block_on(resolver.resolve(&(), None)));
+        let context = Context::new(
+            Arc::new(()),
+            Request::new(HttpMethod::Get, "/graphql".into(), Vec::new()),
+        );
+        consume_result(runtime.block_on(resolver.resolve(&context)));
     });
 
-    let manager = SubscriptionManager::new(Arc::new(NoopExecutor));
+    let manager = SubscriptionManager::new();
     runtime.block_on(manager.register("eventCreated".to_string(), Arc::new(SubscriptionResolver)));
     measure("subscription_resolve", iterations, || {
-        consume_result(runtime.block_on(manager.resolve("eventCreated", &(), None)));
+        let context = Context::new(
+            Arc::new(()),
+            Request::new(HttpMethod::Get, "/graphql".into(), Vec::new()),
+        );
+        consume_result(runtime.block_on(manager.resolve("eventCreated", &context)));
     });
 
     let context = Context::new(
