@@ -4,7 +4,7 @@ use std::sync::Arc;
 use gerax_db::{Connection, DatabaseConfig, DbError, Repository, RepositoryBuilder};
 use gerax_core::Entity;
 
-use crate::mongodb::{MongoDbConnection, MongoDbRepository, MongoDbConfig};
+use crate::mongodb::{MongoDbConnection, MongoDbRepository};
 
 /// Builder concreto para repositórios MongoDB.
 pub struct MongoDbRepositoryBuilder<T> {

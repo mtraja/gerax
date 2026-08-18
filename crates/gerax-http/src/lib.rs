@@ -13,3 +13,4 @@ pub use builder::HttpServerBuilder;
 pub use middleware::{Middleware, Next};
 pub use server::HttpServer;
 pub use routing::router::Router;
+pub use gerax_macros::handler;

@@ -6,7 +6,7 @@ use crate::ActixHttpServer;
 
 use gerax_http::{HttpServerBuilder, Middleware, Router, ServerConfig, ServerResult};
 
-pub use gerax_http::ServerConfig as ActixConfig;
+//pub use gerax_http::ServerConfig as ActixConfig;
 
 /// Builder para construção fluida de servidores HTTP com Actix Web.
 pub struct ActixHttpServerBuilder<S> {

@@ -1724,6 +1724,7 @@ dependencies = [
  "bytes",
  "gerax-config",
  "gerax-core",
+ "gerax-macros",
  "http 1.4.2",
  "matchit 0.7.3",
  "serde",

@@ -24,6 +24,7 @@ categories = [
 [dependencies]
 gerax-core.workspace = true
 gerax-config.workspace = true
+gerax-macros.workspace = true
 
 async-trait.workspace = true
 serde.workspace = true
