@@ -38,7 +38,7 @@ where
         );
         self.connection.client().execute(&query, &[])
             .await
-            .map_err(|e| DbError::connection(e))?;
+            .map_err(DbError::connection)?;
         Ok(())
     }
 }
@@ -52,13 +52,13 @@ where
         let query = format!("SELECT data FROM {} WHERE id = $1", self.table_name());
         let row = self.connection.client().query_opt(&query, &[&id])
             .await
-            .map_err(|e| DbError::connection(e))?;
+            .map_err(DbError::connection)?;
 
         match row {
             Some(row) => {
                 let data: String = row.get(0);
                 let entity = serde_json::from_str(&data)
-                    .map_err(|e| DbError::serialization(e))?;
+                    .map_err(DbError::serialization)?;
                 Ok(Some(entity))
             }
             None => Ok(None),
@@ -69,13 +69,13 @@ where
         let query = format!("SELECT data FROM {}", self.table_name());
         let rows = self.connection.client().query(&query, &[])
             .await
-            .map_err(|e| DbError::connection(e))?;
+            .map_err(DbError::connection)?;
 
         let mut entities = Vec::new();
         for row in rows {
             let data: String = row.get(0);
             let entity = serde_json::from_str(&data)
-                .map_err(|e| DbError::serialization(e))?;
+                    .map_err(DbError::serialization)?;
             entities.push(entity);
         }
         Ok(entities)
@@ -100,7 +100,7 @@ where
         );
         let row = self.connection.client().query_one(&query, &[&id, &data])
             .await
-            .map_err(|e| DbError::connection(e))?;
+            .map_err(DbError::connection)?;
 
         let returned_data: String = row.get(0);
         let returned_entity = serde_json::from_str(&returned_data)
@@ -118,7 +118,7 @@ where
         let query = format!("UPDATE {} SET data = $1 WHERE id = $2", self.table_name());
         let rows_affected = self.connection.client().execute(&query, &[&data, &id])
             .await
-            .map_err(|e| DbError::connection(e))?;
+            .map_err(DbError::connection)?;
 
         if rows_affected == 0 {
             return Err(DbError::not_found(id));
@@ -130,7 +130,7 @@ where
         let query = format!("DELETE FROM {} WHERE id = $1", self.table_name());
         let rows_affected = self.connection.client().execute(&query, &[&id])
             .await
-            .map_err(|e| DbError::connection(e))?;
+            .map_err(DbError::connection)?;
 
         if rows_affected == 0 {
             return Err(DbError::not_found(id));

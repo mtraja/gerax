@@ -18,6 +18,6 @@ fn db_serialization_error_maps_to_grpc_serialization_error() {
 #[test]
 fn db_connection_error_maps_to_grpc_rpc_error() {
     let io_err = std::io::Error::other("connection refused");
-    let err = GrpcError::from(DbError::ConnectionError(io_err));
+    let err = GrpcError::from(DbError::ConnectionError(Box::new(io_err)));
     assert!(matches!(err, GrpcError::RpcError(_)));
 }

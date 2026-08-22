@@ -1587,6 +1587,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "gerax-app"
+version = "0.1.0"
+dependencies = [
+ "gerax-actix",
+ "gerax-config",
+ "gerax-db",
+ "gerax-http",
+ "gerax-mongodb",
+ "gerax-postgres",
+ "serde",
+ "thiserror 2.0.18",
+]
+
+[[package]]
 name = "gerax-auth"
 version = "0.1.0"
 dependencies = [
@@ -1807,6 +1821,8 @@ dependencies = [
  "gerax-config",
  "gerax-core",
  "gerax-db",
+ "native-tls",
+ "postgres-native-tls",
  "serde",
  "serde_json",
  "thiserror 2.0.18",
@@ -3464,6 +3480,18 @@ name = "portable-atomic"
 version = "1.13.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c33a9471896f1c69cecef8d20cbe2f7accd12527ce60845ff44c153bb2a21b49"
+
+[[package]]
+name = "postgres-native-tls"
+version = "0.5.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fef4de47bb81477e0c3deaf153a1b10ae176484713ff1640969f4cb96b653ebc"
+dependencies = [
+ "native-tls",
+ "tokio",
+ "tokio-native-tls",
+ "tokio-postgres",
+]
 
 [[package]]
 name = "postgres-protocol"

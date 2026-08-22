@@ -30,6 +30,7 @@ impl From<DbError> for GrpcError {
         match err {
             DbError::NotFoundError(id) => Self::NotFound(id),
             DbError::SerializationError(msg) => Self::SerializationError(msg),
+            DbError::ConfigurationError(msg) => Self::InvalidRequest(msg),
             DbError::ConnectionError(_) => Self::RpcError(err.to_string()),
         }
     }

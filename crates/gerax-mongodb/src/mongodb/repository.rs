@@ -46,7 +46,7 @@ where
             .collection()
             .find_one(filter)
             .await
-            .map_err(|e| DbError::connection(e.to_string()))?;
+            .map_err(|e| DbError::connection(e))?;
 
         match result {
             Some(mut doc) => {
@@ -66,11 +66,11 @@ where
             .collection()
             .find(doc! {})
             .await
-            .map_err(|e| DbError::connection(e.to_string()))?;
+            .map_err(|e| DbError::connection(e))?;
         let mut entities = Vec::new();
 
         while let Some(result) = cursor.next().await {
-            let mut doc = result.map_err(|e| DbError::connection(e.to_string()))?;
+            let mut doc = result.map_err(|e| DbError::connection(e))?;
             let object_id = doc.get_object_id("_id").map_err(|e| DbError::serialization(e.to_string()))?;
             doc.insert("id", object_id.to_hex());
             doc.remove("_id");
@@ -92,7 +92,7 @@ where
         self.collection()
             .insert_one(doc)
             .await
-            .map_err(|e| DbError::connection(e.to_string()))?;
+            .map_err(|e| DbError::connection(e))?;
 
         entity.set_id(object_id.to_hex());
         Ok(entity)
@@ -115,7 +115,7 @@ where
             .collection()
             .update_one(filter, update)
             .await
-            .map_err(|e| DbError::connection(e.to_string()))?;
+            .map_err(|e| DbError::connection(e))?;
 
         if result.modified_count == 0 {
             return Err(DbError::not_found(&id));
@@ -131,7 +131,7 @@ where
             .collection()
             .delete_one(filter)
             .await
-            .map_err(|e| DbError::connection(e.to_string()))?;
+            .map_err(|e| DbError::connection(e))?;
 
         if result.deleted_count == 0 {
             return Err(DbError::not_found(id));

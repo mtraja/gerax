@@ -28,9 +28,9 @@ impl Connection for MongoDbConnection {
         let config = MongoDbConfig::from_env()?;
         let options = ClientOptions::parse(&config.uri)
             .await
-            .map_err(|e| DbError::connection(e.to_string()))?;
+            .map_err(|e| DbError::connection(e))?;
         let client = Client::with_options(options)
-            .map_err(|e| DbError::connection(e.to_string()))?;
+            .map_err(|e| DbError::connection(e))?;
 
         let database = client.database(&config.database);
 
@@ -44,7 +44,7 @@ impl Connection for MongoDbConnection {
         self.database()
             .run_command(bson::doc! { "ping": 1 })
             .await
-            .map_err(|e| DbError::connection(e.to_string()))?;
+            .map_err(|e| DbError::connection(e))?;
         Ok(())
     }
 }

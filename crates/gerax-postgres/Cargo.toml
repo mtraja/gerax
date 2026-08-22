@@ -17,6 +17,8 @@ gerax-config.workspace = true
 gerax-db.workspace = true
 
 tokio-postgres.workspace = true
+postgres-native-tls = "0.5"
+native-tls = "0.2"
 serde.workspace = true
 serde_json.workspace = true
 
