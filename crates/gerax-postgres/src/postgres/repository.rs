@@ -92,7 +92,7 @@ where
         entity.set_id(id.clone());
 
         let data = serde_json::to_string(&entity)
-            .map_err(|e| DbError::serialization(e))?;
+            .map_err(DbError::serialization)?;
 
         let query = format!(
             "INSERT INTO {} (id, data) VALUES ($1, $2) RETURNING data",
@@ -104,7 +104,7 @@ where
 
         let returned_data: String = row.get(0);
         let returned_entity = serde_json::from_str(&returned_data)
-            .map_err(|e| DbError::serialization(e))?;
+            .map_err(DbError::serialization)?;
         Ok(returned_entity)
     }
 
@@ -113,7 +113,7 @@ where
             .id()
             .ok_or_else(|| DbError::not_found("missing id"))?;
         let data = serde_json::to_string(&entity)
-            .map_err(|e| DbError::serialization(e))?;
+            .map_err(DbError::serialization)?;
 
         let query = format!("UPDATE {} SET data = $1 WHERE id = $2", self.table_name());
         let rows_affected = self.connection.client().execute(&query, &[&data, &id])
