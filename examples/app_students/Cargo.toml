@@ -1,0 +1,14 @@
+[package]
+name = "app_students"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+gerax-app = { path = "../../crates/gerax-app", features = ["actix", "postgres"] }
+gerax-core = { path = "../../crates/gerax-core" }
+gerax-http = { path = "../../crates/gerax-http" }
+actix-web.workspace = true
+tokio = { version = "1", features = ["full"] }
+dotenv = "0.15"
+serde = { workspace = true }
+serde_json = { workspace = true }

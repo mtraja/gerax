@@ -3,6 +3,7 @@ resolver = "3"
 
 members = [
     "crates/gerax",
+    "crates/gerax-app",
 
     "crates/gerax-core",
     "crates/gerax-http",
@@ -33,6 +34,7 @@ members = [
 
     "examples/myapp",
     "examples/app_postgres",
+    "examples/app_students",
     "examples/app-mongo",
     "examples/graphql-demo",
     "examples/actix-test",
