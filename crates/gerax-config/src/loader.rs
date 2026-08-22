@@ -19,7 +19,7 @@ impl ConfigLoader {
     }
 
     /// Adiciona uma fonte.
-    pub fn add<S>(mut self, source: S) -> Self
+    pub fn with_source<S>(mut self, source: S) -> Self
     where
         S: ConfigSource + 'static,
     {
@@ -29,7 +29,7 @@ impl ConfigLoader {
     }
 
     /// Adiciona uma fonte usando referência.
-    pub fn add_boxed(mut self, source: Arc<dyn ConfigSource>) -> Self {
+    pub fn with_boxed_source(mut self, source: Arc<dyn ConfigSource>) -> Self {
         self.sources.push(source);
 
         self

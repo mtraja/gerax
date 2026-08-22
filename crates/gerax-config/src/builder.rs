@@ -70,7 +70,7 @@ impl ConfigBuilder {
         let mut loader = ConfigLoader::new();
 
         for source in self.sources {
-            loader = loader.add_boxed(source);
+            loader = loader.with_boxed_source(source);
         }
 
         loader

@@ -81,8 +81,8 @@ Carrega configuração diretamente.
 Métodos:
 
 - `new() -> Self`
-- `add<S: ConfigSource + 'static>(self, source: S) -> Self`
-- `add_boxed(self, source: Arc<dyn ConfigSource>) -> Self`
+- `with_source<S: ConfigSource + 'static>(self, source: S) -> Self`
+- `with_boxed_source(self, source: Arc<dyn ConfigSource>) -> Self`
 - `load_document(&self) -> ConfigResult<ConfigDocument>`
 - `load<T: DeserializeOwned>(&self) -> ConfigResult<T>`
 
