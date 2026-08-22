@@ -30,7 +30,7 @@ impl MemorySource {
     ///
     /// Exemplo:
     ///
-    /// ```rust
+    /// ```ignore
     /// MemorySource::from_value(
     ///     &MyConfig { ... }
     /// )

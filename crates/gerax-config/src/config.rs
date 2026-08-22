@@ -5,12 +5,12 @@ use crate::builder::ConfigBuilder;
 ///
 /// Exemplo:
 ///
-/// ```rust
-/// let config = Config::builder()
-///     .env()
-///     .toml("config.toml")
-///     .build::<AppConfig>()?;
-/// ```
+    /// ```ignore
+    /// let config = Config::builder()
+    ///     .env()
+    ///     .toml("config.toml")
+    ///     .build::<AppConfig>()?;
+    /// ```
 pub struct Config;
 
 
