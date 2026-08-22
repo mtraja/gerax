@@ -40,15 +40,23 @@ POSTGRES_URL=postgresql://postgres:postgres@localhost:5432/gerax
 ### TLS
 
 TLS é uma decisão de configuração explícita. O padrão é **desativado**; para
-habilitá-lo, defina a variável `tls` como `true` (ou `1`, `enable`, `enabled`):
+habilitá-lo, defina a variável `tls` como `native` (ou `true`, `1`, `enable`,
+`enabled`) ou `rustls`:
 
 ```dotenv
 URL=postgresql://postgres:postgres@localhost:5432/gerax
-TLS=true
+TLS=native
 ```
 
-Quando TLS está habilitado, a conexão usa `native-tls` via `postgres-native-tls`.
-Para conexões sem TLS, mantenha `TLS=false` ou omita a variável.
+```dotenv
+URL=postgresql://postgres:postgres@localhost:5432/gerax
+TLS=rustls
+```
+
+Quando TLS está habilitado com `native`, a conexão usa `native-tls` via
+`postgres-native-tls`. Com `rustls`, é usado `rustls` via
+`tokio-postgres-rustls` (roots da WebPKI embutidas). Para conexões sem TLS,
+mantenha `TLS=false` ou omita a variável.
 
 Também é possível configurar a conexão de forma programática com
 `PostgresConfig`:
@@ -56,8 +64,16 @@ Também é possível configurar a conexão de forma programática com
 ```rust
 use gerax_postgres::{PostgresConfig, PostgresTls};
 
+// Sem TLS (padrão)
+let config = PostgresConfig::new("postgresql://localhost/gerax");
+
+// TLS com native-tls
 let config = PostgresConfig::new("postgresql://localhost/gerax")
-    .with_tls(PostgresTls::Enabled);
+    .with_tls(PostgresTls::NativeTls);
+
+// TLS com rustls
+let config = PostgresConfig::new("postgresql://localhost/gerax")
+    .with_tls(PostgresTls::Rustls);
 ```
 
 ### Validação
@@ -130,6 +146,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
   `tokio_postgres::Client` subjacente para operações específicas do PostgreSQL.
 - `PostgresConfig`: configuração explícita com `url` e `tls`. Use
   `connect_with_config(config)` para evitar dependência de variáveis de ambiente.
+- `PostgresTls`: `Disabled` (padrão), `NativeTls` (native-tls), `Rustls`
+  (rustls com roots WebPKI). Configure via `PostgresConfig::with_tls()` ou
+  ambiente (`TLS=native` / `TLS=rustls`).
 - `PostgresConnection::try_connection_error()`: consulta não bloqueante para
   verificar se a task do driver reportou uma falha de conexão, TLS ou rede.
 - `PostgresRepository<T>`: recebe um `Arc<PostgresConnection>` em `new()` e
@@ -163,4 +182,6 @@ para `SerializationError`. Problemas de configuração são mapeados para
 migrações. O crate não faz escape ou validação do nome retornado por
 `collection_name()`; esse valor não deve vir de entrada externa. A task do
 driver é executada em segundo plano enquanto o `Client` estiver em uso; falhas
-são capturadas por `try_connection_error()`, mas não há reconexão automática.
+são capturadas por `try_connection_error()`, mas **não há reconexão automática**.
+Em ambientes onde a reconexão é necessária, envolva `PostgresConnection::connect()`
+em uma estratégia de retry no caller e recrie repositórios com a nova conexão.

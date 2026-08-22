@@ -2,17 +2,20 @@ use async_trait::async_trait;
 use gerax_config::Config;
 use gerax_db::{Connection, DbError};
 use postgres_native_tls::MakeTlsConnector;
+use rustls::{ClientConfig, RootCertStore};
 use serde_json::Value;
 use std::sync::Mutex;
 use tokio::sync::oneshot;
 use tokio_postgres::{Client, NoTls};
+use tokio_postgres_rustls::MakeRustlsConnect;
 use tokio::task::JoinHandle;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum PostgresTls {
     #[default]
     Disabled,
-    Enabled,
+    NativeTls,
+    Rustls,
 }
 
 #[derive(Debug, Clone)]
@@ -53,8 +56,23 @@ impl PostgresConnection {
     pub async fn connect_with_config(config: PostgresConfig) -> Result<Self, DbError> {
         Self::validate(&config)?;
 
-        let (client, connection_handle, error_receiver) =
-            if matches!(config.tls, PostgresTls::Enabled) {
+        let (client, connection_handle, error_receiver) = match config.tls {
+            PostgresTls::Disabled => {
+                let (client, connection) =
+                    tokio_postgres::connect(&config.url, NoTls)
+                        .await
+                        .map_err(DbError::connection)?;
+
+                let (error_tx, error_rx) = oneshot::channel();
+                let handle = tokio::spawn(async move {
+                    if let Err(e) = connection.await {
+                        let _ = error_tx.send(DbError::connection(e));
+                    }
+                });
+
+                (client, handle, error_rx)
+            }
+            PostgresTls::NativeTls => {
                 let connector = MakeTlsConnector::new(
                     native_tls::TlsConnector::new()
                         .map_err(DbError::connection)?,
@@ -73,9 +91,23 @@ impl PostgresConnection {
                 });
 
                 (client, handle, error_rx)
-            } else {
+            }
+            PostgresTls::Rustls => {
+                let mut root_store = RootCertStore::empty();
+                root_store.extend(
+                    webpki_roots::TLS_SERVER_ROOTS
+                        .iter()
+                        .cloned(),
+                );
+
+                let tls_config = ClientConfig::builder()
+                    .with_root_certificates(root_store)
+                    .with_no_client_auth();
+
+                let connector = MakeRustlsConnect::new(tls_config);
+
                 let (client, connection) =
-                    tokio_postgres::connect(&config.url, NoTls)
+                    tokio_postgres::connect(&config.url, connector)
                         .await
                         .map_err(DbError::connection)?;
 
@@ -87,7 +119,8 @@ impl PostgresConnection {
                 });
 
                 (client, handle, error_rx)
-            };
+            }
+        };
 
         Ok(Self {
             client,
@@ -131,7 +164,8 @@ impl Connection for PostgresConnection {
             .get("tls")
             .and_then(|v| v.as_str())
             .map(|v| match v.to_lowercase().as_str() {
-                "true" | "1" | "enable" | "enabled" => PostgresTls::Enabled,
+                "true" | "1" | "enable" | "enabled" | "native" | "native-tls" => PostgresTls::NativeTls,
+                "rustls" => PostgresTls::Rustls,
                 _ => PostgresTls::Disabled,
             })
             .unwrap_or_default();
