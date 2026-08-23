@@ -9,6 +9,5 @@ gerax-core = { path = "../../crates/gerax-core" }
 gerax-http = { path = "../../crates/gerax-http" }
 actix-web.workspace = true
 tokio = { version = "1", features = ["full"] }
-dotenv = "0.15"
 serde = { workspace = true }
 serde_json = { workspace = true }

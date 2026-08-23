@@ -14,8 +14,6 @@ use crate::state::AppState;
 
 #[actix_web::main]
 async fn main() -> Result<(), AppError> {
-    dotenv::dotenv().ok();
-
     let connection = Arc::new(PostgresConnection::connect().await?);
     connection.ping().await?;
 
