@@ -1,12 +1,8 @@
 use std::sync::Arc;
 
-use gerax_config::builder::ConfigBuilder;
-
 use crate::ActixHttpServer;
 
 use gerax_http::{HttpServerBuilder, Middleware, Router, ServerConfig, ServerResult};
-
-//pub use gerax_http::ServerConfig as ActixConfig;
 
 /// Builder para construção fluida de servidores HTTP com Actix Web.
 pub struct ActixHttpServerBuilder<S> {
@@ -74,24 +70,21 @@ where
     }
 
     /// Define o roteador do servidor.
-    fn route(mut self, router: Router<S>) -> Self {
-        self.router = Some(Arc::new(router));
-        self
+    fn route(self, router: Router<S>) -> Self {
+        Self::route(self, router)
     }
 
     /// Adiciona um middleware ao servidor.
-    fn middleware<M>(mut self, middleware: M) -> Self
+    fn middleware<M>(self, middleware: M) -> Self
     where
         M: Middleware<S>,
     {
-        self.middlewares.push(Arc::new(middleware));
-        self
+        Self::middleware(self, middleware)
     }
 
-    /// Aplica configuração carregada via `gerax-config`.
-    fn config(self, cfg: ConfigBuilder) -> Self {
-        let loaded = cfg.build::<ServerConfig>().unwrap_or_default();
-        self.config(loaded)
+    /// Aplica configuração HTTP já carregada e validada.
+    fn config(self, config: ServerConfig) -> Self {
+        Self::config(self, config)
     }
 
     /// Constrói a instância de servidor Actix pronta para rodar.

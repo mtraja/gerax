@@ -72,7 +72,7 @@ where
     where
         M: Middleware<State>;
     fn route(self, router: Router<State>) -> Self;
-    fn config(self, cfg: ConfigBuilder) -> Self;
+    fn config(self, config: ServerConfig) -> Self;
     fn build(self) -> ServerResult<Self::Server>;
 }
 ```

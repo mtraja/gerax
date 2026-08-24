@@ -2,7 +2,7 @@ use crate::ServerResult;
 use crate::Middleware;
 use crate::HttpServer;
 use crate::Router;
-use gerax_config::builder::ConfigBuilder;
+use crate::ServerConfig;
 
 
 
@@ -20,7 +20,7 @@ where
 
     fn route(self, router: Router<State>) -> Self;
 
-    fn config(self, cfg: ConfigBuilder) -> Self;
+    fn config(self, config: ServerConfig) -> Self;
 
     fn build(self) -> ServerResult<Self::Server>;
 }

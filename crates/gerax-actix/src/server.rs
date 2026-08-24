@@ -171,7 +171,19 @@ where
     };
 
     let method = converter_method(req.method().clone());
-    let request = Request::new(method, req.path().to_string(), body.to_vec());
+    let mut request = Request::new(method, req.path().to_string(), body.to_vec());
+
+    for (name, value) in req.headers() {
+        let value = match value.to_str() {
+            Ok(value) => value,
+            Err(_) => {
+                return HttpResponse::BadRequest().body("Invalid HTTP header value");
+            }
+        };
+
+        request.headers.insert(name.as_str(), value);
+    }
+
     let context = Context::new(data, request);
 
     let response = route.execute(context).await;

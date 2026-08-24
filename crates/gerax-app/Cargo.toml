@@ -1,0 +1,31 @@
+[package]
+name = "gerax-app"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+publish = false
+
+description = "Ponto de entrada para aplicações construídas com Gerax"
+
+[dependencies]
+gerax-http.workspace = true
+gerax-config = { workspace = true, optional = true }
+gerax-db = { workspace = true, optional = true }
+gerax-actix = { workspace = true, optional = true }
+gerax-postgres = { workspace = true, optional = true }
+gerax-mongodb = { workspace = true, optional = true }
+
+serde = { workspace = true, optional = true }
+thiserror.workspace = true
+
+[features]
+default = ["actix", "config"]
+
+actix = ["dep:gerax-actix"]
+config = ["dep:gerax-config", "dep:serde"]
+db = ["config", "dep:gerax-db"]
+postgres = ["db", "dep:gerax-postgres"]
+mongodb = ["db", "dep:gerax-mongodb"]

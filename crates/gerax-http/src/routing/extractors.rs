@@ -1,11 +1,12 @@
 use bytes::Bytes;
+
 use serde::de::DeserializeOwned;
 use std::convert::Infallible;
 use std::str::FromStr;
 use std::sync::Arc;
 
 use super::Context;
-
+use super::HeaderMap;
 /// Trait base para extrair valores do `Context<S>`.
 ///
 /// Um tipo implementa `FromContext` para declarar como é obtido a partir
@@ -300,6 +301,18 @@ where
     }
 }
 
+pub struct Headers(pub HeaderMap);
+
+impl<S> FromContext<S> for Headers {
+  type Rejection = Infallible;
+
+  fn from_context(ctx: &Context<S>) -> Result<Self, Self::Rejection> {        
+    let headers = ctx.request().headers();
+    Ok(Headers(headers.clone()))
+  }
+
+}
+
 /// Extrai o corpo bruto da requisição como `Bytes`.
 ///
 /// Útil quando você precisa acessar os dados crus sem desserialização,
@@ -359,3 +372,4 @@ impl<S> FromContext<S> for Request {
         Ok(ctx.request().clone())
     }
 }
+

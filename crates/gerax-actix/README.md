@@ -32,10 +32,10 @@ ActixHttpServerBuilder -> config/route/middleware -> build -> ActixHttpServer ->
 Builder para construção fluida de servidores HTTP com Actix Web.
 
 ```rust
-use gerax_actix::ActixHttpServerBuilder;
+use gerax_actix::{ActixHttpServerBuilder, ServerConfig};
 
 let builder = ActixHttpServerBuilder::new(shared_state)
-    .config(ActixConfig::default())
+    .config(ServerConfig::default())
     .route(router)
     .middleware(my_middleware);
 ```
@@ -43,26 +43,25 @@ let builder = ActixHttpServerBuilder::new(shared_state)
 Métodos:
 
 - `new(state: S) -> Self` — cria um novo builder a partir do estado compartilhado.
-- `from_config(state: S, config: ActixConfig) -> Self` — cria um builder com estado e configuração inicial.
-- `config(mut self, config: ActixConfig) -> Self` — aplica uma configuração de servidor ao builder.
+- `from_config(state: S, config: ServerConfig) -> Self` — cria um builder com estado e configuração inicial.
+- `config(mut self, config: ServerConfig) -> Self` — aplica uma configuração de servidor ao builder.
 - `route(mut self, router: Router<S>) -> Self` — define o roteador do servidor.
 - `middleware<M>(mut self, middleware: M) -> Self` — adiciona um middleware ao servidor (requer `M: Middleware`).
 - `build(self) -> ServerResult<ActixHttpServer<S>>` — constrói a instância de servidor Actix pronta para rodar (via trait `HttpServerBuilder`).
 
-Implementa `HttpServerBuilder<S>` de `gerax-http`:
-
-- `config(self, cfg: ConfigBuilder) -> Self` — aplica configuração carregada via `gerax-config`.
+Implementa `HttpServerBuilder<S>` de `gerax-http` com a mesma API do builder,
+incluindo `config(self, config: ServerConfig) -> Self`.
 
 ---
 
-### ActixConfig
+### ServerConfig
 
 Configuração do servidor Actix.
 
 ```rust
-use gerax_actix::ActixConfig;
+use gerax_http::ServerConfig;
 
-let config = ActixConfig {
+let config = ServerConfig {
     host: "127.0.0.1".into(),
     port: 3000,
 };
@@ -76,7 +75,7 @@ Campos:
 Implementa `Default`:
 
 ```rust
-ActixConfig::default() // host: "0.0.0.0", port: 8080
+ServerConfig::default() // host: "0.0.0.0", port: 8080
 ```
 
 Deriva: `Debug`, `Clone`, `Deserialize`.
@@ -121,7 +120,7 @@ Variações de `HttpServerError`:
 ### Servidor Básico
 
 ```rust
-use gerax_actix::{ActixHttpServerBuilder, ActixConfig};
+use gerax_actix::{ActixHttpServerBuilder, ServerConfig};
 use gerax_http::{Router, HttpMethod, routing::Handler};
 use std::sync::Arc;
 
@@ -142,7 +141,7 @@ async fn main() -> gerax_http::ServerResult<()> {
         .route(HttpMethod::Get, "/", HelloHandler);
 
     let server = ActixHttpServerBuilder::new(AppState)
-        .config(ActixConfig { host: "127.0.0.1".into(), port: 8080 })
+        .config(ServerConfig { host: "127.0.0.1".into(), port: 8080 })
         .route(router)
         .build()?;
 
@@ -153,7 +152,7 @@ async fn main() -> gerax_http::ServerResult<()> {
 ### Com gerax-config
 
 ```rust
-use gerax_actix::{ActixHttpServerBuilder, ActixConfig};
+use gerax_actix::{ActixHttpServerBuilder, ServerConfig};
 use gerax_config::Config;
 use gerax_http::{Router, HttpMethod, routing::Handler};
 use std::sync::Arc;
@@ -177,7 +176,7 @@ async fn main() -> gerax_http::ServerResult<()> {
     let config = Config::builder()
         .env()
         .toml("config.toml")?
-        .build::<ActixConfig>()?;
+        .build::<ServerConfig>()?;
 
     let server = ActixHttpServerBuilder::new(AppState)
         .config(config)
