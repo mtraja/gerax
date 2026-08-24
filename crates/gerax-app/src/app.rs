@@ -22,6 +22,16 @@ where
         }
     }
 
+    /// Cria um builder a partir de uma configuração agregada (`AppConfig`).
+    #[cfg(feature = "config")]
+    pub fn from_config(state: State, config: crate::config::AppConfig) -> Self {
+        Self {
+            state,
+            router: Router::new(),
+            server_config: config.server,
+        }
+    }
+
     /// Define todas as rotas da aplicação.
     pub fn router(mut self, router: Router<State>) -> Self {
         self.router = router;
@@ -32,6 +42,15 @@ where
     pub fn server_config(mut self, server_config: ServerConfig) -> Self {
         self.server_config = server_config;
         self
+    }
+
+    /// Aplica configuração agregada (`AppConfig`), sobrescrevendo o `server_config`.
+    #[cfg(feature = "config")]
+    pub fn config(self, config: crate::config::AppConfig) -> Self {
+        Self {
+            server_config: config.server,
+            ..self
+        }
     }
 
     /// Finaliza a composição da aplicação.
@@ -83,5 +102,23 @@ mod tests {
         assert_eq!(app.server_config.host, "0.0.0.0");
         assert_eq!(app.server_config.port, 8080);
         assert!(app.router.routes().is_empty());
+    }
+
+    #[cfg(feature = "config")]
+    #[test]
+    fn from_config_applies_server_config() {
+        let config = crate::config::AppConfig {
+            server: ServerConfig {
+                host: "127.0.0.1".into(),
+                port: 3000,
+            },
+            #[cfg(feature = "db")]
+            database: gerax_db::DatabaseConfig::default(),
+        };
+
+        let app = AppBuilder::from_config((), config).build();
+
+        assert_eq!(app.server_config.host, "127.0.0.1");
+        assert_eq!(app.server_config.port, 3000);
     }
 }

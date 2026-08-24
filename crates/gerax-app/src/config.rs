@@ -17,6 +17,16 @@ pub struct AppConfig {
     pub database: gerax_db::DatabaseConfig,
 }
 
+impl Default for AppConfig {
+    fn default() -> Self {
+        Self {
+            server: ServerConfig::default(),
+            #[cfg(feature = "db")]
+            database: gerax_db::DatabaseConfig::default(),
+        }
+    }
+}
+
 impl AppConfig {
     /// Carrega a configuração a partir das fontes registradas no builder.
     pub fn load(builder: ConfigBuilder) -> AppResult<Self> {
