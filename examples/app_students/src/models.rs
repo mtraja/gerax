@@ -2,15 +2,15 @@ use gerax_core::Entity;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Student {
+pub struct Aluno {
     pub id: Option<String>,
-    pub name: String,
+    pub nome: String,
     pub email: String,
 }
 
-impl Entity for Student {
+impl Entity for Aluno {
     fn collection_name() -> &'static str {
-        "students"
+        "alunos"
     }
 
     fn id(&self) -> Option<String> {
@@ -23,27 +23,27 @@ impl Entity for Student {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct CreateStudentInput {
-    pub name: String,
+pub struct CriarAluno {
+    pub nome: String,
     pub email: String,
 }
 
 #[derive(Debug, Deserialize)]
-pub struct UpdateStudentInput {
-    pub name: String,
+pub struct AtualizarAluno {
+    pub nome: String,
     pub email: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Teacher {
+pub struct Professor {
     pub id: Option<String>,
-    pub name: String,
+    pub nome: String,
     pub email: String,
 }
 
-impl Entity for Teacher {
+impl Entity for Professor {
     fn collection_name() -> &'static str {
-        "teachers"
+        "professores"
     }
 
     fn id(&self) -> Option<String> {
@@ -56,27 +56,27 @@ impl Entity for Teacher {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct CreateTeacherInput {
-    pub name: String,
+pub struct CriarProfessor {
+    pub nome: String,
     pub email: String,
 }
 
 #[derive(Debug, Deserialize)]
-pub struct UpdateTeacherInput {
-    pub name: String,
+pub struct AtualizarProfessor {
+    pub nome: String,
     pub email: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Class {
+pub struct Turma {
     pub id: Option<String>,
-    pub name: String,
-    pub teacher_id: String,
+    pub nome: String,
+    pub professor_id: String,
 }
 
-impl Entity for Class {
+impl Entity for Turma {
     fn collection_name() -> &'static str {
-        "classes"
+        "turmas"
     }
 
     fn id(&self) -> Option<String> {
@@ -89,27 +89,27 @@ impl Entity for Class {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct CreateClassInput {
-    pub name: String,
-    pub teacher_id: String,
+pub struct CriarTurma {
+    pub nome: String,
+    pub professor_id: String,
 }
 
 #[derive(Debug, Deserialize)]
-pub struct UpdateClassInput {
-    pub name: String,
-    pub teacher_id: String,
+pub struct AtualizarTurma {
+    pub nome: String,
+    pub professor_id: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Enrollment {
+pub struct Matricula {
     pub id: Option<String>,
-    pub student_id: String,
-    pub class_id: String,
+    pub aluno_id: String,
+    pub turma_id: String,
 }
 
-impl Entity for Enrollment {
+impl Entity for Matricula {
     fn collection_name() -> &'static str {
-        "enrollments"
+        "matriculas"
     }
 
     fn id(&self) -> Option<String> {
@@ -122,7 +122,7 @@ impl Entity for Enrollment {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct CreateEnrollmentInput {
-    pub student_id: String,
-    pub class_id: String,
+pub struct CriarMatricula {
+    pub aluno_id: String,
+    pub turma_id: String,
 }

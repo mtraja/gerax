@@ -8,7 +8,7 @@ use std::sync::Arc;
 
 use gerax_app::{ActixRuntime, App, AppError, Connection, PostgresConnection, PostgresRepository};
 
-use crate::models::{Class, Enrollment, Student, Teacher};
+use crate::models::{Aluno, Matricula, Professor, Turma};
 use crate::router::router;
 use crate::state::AppState;
 
@@ -17,16 +17,16 @@ async fn main() -> Result<(), AppError> {
     let connection = Arc::new(PostgresConnection::connect().await?);
     connection.ping().await?;
 
-    PostgresRepository::<Student>::new(connection.clone())
+    PostgresRepository::<Aluno>::new(connection.clone())
         .create_table()
         .await?;
-    PostgresRepository::<Teacher>::new(connection.clone())
+    PostgresRepository::<Professor>::new(connection.clone())
         .create_table()
         .await?;
-    PostgresRepository::<Class>::new(connection.clone())
+    PostgresRepository::<Turma>::new(connection.clone())
         .create_table()
         .await?;
-    PostgresRepository::<Enrollment>::new(connection.clone())
+    PostgresRepository::<Matricula>::new(connection.clone())
         .create_table()
         .await?;
 

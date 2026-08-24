@@ -2,22 +2,22 @@ use std::sync::Arc;
 
 use gerax_app::PostgresConnection;
 
-use crate::services::{ClassService, EnrollmentService, StudentService, TeacherService};
+use crate::services::{ServicoAluno, ServicoMatricula, ServicoProfessor, ServicoTurma};
 
 pub struct AppState {
-    pub students: Arc<StudentService>,
-    pub teachers: Arc<TeacherService>,
-    pub classes: Arc<ClassService>,
-    pub enrollments: Arc<EnrollmentService>,
+    pub alunos: Arc<ServicoAluno>,
+    pub professores: Arc<ServicoProfessor>,
+    pub turmas: Arc<ServicoTurma>,
+    pub matriculas: Arc<ServicoMatricula>,
 }
 
 impl AppState {
     pub fn new(db: Arc<PostgresConnection>) -> Self {
         Self {
-            students: Arc::new(StudentService::new(db.clone())),
-            teachers: Arc::new(TeacherService::new(db.clone())),
-            classes: Arc::new(ClassService::new(db.clone())),
-            enrollments: Arc::new(EnrollmentService::new(db)),
+            alunos: Arc::new(ServicoAluno::new(db.clone())),
+            professores: Arc::new(ServicoProfessor::new(db.clone())),
+            turmas: Arc::new(ServicoTurma::new(db.clone())),
+            matriculas: Arc::new(ServicoMatricula::new(db)),
         }
     }
 }
