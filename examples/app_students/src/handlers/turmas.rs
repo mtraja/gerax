@@ -39,3 +39,14 @@ pub async fn deletar(ctx: Context<AppState>) -> ServerResult<Response> {
     ctx.state().turmas.deletar(&id).await.map_err(db_err)?;
     json_response(&serde_json::json!({}))
 }
+
+pub async fn alunos(ctx: Context<AppState>) -> ServerResult<Response> {
+    let id = path_id(&ctx);
+    let items = ctx
+        .state()
+        .matriculas
+        .listar_alunos_por_turma(&id)
+        .await
+        .map_err(db_err)?;
+    json_response(&items)
+}

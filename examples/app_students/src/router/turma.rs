@@ -1,5 +1,5 @@
 use crate::handlers::turmas::{
-    atualizar, criar, deletar, listar, obter,
+    alunos, atualizar, criar, deletar, listar, obter,
 };
 use crate::state::AppState;
 use gerax_app::Router;
@@ -11,4 +11,5 @@ pub fn routes() -> Router<AppState> {
         .get("/turmas/:id", obter)
         .put("/turmas/:id", atualizar)
         .delete("/turmas/:id", deletar)
+        .get("/turmas/:id/alunos", alunos)
 }
