@@ -103,7 +103,7 @@ tokio-tungstenite = "0.26"
 tungstenite = "0.26"
 mongodb = "3"
 tokio-postgres = { version = "0.7", features = ["with-chrono-0_4"] }
-sqlx = { version = "0.8", default-features = false, features = ["postgres", "runtime-tokio", "macros", "json"] }
+sqlx = { version = "0.8", default-features = false, features = ["postgres", "runtime-tokio", "macros", "json", "uuid"] }
 bson = { version = "2", features = ["chrono-0_4"] }
 tokio = { version = "1", features = ["full"] }
 

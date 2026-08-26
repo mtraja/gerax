@@ -4,6 +4,7 @@ use gerax_db::{DbError, Repository};
 use serde::{Deserialize, Serialize};
 use sqlx::Row;
 use std::marker::PhantomData;
+use uuid::Uuid;
 
 use crate::postgres::PostgresConnection;
 
@@ -33,7 +34,7 @@ where
 
     pub async fn create_table(&self) -> Result<(), DbError> {
         let query = format!(
-            "CREATE TABLE IF NOT EXISTS {} (id TEXT PRIMARY KEY, data JSONB)",
+            "CREATE TABLE IF NOT EXISTS {} (id UUID PRIMARY KEY, data JSONB)",
             self.table_name()
         );
         sqlx::query(&query)
@@ -50,9 +51,11 @@ where
     T: Entity + Serialize + for<'de> Deserialize<'de> + Send + Sync + 'static,
 {
     async fn find_by_id(&self, id: &str) -> Result<Option<T>, DbError> {
+        let uuid = Uuid::parse_str(id).map_err(DbError::configuration)?;
+
         let query = format!("SELECT data FROM {} WHERE id = $1", self.table_name());
         let row = sqlx::query(&query)
-            .bind(id)
+            .bind(uuid)
             .fetch_optional(self.connection.client())
             .await
             .map_err(DbError::connection)?;
@@ -86,14 +89,8 @@ where
     }
 
     async fn insert(&self, mut entity: T) -> Result<T, DbError> {
-        let id = entity.id().unwrap_or_else(|| {
-            std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .unwrap()
-                .as_nanos()
-                .to_string()
-        });
-        entity.set_id(id.clone());
+        let uuid = Uuid::new_v4();
+        entity.set_id(uuid.to_string());
 
         let data = serde_json::to_string(&entity)
             .map_err(DbError::serialization)?;
@@ -103,7 +100,7 @@ where
             self.table_name()
         );
         let row = sqlx::query(&query)
-            .bind(&id)
+            .bind(uuid)
             .bind(&data)
             .fetch_one(self.connection.client())
             .await
@@ -119,13 +116,14 @@ where
         let id = entity
             .id()
             .ok_or_else(|| DbError::not_found("missing id"))?;
+        let uuid = Uuid::parse_str(&id).map_err(DbError::configuration)?;
         let data = serde_json::to_string(&entity)
             .map_err(DbError::serialization)?;
 
         let query = format!("UPDATE {} SET data = $1 WHERE id = $2", self.table_name());
         let rows_affected = sqlx::query(&query)
             .bind(&data)
-            .bind(&id)
+            .bind(uuid)
             .execute(self.connection.client())
             .await
             .map_err(DbError::connection)?
@@ -138,9 +136,11 @@ where
     }
 
     async fn delete(&self, id: &str) -> Result<(), DbError> {
+        let uuid = Uuid::parse_str(id).map_err(DbError::configuration)?;
+
         let query = format!("DELETE FROM {} WHERE id = $1", self.table_name());
         let rows_affected = sqlx::query(&query)
-            .bind(id)
+            .bind(uuid)
             .execute(self.connection.client())
             .await
             .map_err(DbError::connection)?

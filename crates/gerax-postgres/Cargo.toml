@@ -17,6 +17,7 @@ gerax-config.workspace = true
 gerax-db.workspace = true
 
 sqlx = { workspace = true }
+uuid = { workspace = true }
 
 serde.workspace = true
 serde_json.workspace = true
