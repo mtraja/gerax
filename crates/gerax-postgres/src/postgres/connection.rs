@@ -46,6 +46,7 @@ impl PostgresConnection {
         &self.pool
     }
 
+    #[tracing::instrument(skip_all)]
     pub async fn connect_with_config(config: PostgresConfig) -> Result<Self, DbError> {
         Self::validate(&config)?;
 
@@ -100,6 +101,7 @@ impl Connection for PostgresConnection {
         Self::connect_with_config(config).await
     }
 
+    #[tracing::instrument(skip_all)]
     async fn ping(&self) -> Result<(), DbError> {
         sqlx::query("SELECT 1")
             .execute(&self.pool)

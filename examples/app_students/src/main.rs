@@ -14,6 +14,13 @@ use crate::state::AppState;
 
 #[actix_web::main]
 async fn main() -> Result<(), AppError> {
+    let _ = tracing_subscriber::fmt()
+        .with_env_filter(
+            tracing_subscriber::EnvFilter::try_from_default_env()
+                .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("gerax_postgres=debug,app_students=info"))
+        )
+        .try_init();
+
     let connection = Arc::new(PostgresConnection::connect().await?);
     connection.ping().await?;
 
