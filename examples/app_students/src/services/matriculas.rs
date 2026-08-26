@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use gerax_app::{DbError, PostgresConnection, PostgresRepository, Repository};
 use gerax_core::Entity;
+use sqlx::Row;
 
 use crate::models::{Aluno, CriarMatricula, Matricula};
 
@@ -42,10 +43,9 @@ impl ServicoMatricula {
     pub async fn listar_alunos_por_turma(&self, turma_id: &str) -> Result<Vec<Aluno>, DbError> {
         let tabela = Matricula::collection_name();
         let query = format!("SELECT data FROM {} WHERE data->>'turma_id' = $1", tabela);
-        let rows = self
-            .db
-            .client()
-            .query(&query, &[&turma_id])
+        let rows = sqlx::query(&query)
+            .bind(turma_id)
+            .fetch_all(self.db.client())
             .await
             .map_err(DbError::connection)?;
 
@@ -53,7 +53,7 @@ impl ServicoMatricula {
         let mut alunos = Vec::new();
         let mut vistos = std::collections::HashSet::new();
         for row in rows {
-            let data: String = row.get(0);
+            let data: String = row.get("data");
             let mat: Matricula = serde_json::from_str(&data).map_err(DbError::serialization)?;
             if !vistos.insert(mat.aluno_id.clone()) {
                 continue;

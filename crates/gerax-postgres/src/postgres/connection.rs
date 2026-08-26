@@ -1,14 +1,8 @@
 use async_trait::async_trait;
 use gerax_config::Config;
 use gerax_db::{Connection, DbError};
-use postgres_native_tls::MakeTlsConnector;
-use rustls::{ClientConfig, RootCertStore};
 use serde_json::Value;
-use std::sync::Mutex;
-use tokio::sync::oneshot;
-use tokio_postgres::{Client, NoTls};
-use tokio_postgres_rustls::MakeRustlsConnect;
-use tokio::task::JoinHandle;
+use sqlx::postgres::PgPoolOptions;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum PostgresTls {
@@ -38,103 +32,35 @@ impl PostgresConfig {
     }
 }
 
+#[derive(Clone)]
 pub struct PostgresConnection {
-    client: Client,
-    _connection_handle: JoinHandle<()>,
-    error_receiver: Mutex<oneshot::Receiver<DbError>>,
+    pool: sqlx::PgPool,
 }
 
 impl PostgresConnection {
-    pub fn client(&self) -> &Client {
-        &self.client
+    pub fn client(&self) -> &sqlx::PgPool {
+        &self.pool
     }
 
-    pub fn try_connection_error(&self) -> Result<DbError, oneshot::error::TryRecvError> {
-        self.error_receiver.lock().unwrap().try_recv()
+    pub fn pool(&self) -> &sqlx::PgPool {
+        &self.pool
     }
 
     pub async fn connect_with_config(config: PostgresConfig) -> Result<Self, DbError> {
         Self::validate(&config)?;
 
-        let (client, connection_handle, error_receiver) = match config.tls {
-            PostgresTls::Disabled => {
-                let (client, connection) =
-                    tokio_postgres::connect(&config.url, NoTls)
-                        .await
-                        .map_err(DbError::connection)?;
+        let pool = PgPoolOptions::new()
+            .connect(&config.url)
+            .await
+            .map_err(DbError::connection)?;
 
-                let (error_tx, error_rx) = oneshot::channel();
-                let handle = tokio::spawn(async move {
-                    if let Err(e) = connection.await {
-                        let _ = error_tx.send(DbError::connection(e));
-                    }
-                });
-
-                (client, handle, error_rx)
-            }
-            PostgresTls::NativeTls => {
-                let connector = MakeTlsConnector::new(
-                    native_tls::TlsConnector::new()
-                        .map_err(DbError::connection)?,
-                );
-
-                let (client, connection) =
-                    tokio_postgres::connect(&config.url, connector)
-                        .await
-                        .map_err(DbError::connection)?;
-
-                let (error_tx, error_rx) = oneshot::channel();
-                let handle = tokio::spawn(async move {
-                    if let Err(e) = connection.await {
-                        let _ = error_tx.send(DbError::connection(e));
-                    }
-                });
-
-                (client, handle, error_rx)
-            }
-            PostgresTls::Rustls => {
-                let mut root_store = RootCertStore::empty();
-                root_store.extend(
-                    webpki_roots::TLS_SERVER_ROOTS
-                        .iter()
-                        .cloned(),
-                );
-
-                let tls_config = ClientConfig::builder()
-                    .with_root_certificates(root_store)
-                    .with_no_client_auth();
-
-                let connector = MakeRustlsConnect::new(tls_config);
-
-                let (client, connection) =
-                    tokio_postgres::connect(&config.url, connector)
-                        .await
-                        .map_err(DbError::connection)?;
-
-                let (error_tx, error_rx) = oneshot::channel();
-                let handle = tokio::spawn(async move {
-                    if let Err(e) = connection.await {
-                        let _ = error_tx.send(DbError::connection(e));
-                    }
-                });
-
-                (client, handle, error_rx)
-            }
-        };
-
-        Ok(Self {
-            client,
-            _connection_handle: connection_handle,
-            error_receiver: Mutex::new(error_receiver),
-        })
+        Ok(Self { pool })
     }
 
     fn validate(config: &PostgresConfig) -> Result<(), DbError> {
         let trimmed = config.url.trim();
         if trimmed.is_empty() {
-            return Err(DbError::configuration(
-                "postgres url cannot be empty",
-            ));
+            return Err(DbError::configuration("postgres url cannot be empty"));
         }
         Ok(())
     }
@@ -175,7 +101,8 @@ impl Connection for PostgresConnection {
     }
 
     async fn ping(&self) -> Result<(), DbError> {
-        self.client.execute("SELECT 1", &[])
+        sqlx::query("SELECT 1")
+            .execute(&self.pool)
             .await
             .map_err(DbError::connection)?;
         Ok(())

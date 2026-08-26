@@ -16,12 +16,8 @@ gerax-core.workspace = true
 gerax-config.workspace = true
 gerax-db.workspace = true
 
-tokio-postgres = { workspace = true }
-postgres-native-tls = "0.5"
-native-tls = "0.2"
-tokio-postgres-rustls = { version = "0.14", default-features = false, features = ["webpki-roots"] }
-rustls = { version = "0.23", default-features = false, features = ["ring"] }
-webpki-roots = "1.0"
+sqlx = { workspace = true }
+
 serde.workspace = true
 serde_json.workspace = true
 
