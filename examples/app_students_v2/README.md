@@ -52,8 +52,8 @@ flowchart TD
     D2 --> D2a[postgres]
     D2a --> D2a1[mod.rs]
 
-    E --> E1[AppState]
-    E --> E2[run()]
+    E --> E1[app_state]
+    E --> E2[run]
 ```
 
 ## Arquitetura
@@ -61,27 +61,27 @@ flowchart TD
 ```mermaid
 flowchart LR
     subgraph HTTP["Adaptador de entrada"]
-        A[Routes / Handlers]
+        A[Routes Handlers]
         B[DTOs]
     end
 
     subgraph APP["Aplicação"]
         C[Use Cases]
-        D[Portas de entrada]
-        E[Portas de saída]
-        F[Comandos / Consultas]
+        D[Portas entrada]
+        E[Portas saída]
+        F[Comandos Consultas]
     end
 
     subgraph DOMAIN["Domínio"]
         G[Entidades]
-        H[Erros de domínio]
-        I[Regras de negócio]
+        H[Erros domínio]
+        I[Regras negócio]
     end
 
-    subgraph OUT["Adaptador de saída"]
+    subgraph OUT["Adaptador saída"]
         J[PostgreSQL]
         K[Gerax Postgres]
-        L[Entidades de persistência]
+        L[Entidades persistência]
     end
 
     A --> B
