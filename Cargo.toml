@@ -35,6 +35,7 @@ members = [
     "examples/myapp",
     "examples/app_postgres",
     "examples/app_students",
+    "examples/app_students_v2",
     "examples/app-mongo",
     "examples/graphql-demo",
     "examples/actix-test",

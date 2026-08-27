@@ -1,0 +1,22 @@
+[package]
+name = "app_students_v2"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+async-trait.workspace = true
+gerax-app = { path = "../../crates/gerax-app", features = ["actix", "postgres"] }
+gerax-core.workspace = true
+gerax-db.workspace = true
+gerax-http.workspace = true
+gerax-postgres.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sqlx.workspace = true
+thiserror.workspace = true
+tracing-subscriber.workspace = true
+actix-web.workspace = true
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
+

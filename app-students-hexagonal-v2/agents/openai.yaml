@@ -1,0 +1,4 @@
+interface:
+  display_name: "App Students Hexagonal V2"
+  short_description: "Arquitetura hexagonal para app_students com Gerax"
+  default_prompt: "Implemente a versão 2 da app_students com arquitetura hexagonal e os crates Gerax."
