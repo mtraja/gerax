@@ -7,6 +7,7 @@ mod state;
 use std::sync::Arc;
 
 use gerax_app::{ActixRuntime, App, AppError, Connection, PostgresConnection, PostgresRepository};
+use gerax_http::CorsConfig;
 
 use crate::models::{Aluno, Matricula, Professor, Turma};
 use crate::router::router;
@@ -39,8 +40,12 @@ async fn main() -> Result<(), AppError> {
 
     let state = AppState::new(connection);
 
+    let cors = CorsConfig::new()
+    .allowed_origin("http://localhost:5173");
+
     App::builder(state)
         .router(router())
+        .cors(cors)
         .build()
         .run::<ActixRuntime>()
         .await

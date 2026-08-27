@@ -1,4 +1,4 @@
-use gerax_http::{HttpServer, Router, ServerConfig};
+use gerax_http::{HttpServer, Router, ServerConfig, CorsConfig};
 
 use crate::{AppResult, HttpRuntime};
 
@@ -7,6 +7,7 @@ pub struct AppBuilder<State> {
     state: State,
     router: Router<State>,
     server_config: ServerConfig,
+    cors_config: Option<CorsConfig>,
 }
 
 impl<State> AppBuilder<State>
@@ -19,6 +20,7 @@ where
             state,
             router: Router::new(),
             server_config: ServerConfig::default(),
+            cors_config: None,
         }
     }
 
@@ -29,6 +31,7 @@ where
             state,
             router: Router::new(),
             server_config: config.server,
+            cors_config: None,
         }
     }
 
@@ -41,6 +44,12 @@ where
     /// Define a configuração de bind do servidor HTTP.
     pub fn server_config(mut self, server_config: ServerConfig) -> Self {
         self.server_config = server_config;
+        self
+    }
+
+    /// Habilita CORS com a configuração informada.
+    pub fn cors(mut self, cors_config: CorsConfig) -> Self {
+        self.cors_config = Some(cors_config);
         self
     }
 
@@ -59,6 +68,7 @@ where
             state: self.state,
             router: self.router,
             server_config: self.server_config,
+            cors_config: self.cors_config,
         }
     }
 }
@@ -68,6 +78,7 @@ pub struct App<State> {
     state: State,
     router: Router<State>,
     server_config: ServerConfig,
+    cors_config: Option<CorsConfig>,
 }
 
 impl<State> App<State>
@@ -84,7 +95,7 @@ where
     where
         Runtime: HttpRuntime<State>,
     {
-        let server = Runtime::build(self.state, self.router, self.server_config)?;
+        let server = Runtime::build(self.state, self.router, self.server_config, self.cors_config)?;
         server.run().await?;
 
         Ok(())
@@ -102,6 +113,7 @@ mod tests {
         assert_eq!(app.server_config.host, "0.0.0.0");
         assert_eq!(app.server_config.port, 8080);
         assert!(app.router.routes().is_empty());
+        assert!(app.cors_config.is_none());
     }
 
     #[cfg(feature = "config")]

@@ -11,10 +11,9 @@ pub fn json_response(value: &impl Serialize) -> ServerResult<Response> {
     Ok(Response::ok(json))
 }
 
-pub fn path_id<S>(ctx: &Context<S>) -> String {
+pub fn path_id<S>(ctx: &Context<S>) -> Result<String, HttpServerError> {
     ctx.params()
         .get("id")
         .ok_or_else(|| HttpServerError::HandlerError("identificador ausente".into()))
-        .unwrap()
-        .to_string()
+        .map(str::to_owned)
 }

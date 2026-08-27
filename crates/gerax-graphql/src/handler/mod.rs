@@ -62,7 +62,11 @@ impl<State> GraphqlHandler<State> {
                 };
                 let body = serde_json::to_vec(&error_response)
                     .map_err(|e| HttpServerError::RuntimeError(e.to_string()))?;
-                Ok(Response { status: 400, body })
+                Ok(Response {
+                    status: 400,
+                    body,
+                    ..Default::default()
+                })
             }
         }
     }

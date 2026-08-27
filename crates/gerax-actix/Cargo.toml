@@ -17,6 +17,7 @@ gerax-config.workspace = true
 gerax-http.workspace = true
 
 actix-web.workspace = true
+actix-cors.workspace = true
 serde.workspace = true
 async-trait.workspace = true
 thiserror.workspace = true

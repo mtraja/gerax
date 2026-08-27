@@ -12,7 +12,7 @@ pub async fn listar(ctx: Context<AppState>) -> ServerResult<Response> {
 }
 
 pub async fn obter(ctx: Context<AppState>) -> ServerResult<Response> {
-    let id = path_id(&ctx);
+    let id = path_id(&ctx)?;
     match ctx.state().matriculas.obter(&id).await.map_err(db_err)? {
         Some(item) => json_response(&item),
         None => Ok(Response::not_found()),
@@ -20,14 +20,14 @@ pub async fn obter(ctx: Context<AppState>) -> ServerResult<Response> {
 }
 
 pub async fn criar(ctx: Context<AppState>) -> ServerResult<Response> {
-    let input: CriarMatricula =
-        serde_json::from_slice(&ctx.request().body).map_err(|e| db_err(DbError::serialization(e)))?;
+    let input: CriarMatricula = serde_json::from_slice(&ctx.request().body)
+        .map_err(|e| db_err(DbError::serialization(e)))?;
     let item = ctx.state().matriculas.criar(input).await.map_err(db_err)?;
     json_response(&item)
 }
 
 pub async fn deletar(ctx: Context<AppState>) -> ServerResult<Response> {
-    let id = path_id(&ctx);
+    let id = path_id(&ctx)?;
     ctx.state().matriculas.deletar(&id).await.map_err(db_err)?;
     json_response(&serde_json::json!({}))
 }

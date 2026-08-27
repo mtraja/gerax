@@ -1,5 +1,5 @@
 use gerax_actix::{ActixHttpServer, ActixHttpServerBuilder};
-use gerax_http::{HttpServerBuilder, Router, ServerConfig, ServerResult};
+use gerax_http::{HttpServerBuilder, Router, ServerConfig, ServerResult, CorsConfig};
 
 use super::HttpRuntime;
 
@@ -17,9 +17,15 @@ where
         state: State,
         router: Router<State>,
         config: ServerConfig,
+        cors_config: Option<CorsConfig>,
     ) -> ServerResult<Self::Server> {
-        ActixHttpServerBuilder::from_config(state, config)
-            .route(router)
-            .build()
+        let mut builder = ActixHttpServerBuilder::from_config(state, config)
+            .route(router);
+
+        if let Some(cors_config) = cors_config {
+            builder = builder.cors(cors_config);
+        }
+
+        builder.build()
     }
 }

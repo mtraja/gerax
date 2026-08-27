@@ -89,6 +89,7 @@ gerax-codec = { path = "crates/gerax-codec" }
 gerax-rpc = { path = "crates/gerax-rpc" }
 
 actix-web = { version = "4", features = ["macros"] }
+actix-cors = "0.7"
 axum = { version = "0.8", features = ["macros"] }
 poem = { version = "3" }
 async-trait = "0.1.91"

@@ -100,6 +100,7 @@ where
             Ok(Response {
                 status: Self::map_status(response.status),
                 body: message.into_bytes(),
+                ..Default::default()
             })
         }
     }

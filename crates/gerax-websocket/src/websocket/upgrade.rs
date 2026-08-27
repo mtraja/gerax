@@ -52,6 +52,7 @@ where
             return Ok(Response {
                 status: 400,
                 body: b"Bad Request: Expected WebSocket upgrade".to_vec(),
+                ..Default::default()
             });
         }
 
@@ -62,6 +63,7 @@ where
         Ok(Response {
             status: 101,
             body: Vec::new(),
+            ..Default::default()
         })
     }
 }

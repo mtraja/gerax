@@ -12,7 +12,7 @@ pub struct DatabaseConfig {
 impl Default for DatabaseConfig {
     fn default() -> Self {
         Self {
-            url: "postgresql://user:password@host:port/name_db".to_string(),
+            url: "postgresql://admin:admin@host:5432/demo_db".to_string(),
             database: "demo_db".to_string(),
         }
     }

@@ -23,6 +23,7 @@ async fn create_user<S>(Json(payload): Json<CreateUserInput>, State(_state): Sta
     Ok(Response {
         status: 201,
         body,
+        ..Default::default()
     })
 }
 

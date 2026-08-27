@@ -73,6 +73,7 @@ async fn create_user(ctx: Context<AppState>) -> ServerResult<Response> {
     Ok(Response {
         status: 201,
         body,
+        ..Default::default()
     })
 }
 

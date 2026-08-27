@@ -76,6 +76,7 @@ where
     Ok(Response {
         status: 200,
         body,
+        ..Default::default()
     })
 }
 
@@ -140,6 +141,7 @@ where
     Ok(Response {
         status: 200,
         body,
+        ..Default::default()
     })
 }
 

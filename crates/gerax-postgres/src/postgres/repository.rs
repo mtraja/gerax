@@ -81,8 +81,8 @@ where
 
         match row {
             Some(row) => {
-                let data: String = row.get("data");
-                let entity = serde_json::from_str(&data)
+                let data: serde_json::Value = row.get("data");
+                let entity = serde_json::from_value(data)
                     .map_err(DbError::serialization)?;
                 Ok(Some(entity))
             }
@@ -103,8 +103,8 @@ where
 
         let mut entities = Vec::with_capacity(rows.len());
         for row in rows {
-            let data: String = row.get("data");
-            let entity = serde_json::from_str(&data)
+            let data: serde_json::Value = row.get("data");
+            let entity = serde_json::from_value(data)
                 .map_err(DbError::serialization)?;
             entities.push(entity);
         }
@@ -121,7 +121,7 @@ where
             .map_err(DbError::serialization)?;
 
         let query = format!(
-            "INSERT INTO {} (id, data) VALUES ($1, $2) RETURNING data",
+            "INSERT INTO {} (id, data) VALUES ($1, $2::JSONB) RETURNING data",
             self.table_name()
         );
         let row = sqlx::query(&query)
@@ -133,8 +133,8 @@ where
 
         log_slow("insert", self.table_name(), start);
 
-        let returned_data: String = row.get("data");
-        let returned_entity = serde_json::from_str(&returned_data)
+        let returned_data: serde_json::Value = row.get("data");
+        let returned_entity = serde_json::from_value(returned_data)
             .map_err(DbError::serialization)?;
         Ok(returned_entity)
     }
@@ -149,7 +149,7 @@ where
         let data = serde_json::to_string(&entity)
             .map_err(DbError::serialization)?;
 
-        let query = format!("UPDATE {} SET data = $1 WHERE id = $2", self.table_name());
+        let query = format!("UPDATE {} SET data = $1::JSONB WHERE id = $2", self.table_name());
         let rows_affected = sqlx::query(&query)
             .bind(&data)
             .bind(uuid)

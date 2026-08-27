@@ -24,6 +24,10 @@ impl HeaderMap {
         self.values
             .insert(name.as_ref().to_ascii_lowercase(), value.into())
     }
+
+    pub fn iter(&self) -> impl Iterator<Item = (&String, &String)> {
+        self.values.iter()
+    }
 }
 
 impl Default for HeaderMap {

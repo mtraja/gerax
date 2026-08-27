@@ -240,14 +240,21 @@ impl Request {
 ```rust
 pub struct Response {
     pub status: u16,
+    pub headers: HeaderMap,
     pub body: Vec<u8>,
 }
 
 impl Response {
     pub fn ok(body: impl Into<Vec<u8>>) -> Self;
+    pub fn json<T: Serialize>(body: T) -> Result<Self, HttpServerError>;
     pub fn not_found() -> Self;
 }
 ```
+
+- `Response::ok(body)` — cria resposta 200 com corpo raw.
+- `Response::json(body)` — serializa `body` para JSON, define `Content-Type: application/json` e retorna `200`.
+- `Response::not_found()` — resposta 404 padrão.
+- `headers` — mapa de headers HTTP que será propagado para o adaptador de servidor (ex.: Actix, Axum).
 
 ### Context
 
