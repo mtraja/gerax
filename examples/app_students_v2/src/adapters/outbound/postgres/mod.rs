@@ -7,7 +7,7 @@ use gerax_postgres::PostgresRepository;
 use sqlx::Row;
 
 use crate::application::errors::ApplicationError;
-use crate::application::ports::{
+use crate::application::ports::outbound::{
     AlunoPorTurmaQuery, AlunoRepository, MatriculaRepository, ProfessorRepository, TurmaRepository,
 };
 use crate::domain::{Aluno, Matricula, Professor, Turma};

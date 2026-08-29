@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use crate::application::errors::ApplicationError;
-use crate::application::ports::aluno::AlunoRepository;
+use crate::application::ports::outbound::aluno::AlunoRepository;
 use crate::domain::Aluno;
 #[allow(unused_imports)]
 use async_trait::async_trait;

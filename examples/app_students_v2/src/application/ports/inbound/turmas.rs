@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use crate::application::errors::ApplicationError;
-use crate::application::ports::turma::TurmaRepository;
+use crate::application::ports::outbound::turma::TurmaRepository;
 use crate::domain::Turma;
 
 #[derive(Debug, Clone)]

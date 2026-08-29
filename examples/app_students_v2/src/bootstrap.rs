@@ -8,10 +8,10 @@ use crate::adapters::outbound::postgres::{
     PostgresAlunoPorTurmaQuery, PostgresAlunoRepository, PostgresMatriculaRepository,
     PostgresProfessorRepository, PostgresTurmaRepository,
 };
-use crate::application::use_cases::alunos::AlunoUseCases;
-use crate::application::use_cases::matriculas::MatriculaUseCases;
-use crate::application::use_cases::professores::ProfessorUseCases;
-use crate::application::use_cases::turmas::TurmaUseCases;
+use crate::application::ports::inbound::alunos::AlunoUseCases;
+use crate::application::ports::inbound::matriculas::MatriculaUseCases;
+use crate::application::ports::inbound::professores::ProfessorUseCases;
+use crate::application::ports::inbound::turmas::TurmaUseCases;
 
 pub struct AppState {
     pub alunos: Arc<AlunoUseCases<PostgresAlunoRepository>>,

@@ -1,10 +1,10 @@
 use std::sync::Arc;
 
 use crate::application::errors::ApplicationError;
-use crate::application::ports::aluno::AlunoRepository;
-use crate::application::ports::aluno_por_turma::AlunoPorTurmaQuery;
-use crate::application::ports::matricula::MatriculaRepository;
-use crate::application::ports::turma::TurmaRepository;
+use crate::application::ports::outbound::aluno::AlunoRepository;
+use crate::application::ports::outbound::aluno_por_turma::AlunoPorTurmaQuery;
+use crate::application::ports::outbound::matricula::MatriculaRepository;
+use crate::application::ports::outbound::turma::TurmaRepository;
 use crate::domain::{Aluno, Matricula};
 
 #[derive(Debug, Clone)]

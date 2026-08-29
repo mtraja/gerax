@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use crate::application::errors::ApplicationError;
-use crate::application::ports::professor::ProfessorRepository;
+use crate::application::ports::outbound::professor::ProfessorRepository;
 use crate::domain::Professor;
 #[allow(unused_imports)]
 use async_trait::async_trait;
