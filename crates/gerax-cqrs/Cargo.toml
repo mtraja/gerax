@@ -1,0 +1,30 @@
+[package]
+name = "gerax-cqrs"
+
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+description = "CQRS para o Gerax"
+
+[dependencies]
+async-trait.workspace = true
+thiserror.workspace = true
+gerax-es = { path = "../gerax-es", optional = true }
+
+[features]
+default = []
+event-sourcing = ["dep:gerax-es"]
+
+[dev-dependencies]
+tokio.workspace = true
+gerax-macros = { path = "../gerax-macros" }
+serde = { workspace = true, features = ["derive"] }
+
+[[example]]
+name = "command_handler_es"
+required-features = ["event-sourcing"]

@@ -1013,6 +1013,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "cqrs-demo"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "gerax-cqrs",
+ "gerax-macros",
+ "tokio",
+]
+
+[[package]]
 name = "crc"
 version = "3.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1822,6 +1832,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "gerax-cqrs"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "gerax-es",
+ "gerax-macros",
+ "serde",
+ "thiserror 2.0.18",
+ "tokio",
+]
+
+[[package]]
 name = "gerax-db"
 version = "0.1.0"
 dependencies = [
@@ -1831,6 +1853,19 @@ dependencies = [
  "serde",
  "thiserror 2.0.18",
  "tokio",
+]
+
+[[package]]
+name = "gerax-es"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "chrono",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
+ "tokio",
+ "uuid",
 ]
 
 [[package]]

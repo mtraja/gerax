@@ -1,0 +1,10 @@
+[package]
+name = "cqrs-demo"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+async-trait.workspace = true
+gerax-cqrs = { path = "../../crates/gerax-cqrs" }
+gerax-macros = { path = "../../crates/gerax-macros" }
+tokio = { version = "1", features = ["full"] }

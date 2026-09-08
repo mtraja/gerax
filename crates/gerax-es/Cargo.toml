@@ -1,0 +1,23 @@
+[package]
+name = "gerax-es"
+
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+description = "Event Sourcing para o Gerax"
+
+[dependencies]
+async-trait.workspace = true
+chrono = { workspace = true, features = ["serde"] }
+serde.workspace = true
+serde_json.workspace = true
+uuid.workspace = true
+thiserror.workspace = true
+
+[dev-dependencies]
+tokio.workspace = true

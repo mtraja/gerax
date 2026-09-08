@@ -1,19 +1,23 @@
 use proc_macro::TokenStream;
 use proc_macro2::TokenStream as TokenStream2;
 use quote::quote;
-use syn::{parse_macro_input, DeriveInput, Error, ItemFn, Pat};
 use syn::spanned::Spanned;
+use syn::{DeriveInput, Error, ItemFn, Pat, parse_macro_input};
 
 #[proc_macro_derive(Entity, attributes(entity))]
 pub fn entity_derive(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
-    expand_entity(&input).unwrap_or_else(|e| e.to_compile_error().into()).into()
+    expand_entity(&input)
+        .unwrap_or_else(|e| e.to_compile_error().into())
+        .into()
 }
 
 #[proc_macro_attribute]
 pub fn handler(_attr: TokenStream, item: TokenStream) -> TokenStream {
     let input = parse_macro_input!(item as ItemFn);
-    expand_handler(&input).unwrap_or_else(|e| e.to_compile_error().into()).into()
+    expand_handler(&input)
+        .unwrap_or_else(|e| e.to_compile_error().into())
+        .into()
 }
 
 fn expand_handler(input: &ItemFn) -> Result<TokenStream2, Error> {
@@ -53,9 +57,8 @@ fn expand_handler(input: &ItemFn) -> Result<TokenStream2, Error> {
         }
     }
 
-    let state_type = state_type.ok_or_else(|| {
-        Error::new_spanned(input, "handler must have a `State<T>` parameter")
-    })?;
+    let state_type = state_type
+        .ok_or_else(|| Error::new_spanned(input, "handler must have a `State<T>` parameter"))?;
 
     let is_state_generic = if let syn::Type::Path(type_path) = &state_type {
         if let Some(seg) = type_path.path.segments.last() {
@@ -90,7 +93,10 @@ fn expand_handler(input: &ItemFn) -> Result<TokenStream2, Error> {
         }
     }
 
-    let wrapper_name = syn::Ident::new(&format!("{}Handler", to_upper_camel_case(&func_name.to_string())), func_name.span());
+    let wrapper_name = syn::Ident::new(
+        &format!("{}Handler", to_upper_camel_case(&func_name.to_string())),
+        func_name.span(),
+    );
 
     let wrapper_impl = if is_state_generic {
         quote! {
@@ -179,7 +185,7 @@ fn expand_entity(input: &DeriveInput) -> Result<TokenStream2, Error> {
             return Err(Error::new_spanned(
                 input,
                 "Entity derive macro can only be applied to structs",
-            ))
+            ));
         }
     };
 
@@ -189,7 +195,7 @@ fn expand_entity(input: &DeriveInput) -> Result<TokenStream2, Error> {
             return Err(Error::new_spanned(
                 input,
                 "Entity derive macro can only be applied to structs with named fields",
-            ))
+            ));
         }
     };
 
@@ -212,7 +218,12 @@ fn expand_entity(input: &DeriveInput) -> Result<TokenStream2, Error> {
     let id_field = fields
         .iter()
         .find(|f| f.ident.as_ref().map(|i| i == "id").unwrap_or(false))
-        .ok_or_else(|| Error::new_spanned(input, "struct must have an `id` field of type `Option<String>`"))?;
+        .ok_or_else(|| {
+            Error::new_spanned(
+                input,
+                "struct must have an `id` field of type `Option<String>`",
+            )
+        })?;
 
     let id_ty = &id_field.ty;
     let is_option_string = match id_ty {
@@ -268,10 +279,121 @@ fn expand_entity(input: &DeriveInput) -> Result<TokenStream2, Error> {
     Ok(expanded)
 }
 
+fn to_snake_case(s: &str) -> String {
+    let mut out = String::new();
+    for (i, ch) in s.chars().enumerate() {
+        if ch.is_ascii_uppercase() {
+            if i > 0 {
+                out.push('_');
+            }
+            out.push(ch.to_ascii_lowercase());
+        } else {
+            out.push(ch);
+        }
+    }
+    out
+}
+
+fn parse_output_attr(input: &DeriveInput, attr_name: &str) -> Result<syn::Type, Error> {
+    let mut output_ty: Option<syn::Type> = None;
+    for attr in &input.attrs {
+        if attr.path().is_ident(attr_name) {
+            attr.parse_nested_meta(|meta| {
+                if meta.path.is_ident("output") {
+                    let value = meta.value()?;
+                    let ty: syn::Type = value.parse()?;
+                    output_ty = Some(ty);
+                    Ok(())
+                } else {
+                    Err(meta.error(format!("unknown attribute `{attr_name}`")))
+                }
+            })?;
+        }
+    }
+    output_ty.ok_or_else(|| {
+        Error::new_spanned(
+            input,
+            format!("missing `#[{attr_name}(output = ...)]` attribute"),
+        )
+    })
+}
+
+#[proc_macro_derive(Command, attributes(command))]
+pub fn command_derive(input: TokenStream) -> TokenStream {
+    let input = parse_macro_input!(input as DeriveInput);
+    expand_command(&input)
+        .unwrap_or_else(|e| e.to_compile_error())
+        .into()
+}
+
+fn expand_command(input: &DeriveInput) -> Result<TokenStream2, Error> {
+    let name = &input.ident;
+    let generics = &input.generics;
+    let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
+    let output_ty = parse_output_attr(input, "command")?;
+    let name_lit = syn::LitStr::new(&name.to_string(), name.span());
+
+    Ok(quote! {
+        impl #impl_generics ::gerax_cqrs::Message for #name #ty_generics #where_clause {
+            type Output = #output_ty;
+        }
+
+        impl #impl_generics ::gerax_cqrs::Command for #name #ty_generics #where_clause {}
+
+        impl #impl_generics ::gerax_cqrs::CommandMetadata for #name #ty_generics #where_clause {
+            const NAME: &'static str = #name_lit;
+        }
+    })
+}
+
+#[proc_macro_derive(Query, attributes(query))]
+pub fn query_derive(input: TokenStream) -> TokenStream {
+    let input = parse_macro_input!(input as DeriveInput);
+    expand_query(&input)
+        .unwrap_or_else(|e| e.to_compile_error())
+        .into()
+}
+
+fn expand_query(input: &DeriveInput) -> Result<TokenStream2, Error> {
+    let name = &input.ident;
+    let generics = &input.generics;
+    let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
+    let output_ty = parse_output_attr(input, "query")?;
+    let name_lit = syn::LitStr::new(&name.to_string(), name.span());
+
+    Ok(quote! {
+        impl #impl_generics ::gerax_cqrs::Message for #name #ty_generics #where_clause {
+            type Output = #output_ty;
+        }
+
+        impl #impl_generics ::gerax_cqrs::Query for #name #ty_generics #where_clause {}
+
+        impl #impl_generics ::gerax_cqrs::QueryMetadata for #name #ty_generics #where_clause {
+            const NAME: &'static str = #name_lit;
+        }
+    })
+}
+
+fn to_upper_camel_case(s: &str) -> String {
+    let mut out = String::new();
+    let mut capitalize = true;
+    for ch in s.chars() {
+        if ch == '_' {
+            capitalize = true;
+        } else if capitalize {
+            out.push(ch.to_ascii_uppercase());
+            capitalize = false;
+        } else {
+            out.push(ch);
+        }
+    }
+    out
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use syn::{parse_quote, DeriveInput};
+    use syn::{DeriveInput, parse_quote};
 
     #[test]
     fn derive_entity_on_non_struct_fails() {
@@ -304,7 +426,10 @@ mod tests {
             }
         };
         let err = expand_entity(&input).unwrap_err();
-        assert!(err.to_string().contains("`id` field must be of type `Option<String>`"));
+        assert!(
+            err.to_string()
+                .contains("`id` field must be of type `Option<String>`")
+        );
     }
 
     #[test]
@@ -337,35 +462,82 @@ mod tests {
         assert!(output.contains("user_profiles"));
         assert!(output.contains("fn collection_name"));
     }
-}
 
-fn to_snake_case(s: &str) -> String {
-    let mut out = String::new();
-    for (i, ch) in s.chars().enumerate() {
-        if ch.is_ascii_uppercase() {
-            if i > 0 {
-                out.push('_');
+    #[test]
+    fn derive_command_generates_message_command_and_metadata() {
+        let input: DeriveInput = parse_quote! {
+            #[command(output = Aluno)]
+            struct CreateAluno {
+                pub nome: String,
             }
-            out.push(ch.to_ascii_lowercase());
-        } else {
-            out.push(ch);
-        }
+        };
+        let tokens = expand_command(&input).unwrap();
+        let output = tokens.to_string();
+        assert!(output.contains("type Output = Aluno"));
+        assert!(output.contains(":: gerax_cqrs :: Command"));
+        assert!(output.contains(":: gerax_cqrs :: CommandMetadata"));
+        assert!(output.contains("CreateAluno"));
     }
-    out
-}
 
-fn to_upper_camel_case(s: &str) -> String {
-    let mut out = String::new();
-    let mut capitalize = true;
-    for ch in s.chars() {
-        if ch == '_' {
-            capitalize = true;
-        } else if capitalize {
-            out.push(ch.to_ascii_uppercase());
-            capitalize = false;
-        } else {
-            out.push(ch);
-        }
+    #[test]
+    fn derive_command_missing_output_attr_fails() {
+        let input: DeriveInput = parse_quote! {
+            struct CreateAluno {
+                pub nome: String,
+            }
+        };
+        let err = expand_command(&input).unwrap_err();
+        assert!(err.to_string().contains("missing"));
     }
-    out
+
+    #[test]
+    fn derive_command_complex_output_type() {
+        let input: DeriveInput = parse_quote! {
+            #[command(output = Vec<Aluno>)]
+            struct ListAlunos;
+        };
+        let tokens = expand_command(&input).unwrap();
+        let output = tokens.to_string();
+        assert!(output.contains("Vec < Aluno >"));
+    }
+
+    #[test]
+    fn derive_query_generates_message_query_and_metadata() {
+        let input: DeriveInput = parse_quote! {
+            #[query(output = Option<Aluno>)]
+            struct GetAluno {
+                pub id: u64,
+            }
+        };
+        let tokens = expand_query(&input).unwrap();
+        let output = tokens.to_string();
+        assert!(output.contains("type Output = Option < Aluno >"));
+        assert!(output.contains(":: gerax_cqrs :: Query"));
+        assert!(output.contains(":: gerax_cqrs :: QueryMetadata"));
+        assert!(output.contains("GetAluno"));
+    }
+
+    #[test]
+    fn derive_query_complex_output_type() {
+        let input: DeriveInput = parse_quote! {
+            #[query(output = Result<Aluno, String>)]
+            struct GetAlunoResult {
+                pub id: u64,
+            }
+        };
+        let tokens = expand_query(&input).unwrap();
+        let output = tokens.to_string();
+        assert!(output.contains("Result < Aluno , String >"));
+    }
+
+    #[test]
+    fn derive_query_nested_output_type() {
+        let input: DeriveInput = parse_quote! {
+            #[query(output = Option<Vec<Aluno>>)]
+            struct ListAlunosOption;
+        };
+        let tokens = expand_query(&input).unwrap();
+        let output = tokens.to_string();
+        assert!(output.contains("Option < Vec < Aluno > >"));
+    }
 }

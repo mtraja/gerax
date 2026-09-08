@@ -30,6 +30,8 @@ members = [
     "crates/gerax-openapi",
     "crates/gerax-codec",
     "crates/gerax-rpc",
+    "crates/gerax-cqrs",
+    "crates/gerax-es",
 
 
     "examples/myapp",
@@ -42,6 +44,7 @@ members = [
     "examples/graphql-test",
     "examples/actix-dep-test",
     "examples/graphql-build-test",
+    "examples/cqrs-demo",
 ]
 
 [workspace.package]
@@ -88,6 +91,8 @@ gerax-websocket = { path = "crates/gerax-websocket" }
 gerax-openapi = { path = "crates/gerax-openapi" }
 gerax-codec = { path = "crates/gerax-codec" }
 gerax-rpc = { path = "crates/gerax-rpc" }
+gerax-cqrs = { path = "crates/gerax-cqrs" }
+gerax-es = { path = "crates/gerax-es" }
 
 actix-web = { version = "4", features = ["macros"] }
 actix-cors = "0.7"
