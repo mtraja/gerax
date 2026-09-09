@@ -94,6 +94,27 @@
 //!
 //! Exemplo executável: `crates/gerax-cqrs/examples/command_handler_es.rs`
 //! (`cargo run -p gerax-cqrs --example command_handler_es --features event-sourcing`).
+//!
+//! ## Adapters de persistência (opcionalais)
+//!
+//! Por padrão `gerax-es` vem apenas com [`InMemoryEventStore`]. Para
+//! persistência real, use os adapters optionais:
+//!
+//! - `postgres` → [`adapters::postgres::PostgresEventStore`](adapters::postgres/struct.PostgresEventStore.html)
+//!   (`cargo build --features postgres`)
+//! - `mongodb` → [`adapters::mongodb::MongoDbEventStore`](adapters::mongodb/struct.MongoDbEventStore.html)
+//!   (`cargo build --features mongodb`)
+//!
+//! ```text
+//! gerax-es
+//!   │
+//!   ▼
+//! EventStore (porta)
+//!   │
+//!   ├── InMemoryEventStore        (sempre disponível)
+//!   ├── PostgresEventStore        (feature "postgres")
+//!   └── MongoDbEventStore         (feature "mongodb")
+//! ```
 
 pub mod aggregate;
 pub mod error;
@@ -106,6 +127,15 @@ pub mod repository;
 pub mod serialization;
 pub mod snapshot;
 pub mod version;
+
+/// Adapters de persistência para `gerax-es`.
+///
+/// Cada adapter é **opcional** e só é compilado com sua feature respectiva:
+///
+/// - `postgres` → [`postgres::PostgresEventStore`]
+/// - `mongodb` → [`mongodb::MongoDbEventStore`]
+#[cfg(any(feature = "postgres", feature = "mongodb"))]
+pub mod adapters;
 
 pub use aggregate::Aggregate;
 pub use error::{

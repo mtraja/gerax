@@ -19,5 +19,16 @@ serde_json.workspace = true
 uuid.workspace = true
 thiserror.workspace = true
 
+# Optional adapters
+sqlx = { workspace = true, features = ["chrono"], optional = true }
+mongodb = { workspace = true, optional = true }
+bson = { workspace = true, optional = true }
+futures = { workspace = true, optional = true }
+
 [dev-dependencies]
 tokio.workspace = true
+
+[features]
+default = []
+postgres = ["dep:sqlx"]
+mongodb = ["dep:mongodb", "dep:bson", "dep:futures"]
