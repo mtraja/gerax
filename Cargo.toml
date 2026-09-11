@@ -32,6 +32,7 @@ members = [
     "crates/gerax-rpc",
     "crates/gerax-cqrs",
     "crates/gerax-es",
+    "crates/gerax-rag",
 
 
     "examples/myapp",
@@ -93,6 +94,7 @@ gerax-codec = { path = "crates/gerax-codec" }
 gerax-rpc = { path = "crates/gerax-rpc" }
 gerax-cqrs = { path = "crates/gerax-cqrs" }
 gerax-es = { path = "crates/gerax-es" }
+gerax-rag = { path = "crates/gerax-rag" }
 
 actix-web = { version = "4", features = ["macros"] }
 actix-cors = "0.7"
