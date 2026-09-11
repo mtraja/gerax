@@ -29,7 +29,7 @@
 //! ```
 
 use async_trait::async_trait;
-use bson::{doc, Document};
+use bson::{Document, doc};
 use futures::StreamExt;
 use mongodb::Collection;
 
@@ -98,10 +98,12 @@ impl MongoDbEventStore {
         Ok(())
     }
 
+    /// Coleção de eventos persistidos.
     fn events(&self) -> &Collection<Document> {
         &self.events
     }
 
+    /// Coleção de controle de versão das streams.
     fn versions(&self) -> &Collection<Document> {
         &self.versions
     }
@@ -148,8 +150,7 @@ impl EventStore for MongoDbEventStore {
             if event.version != next {
                 return Err(EventStoreError::InvalidSequence(format!(
                     "expected version {}, got {}",
-                    next,
-                    event.version
+                    next, event.version
                 )));
             }
             next = next.next();
@@ -224,6 +225,5 @@ fn stored_to_document(event: &StoredEvent) -> Result<Document, EventStoreError> 
 
 /// Converte um [`Document`] do MongoDB em um [`StoredEvent`].
 fn document_to_stored(doc: &Document) -> Result<StoredEvent, EventStoreError> {
-    bson::from_document(doc.clone())
-        .map_err(|e| EventStoreError::Storage(e.to_string()))
+    bson::from_document(doc.clone()).map_err(|e| EventStoreError::Storage(e.to_string()))
 }

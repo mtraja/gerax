@@ -5,8 +5,8 @@
 //!
 //! Cada adapter é **opcional** e só é compilado com sua feature respectiva:
 //!
-//! - `postgres` → [`postgres::PostgresEventStore`]
-//! - `mongodb` → [`mongodb::MongoDbEventStore`]
+//! - `postgres` → [`crate::adapters::postgres::PostgresEventStore`]
+//! - `mongodb` → [`crate::adapters::mongodb::MongoDbEventStore`]
 
 #[cfg(feature = "postgres")]
 pub mod postgres;

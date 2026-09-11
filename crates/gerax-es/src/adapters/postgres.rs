@@ -154,15 +154,18 @@ impl EventStore for PostgresEventStore {
             if event.version != next {
                 return Err(EventStoreError::InvalidSequence(format!(
                     "expected version {}, got {}",
-                    next,
-                    event.version
+                    next, event.version
                 )));
             }
             next = next.next();
         }
 
         // Persiste todos os eventos em uma transação.
-        let mut tx = self.pool.begin().await.map_err(|e| EventStoreError::Storage(e.to_string()))?;
+        let mut tx = self
+            .pool
+            .begin()
+            .await
+            .map_err(|e| EventStoreError::Storage(e.to_string()))?;
 
         for event in &events {
             let metadata = serde_json::to_value(&event.metadata)
@@ -187,7 +190,9 @@ impl EventStore for PostgresEventStore {
             .map_err(|e| EventStoreError::Storage(e.to_string()))?;
         }
 
-        tx.commit().await.map_err(|e| EventStoreError::Storage(e.to_string()))?;
+        tx.commit()
+            .await
+            .map_err(|e| EventStoreError::Storage(e.to_string()))?;
 
         Ok(())
     }
@@ -207,9 +212,10 @@ struct EventStoreRow {
 }
 
 impl EventStoreRow {
+    /// Converte a linha crua em um [`StoredEvent`] da API pública.
     fn into_stored(self) -> StoredEvent {
-        let metadata: crate::metadata::EventMetadata = serde_json::from_value(self.metadata)
-            .unwrap_or_default();
+        let metadata: crate::metadata::EventMetadata =
+            serde_json::from_value(self.metadata).unwrap_or_default();
         StoredEvent {
             event_id: crate::event::EventId::from_uuid(self.event_id),
             aggregate_id: self.aggregate_id,
