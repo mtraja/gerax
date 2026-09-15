@@ -1,5 +1,5 @@
-use prost::Message;
 use super::codec::{Codec, CodecError};
+use prost::Message;
 
 /// Codec Protobuf via `prost`.
 ///

@@ -304,13 +304,12 @@ where
 pub struct Headers(pub HeaderMap);
 
 impl<S> FromContext<S> for Headers {
-  type Rejection = Infallible;
+    type Rejection = Infallible;
 
-  fn from_context(ctx: &Context<S>) -> Result<Self, Self::Rejection> {        
-    let headers = ctx.request().headers();
-    Ok(Headers(headers.clone()))
-  }
-
+    fn from_context(ctx: &Context<S>) -> Result<Self, Self::Rejection> {
+        let headers = ctx.request().headers();
+        Ok(Headers(headers.clone()))
+    }
 }
 
 /// Extrai o corpo bruto da requisição como `Bytes`.
@@ -372,4 +371,3 @@ impl<S> FromContext<S> for Request {
         Ok(ctx.request().clone())
     }
 }
-

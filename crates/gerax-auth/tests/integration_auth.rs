@@ -1,12 +1,11 @@
 use std::sync::Arc;
 
 use gerax_auth::{
-    TokenStorage,
-    login, refresh, AuthMiddleware, AuthState, JwtAuthenticator, MemoryTokenStorage,
+    AuthMiddleware, AuthState, JwtAuthenticator, MemoryTokenStorage, TokenStorage, login, refresh,
 };
-use gerax_http::middleware::{Middleware, Next};
-use gerax_http::routing::{Context, HttpMethod, Request, Response, Handler};
 use gerax_http::ServerResult;
+use gerax_http::middleware::{Middleware, Next};
+use gerax_http::routing::{Context, Handler, HttpMethod, Request, Response};
 
 /// Testa o fluxo completo de autenticação:
 /// 1. Login com credenciais válidas retorna token pair
@@ -43,8 +42,7 @@ async fn full_auth_flow() {
         .await
         .unwrap();
 
-    let token_pair: gerax_auth::TokenPair =
-        serde_json::from_slice(&login_result.body).unwrap();
+    let token_pair: gerax_auth::TokenPair = serde_json::from_slice(&login_result.body).unwrap();
     assert!(!token_pair.access_token.is_empty());
     assert!(!token_pair.refresh_token.is_empty());
 
@@ -75,12 +73,8 @@ async fn full_auth_flow() {
 
     // 4) Scope insuficiente é negado
     let authorizer = MockAuthorizer;
-    let auth_middleware_scoped = AuthMiddleware::new(
-        state.jwt.clone(),
-        Some(authorizer),
-        vec![],
-    )
-    .with_scope_resolver(|_| vec!["admin".to_string()]);
+    let auth_middleware_scoped = AuthMiddleware::new(state.jwt.clone(), Some(authorizer), vec![])
+        .with_scope_resolver(|_| vec!["admin".to_string()]);
 
     let scoped_ctx = Context::new(
         Arc::clone(&state),
@@ -100,8 +94,7 @@ async fn full_auth_flow() {
     .await
     .unwrap();
 
-    let refreshed: gerax_auth::TokenPair =
-        serde_json::from_slice(&refresh_result.body).unwrap();
+    let refreshed: gerax_auth::TokenPair = serde_json::from_slice(&refresh_result.body).unwrap();
     assert!(!refreshed.refresh_token.is_empty());
 
     // 6) Reutilização do refresh token antigo é negada
@@ -111,7 +104,10 @@ async fn full_auth_flow() {
     ))
     .await;
 
-    assert!(reuse_result.is_err(), "refresh token reutilizado deve ser negado");
+    assert!(
+        reuse_result.is_err(),
+        "refresh token reutilizado deve ser negado"
+    );
 }
 
 #[tokio::test]
@@ -168,14 +164,12 @@ async fn middleware_blocks_expired_token() {
         jwt.encode_token(&claims).unwrap()
     };
 
-    let auth_middleware = AuthMiddleware::new(
-        state.jwt.clone(),
-        None::<MockAuthorizer>,
-        vec![],
-    );
+    let auth_middleware = AuthMiddleware::new(state.jwt.clone(), None::<MockAuthorizer>, vec![]);
 
     let mut request = Request::new(HttpMethod::Get, "/protected".into(), Vec::new());
-    request.headers.insert("authorization", format!("Bearer {}", expired_token));
+    request
+        .headers
+        .insert("authorization", format!("Bearer {}", expired_token));
     let ctx = Context::new(Arc::clone(&state), request);
 
     let result = auth_middleware
@@ -203,7 +197,9 @@ fn login_request() -> Request {
 fn protected_request(token: Option<&str>) -> Request {
     let mut request = Request::new(HttpMethod::Get, "/api/protected".into(), Vec::new());
     if let Some(token) = token {
-        request.headers.insert("authorization", format!("Bearer {}", token));
+        request
+            .headers
+            .insert("authorization", format!("Bearer {}", token));
     }
     request
 }
@@ -221,7 +217,11 @@ struct MockAuthorizer;
 
 #[async_trait::async_trait]
 impl<State> gerax_auth::Authorizer<State> for MockAuthorizer {
-    async fn authorize(&self, _ctx: &Context<State>, required: &[String]) -> gerax_auth::AuthResult<bool> {
+    async fn authorize(
+        &self,
+        _ctx: &Context<State>,
+        required: &[String],
+    ) -> gerax_auth::AuthResult<bool> {
         Ok(required.contains(&"read".to_string()))
     }
 }

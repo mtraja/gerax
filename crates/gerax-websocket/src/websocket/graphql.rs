@@ -7,7 +7,10 @@ pub enum GraphQLClientMessage {
     ConnectionInit,
 
     #[serde(rename = "start")]
-    Start { id: String, payload: GraphQLStartPayload },
+    Start {
+        id: String,
+        payload: GraphQLStartPayload,
+    },
 
     #[serde(rename = "stop")]
     Stop { id: String },
@@ -29,10 +32,16 @@ pub enum GraphQLServerMessage {
     ConnectionAck,
 
     #[serde(rename = "data")]
-    Data { id: String, payload: GraphQLDataPayload },
+    Data {
+        id: String,
+        payload: GraphQLDataPayload,
+    },
 
     #[serde(rename = "error")]
-    Error { id: String, payload: GraphQLErrorPayload },
+    Error {
+        id: String,
+        payload: GraphQLErrorPayload,
+    },
 
     #[serde(rename = "complete")]
     Complete { id: String },

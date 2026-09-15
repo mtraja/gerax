@@ -51,16 +51,10 @@ async fn echo_server_basic() {
     let server_received = SharedReceived::new();
     let server_handler = Arc::new(EchoHandler::new(server_received.clone()));
 
-    let server = WebSocketServer::new(
-        "127.0.0.1:0".parse().unwrap(),
-        Arc::new(()),
-        server_handler,
-    );
+    let server = WebSocketServer::new("127.0.0.1:0".parse().unwrap(), Arc::new(()), server_handler);
 
     let server_clone = server.clone();
-    let server_task = tokio::spawn(async move {
-        server_clone.run().await
-    });
+    let server_task = tokio::spawn(async move { server_clone.run().await });
 
     let bound_addr = loop {
         if let Some(addr) = server.addr().await {
@@ -73,7 +67,7 @@ async fn echo_server_basic() {
     let client_handler = Arc::new(EchoHandler::new(client_received.clone()));
 
     let client = WebSocketClient::new(url, Arc::new(()), client_handler);
-    
+
     for attempt in 0..10 {
         if client.connect().await.is_ok() {
             break;
@@ -105,16 +99,10 @@ async fn multiple_connections() {
     let server_received = SharedReceived::new();
     let server_handler = Arc::new(EchoHandler::new(server_received));
 
-    let server = WebSocketServer::new(
-        "127.0.0.1:0".parse().unwrap(),
-        Arc::new(()),
-        server_handler,
-    );
+    let server = WebSocketServer::new("127.0.0.1:0".parse().unwrap(), Arc::new(()), server_handler);
 
     let server_clone = server.clone();
-    let server_task = tokio::spawn(async move {
-        server_clone.run().await
-    });
+    let server_task = tokio::spawn(async move { server_clone.run().await });
 
     let bound_addr = loop {
         if let Some(addr) = server.addr().await {
@@ -150,16 +138,10 @@ async fn multiple_connections() {
 async fn shutdown_is_clean() {
     let server_handler = Arc::new(EchoHandler::new(SharedReceived::new()));
 
-    let server = WebSocketServer::new(
-        "127.0.0.1:0".parse().unwrap(),
-        Arc::new(()),
-        server_handler,
-    );
+    let server = WebSocketServer::new("127.0.0.1:0".parse().unwrap(), Arc::new(()), server_handler);
 
     let server_clone = server.clone();
-    let server_task = tokio::spawn(async move {
-        server_clone.run().await
-    });
+    let server_task = tokio::spawn(async move { server_clone.run().await });
 
     tokio::time::sleep(tokio::time::Duration::from_millis(50)).await;
     server.stop().await.unwrap();

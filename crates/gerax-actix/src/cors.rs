@@ -3,9 +3,9 @@ use std::str::FromStr;
 use actix_cors::Cors;
 use actix_web::http::Method;
 use gerax_http::{
+    CorsConfig, ServerResult,
     middleware::{Middleware, Next},
     routing::Response,
-    CorsConfig, ServerResult,
 };
 
 #[derive(Clone)]
@@ -48,7 +48,12 @@ impl CorsMiddleware {
         if self.config.allowed_headers.is_empty() {
             cors = cors.allow_any_header();
         } else {
-            let headers: Vec<&str> = self.config.allowed_headers.iter().map(|h| h.as_str()).collect();
+            let headers: Vec<&str> = self
+                .config
+                .allowed_headers
+                .iter()
+                .map(|h| h.as_str())
+                .collect();
             cors = cors.allowed_headers(headers);
         }
 
@@ -85,17 +90,23 @@ where
         } else {
             &self.config.allowed_methods.join(", ")
         };
-        response.headers.insert("access-control-allow-methods", methods);
+        response
+            .headers
+            .insert("access-control-allow-methods", methods);
 
         let headers = if self.config.allowed_headers.is_empty() {
             "Content-Type, Authorization"
         } else {
             &self.config.allowed_headers.join(", ")
         };
-        response.headers.insert("access-control-allow-headers", headers);
+        response
+            .headers
+            .insert("access-control-allow-headers", headers);
 
         if let Some(max_age) = self.config.max_age {
-            response.headers.insert("access-control-max-age", max_age.to_string());
+            response
+                .headers
+                .insert("access-control-max-age", max_age.to_string());
         }
 
         Ok(response)

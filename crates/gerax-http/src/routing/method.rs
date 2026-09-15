@@ -41,8 +41,9 @@ impl From<HttpMethod> for http::Method {
             HttpMethod::Options => http::Method::OPTIONS,
             HttpMethod::Trace => http::Method::TRACE,
             HttpMethod::Connect => http::Method::CONNECT,
-            HttpMethod::Custom(s) => http::Method::from_bytes(s.as_bytes())
-                .unwrap_or(http::Method::GET),
+            HttpMethod::Custom(s) => {
+                http::Method::from_bytes(s.as_bytes()).unwrap_or(http::Method::GET)
+            }
         }
     }
 }

@@ -1,8 +1,8 @@
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use gerax_http::routing::{Context, Response};
 use gerax_http::ServerResult;
+use gerax_http::routing::{Context, Response};
 
 use crate::websocket::handler::WsHandler;
 

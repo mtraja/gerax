@@ -8,12 +8,18 @@ use crate::adapters::inbound::http::dto::{
     MatriculaResponse, ProfessorResponse, TurmaResponse,
 };
 use crate::application::errors::ApplicationError;
-use crate::application::ports::inbound::alunos::{AtualizarAluno, CriarAluno, DeletarAluno, ObterAluno};
-use crate::application::ports::inbound::matriculas::{CriarMatricula, DeletarMatricula, ObterMatricula};
+use crate::application::ports::inbound::alunos::{
+    AtualizarAluno, CriarAluno, DeletarAluno, ObterAluno,
+};
+use crate::application::ports::inbound::matriculas::{
+    CriarMatricula, DeletarMatricula, ObterMatricula,
+};
 use crate::application::ports::inbound::professores::{
     AtualizarProfessor, CriarProfessor, DeletarProfessor, ObterProfessor,
 };
-use crate::application::ports::inbound::turmas::{AtualizarTurma, CriarTurma, DeletarTurma, ObterTurma};
+use crate::application::ports::inbound::turmas::{
+    AtualizarTurma, CriarTurma, DeletarTurma, ObterTurma,
+};
 use crate::bootstrap::AppState;
 
 pub async fn listar_alunos(ctx: Context<AppState>) -> ServerResult<Response> {

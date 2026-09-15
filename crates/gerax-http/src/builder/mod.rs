@@ -1,10 +1,8 @@
-use crate::ServerResult;
-use crate::Middleware;
 use crate::HttpServer;
+use crate::Middleware;
 use crate::Router;
 use crate::ServerConfig;
-
-
+use crate::ServerResult;
 
 pub trait HttpServerBuilder<State>: Sized + Send + Sync
 where

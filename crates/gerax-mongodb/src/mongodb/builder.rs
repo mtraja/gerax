@@ -1,8 +1,8 @@
 use std::marker::PhantomData;
 use std::sync::Arc;
 
-use gerax_db::{Connection, DatabaseConfig, DbError, Repository, RepositoryBuilder};
 use gerax_core::Entity;
+use gerax_db::{Connection, DatabaseConfig, DbError, Repository, RepositoryBuilder};
 
 use crate::mongodb::{MongoDbConnection, MongoDbRepository};
 

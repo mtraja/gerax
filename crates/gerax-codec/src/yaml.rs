@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize};
 use crate::codec::Codec;
+use serde::{Deserialize, Serialize};
 pub struct YamlCodec;
 
 impl<T> Codec<T> for YamlCodec

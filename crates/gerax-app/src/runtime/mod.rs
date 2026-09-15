@@ -1,4 +1,4 @@
-use gerax_http::{HttpServer, Router, ServerConfig, CorsConfig, ServerResult};
+use gerax_http::{CorsConfig, HttpServer, Router, ServerConfig, ServerResult};
 
 /// Adaptador capaz de construir um servidor HTTP para uma aplicação Gerax.
 pub trait HttpRuntime<State>

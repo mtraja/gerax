@@ -1,11 +1,11 @@
 use std::sync::Arc;
 
-use futures_util::{stream::StreamExt, SinkExt};
+use futures_util::{SinkExt, stream::StreamExt};
 use gerax_http::ServerResult;
-use tokio::sync::{mpsc, Mutex, Notify};
+use tokio::sync::{Mutex, Notify, mpsc};
 use tokio_tungstenite::connect_async;
 
-use crate::websocket::handler::{WsContext, WsHandler, ServerError};
+use crate::websocket::handler::{ServerError, WsContext, WsHandler};
 use crate::websocket::message::WsMessage;
 
 pub struct WebSocketClient<State> {
@@ -25,10 +25,7 @@ where
             url,
             state,
             handler,
-            shutdown: Arc::new((
-                std::sync::atomic::AtomicBool::new(false),
-                Notify::new(),
-            )),
+            shutdown: Arc::new((std::sync::atomic::AtomicBool::new(false), Notify::new())),
             sender: Arc::new(Mutex::new(None)),
         }
     }
@@ -55,9 +52,10 @@ where
         );
 
         let ctx = WsContext::new(state, peer_addr, tx.clone());
-        handler.on_open(ctx.clone()).await.map_err(|e| {
-            gerax_http::HttpServerError::RuntimeError(e.to_string())
-        })?;
+        handler
+            .on_open(ctx.clone())
+            .await
+            .map_err(|e| gerax_http::HttpServerError::RuntimeError(e.to_string()))?;
 
         let send_handler = Arc::clone(&handler);
         let send_ctx = ctx.clone();
@@ -67,7 +65,10 @@ where
                 let frame: tungstenite::Message = msg.into();
                 if let Err(e) = sink.send(frame).await {
                     let _ = send_handler
-                        .on_error(send_ctx.clone(), ServerError::ConnectionError(e.to_string()))
+                        .on_error(
+                            send_ctx.clone(),
+                            ServerError::ConnectionError(e.to_string()),
+                        )
                         .await;
                     break;
                 }
@@ -129,7 +130,9 @@ where
     }
 
     pub async fn close(&self) -> ServerResult<()> {
-        self.shutdown.0.store(true, std::sync::atomic::Ordering::SeqCst);
+        self.shutdown
+            .0
+            .store(true, std::sync::atomic::Ordering::SeqCst);
         self.shutdown.1.notify_one();
         Ok(())
     }

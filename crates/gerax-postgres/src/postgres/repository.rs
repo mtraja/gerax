@@ -82,8 +82,7 @@ where
         match row {
             Some(row) => {
                 let data: serde_json::Value = row.get("data");
-                let entity = serde_json::from_value(data)
-                    .map_err(DbError::serialization)?;
+                let entity = serde_json::from_value(data).map_err(DbError::serialization)?;
                 Ok(Some(entity))
             }
             None => Ok(None),
@@ -104,8 +103,7 @@ where
         let mut entities = Vec::with_capacity(rows.len());
         for row in rows {
             let data: serde_json::Value = row.get("data");
-            let entity = serde_json::from_value(data)
-                .map_err(DbError::serialization)?;
+            let entity = serde_json::from_value(data).map_err(DbError::serialization)?;
             entities.push(entity);
         }
         Ok(entities)
@@ -117,8 +115,7 @@ where
         let uuid = Uuid::new_v4();
         entity.set_id(uuid.to_string());
 
-        let data = serde_json::to_string(&entity)
-            .map_err(DbError::serialization)?;
+        let data = serde_json::to_string(&entity).map_err(DbError::serialization)?;
 
         let query = format!(
             "INSERT INTO {} (id, data) VALUES ($1, $2::JSONB) RETURNING data",
@@ -134,8 +131,8 @@ where
         log_slow("insert", self.table_name(), start);
 
         let returned_data: serde_json::Value = row.get("data");
-        let returned_entity = serde_json::from_value(returned_data)
-            .map_err(DbError::serialization)?;
+        let returned_entity =
+            serde_json::from_value(returned_data).map_err(DbError::serialization)?;
         Ok(returned_entity)
     }
 
@@ -146,10 +143,12 @@ where
             .id()
             .ok_or_else(|| DbError::not_found("missing id"))?;
         let uuid = Uuid::parse_str(&id).map_err(DbError::configuration)?;
-        let data = serde_json::to_string(&entity)
-            .map_err(DbError::serialization)?;
+        let data = serde_json::to_string(&entity).map_err(DbError::serialization)?;
 
-        let query = format!("UPDATE {} SET data = $1::JSONB WHERE id = $2", self.table_name());
+        let query = format!(
+            "UPDATE {} SET data = $1::JSONB WHERE id = $2",
+            self.table_name()
+        );
         let rows_affected = sqlx::query(&query)
             .bind(&data)
             .bind(uuid)

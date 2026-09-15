@@ -1,5 +1,3 @@
-
-
 use crate::traits::{AuthError, AuthResult, Authorizer};
 use crate::types::Claims;
 use gerax_http::routing::Context;
@@ -72,7 +70,12 @@ mod tests {
             "/".into(),
             Vec::new(),
         );
-        let mut ctx = Context::new(std::sync::Arc::new(MockState { _claims: claims.clone() }), request);
+        let mut ctx = Context::new(
+            std::sync::Arc::new(MockState {
+                _claims: claims.clone(),
+            }),
+            request,
+        );
         ctx.extensions_mut().insert(claims.clone());
         ctx
     }
@@ -90,7 +93,12 @@ mod tests {
 
         assert!(authorizer.authorize(&ctx, &["read".into()]).await.unwrap());
         assert!(authorizer.authorize(&ctx, &["write".into()]).await.unwrap());
-        assert!(authorizer.authorize(&ctx, &["read".into(), "admin".into()]).await.unwrap());
+        assert!(
+            authorizer
+                .authorize(&ctx, &["read".into(), "admin".into()])
+                .await
+                .unwrap()
+        );
     }
 
     #[tokio::test]
@@ -118,7 +126,17 @@ mod tests {
         };
         let ctx = context_with_claims(claims);
 
-        assert!(authorizer.authorize(&ctx, &["read".into(), "write".into()]).await.unwrap());
-        assert!(!authorizer.authorize(&ctx, &["read".into(), "admin".into()]).await.unwrap());
+        assert!(
+            authorizer
+                .authorize(&ctx, &["read".into(), "write".into()])
+                .await
+                .unwrap()
+        );
+        assert!(
+            !authorizer
+                .authorize(&ctx, &["read".into(), "admin".into()])
+                .await
+                .unwrap()
+        );
     }
 }

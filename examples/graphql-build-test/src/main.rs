@@ -3,9 +3,9 @@ use async_stream::stream;
 use chrono::{DateTime, Utc};
 use futures::stream::Stream;
 use gerax_actix::{ActixHttpServerBuilder, HttpServerBuilder};
-use gerax_http::server::HttpServer;
 use gerax_graphql::{DefaultExecutor, GraphqlHandler, Schema};
 use gerax_http::routing::Router;
+use gerax_http::server::HttpServer;
 use uuid::Uuid;
 
 #[derive(Debug, Clone, SimpleObject)]

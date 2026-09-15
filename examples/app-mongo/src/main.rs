@@ -35,8 +35,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Conexao com MongoDB estabelecida!");
 
     let config = gerax_config::Config::builder()
-    .env()
-    .build::<DatabaseConfig>()?;
+        .env()
+        .build::<DatabaseConfig>()?;
 
     // Usa o builder para criar o repositório
     let repo = MongoDbRepositoryBuilder::<User>::new(config)

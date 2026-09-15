@@ -4,9 +4,9 @@ use std::sync::Arc;
 
 use crate::DatabaseConfig;
 
+use crate::DbError;
 use crate::connection::Connection;
 use crate::repository::Repository;
-use crate::DbError;
 use gerax_core::Entity;
 
 /// Builder abstrato para construir repositórios.
@@ -154,11 +154,7 @@ mod tests {
         let config = DatabaseConfig::default();
         let builder = DbBuilder::from_config(config).with_connection(connection);
 
-        let repo = builder
-            .repository(|| MockUserRepo)
-            .build()
-            .await
-            .unwrap();
+        let repo = builder.repository(|| MockUserRepo).build().await.unwrap();
 
         let result = repo.find_by_id("1").await.unwrap();
         assert!(result.is_none());

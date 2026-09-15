@@ -30,7 +30,6 @@ impl Default for CorsConfig {
 }
 */
 
-
 impl CorsConfig {
     pub fn new() -> Self {
         Self::default()
@@ -52,14 +51,14 @@ impl CorsConfig {
     }
 
     pub fn allowed_all_methods(mut self) -> Self {
-        self.allowed_methods =  vec![
-                "GET".into(),
-                "POST".into(),
-                "PUT".into(),
-                "PATCH".into(),
-                "DELETE".into(),
-                "OPTIONS".into(),
-            ];
+        self.allowed_methods = vec![
+            "GET".into(),
+            "POST".into(),
+            "PUT".into(),
+            "PATCH".into(),
+            "DELETE".into(),
+            "OPTIONS".into(),
+        ];
         self
     }
 

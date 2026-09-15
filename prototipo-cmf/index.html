@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="fortaleza">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Colégio Militar de Fortaleza — Protótipo Design System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ============ TOKENS ============ */
+:root{
+  --navy:#0A3D6B; --navy-2:#0D4C85; --red-eb:#C8102E; --red-eb-2:#E04054;
+  --gold:#E9B800; --jade:#2E6E62; --celeste:#5FA8D3; --sand:#FAF9F6; --ink:#23272B;
+  --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-6:24px; --sp-8:32px; --sp-12:48px;
+  --sp-16:64px; --sp-24:96px;
+  --sha-btn:0 2px 4px rgba(10,26,46,.16);
+  --chamfer:12px;
+  --font-display:'Sora',system-ui,sans-serif;
+  --font-body:'Inter',system-ui,sans-serif;
+  --ease:cubic-bezier(.2,.8,.2,1);
+  --dur-1:120ms; --dur-2:350ms;
+}
+[data-theme="fortaleza"]{
+  --bg:var(--sand); --surface:#fff; --surface-2:#EFF1F3;
+  --text:var(--ink); --text-muted:#5A6068; --border:#D8DDE3;
+  --primary:var(--navy); --cta:var(--red-eb); --accent:var(--gold);
+  --link:#0B5AA2; --error:#B3261E; --success:#1E7B45; --focus:#0A3D6B;
+  --shadow-card:0 1px 3px rgba(10,26,46,.08);
+  --stars:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='26' height='26' viewBox='0 0 26 26'><path d='M13 3l2.2 6.5 6.8.3-5.4 4.2 1.9 6.6L13 16.6 7.5 20.6l1.9-6.6L4 9.8l6.8-.3z' fill='%230A3D6B'/></svg>");
+}
+[data-theme="eudoro"]{
+  --bg:var(--navy); --surface:#0B4678; --surface-2:#09345C;
+  --text:var(--sand); --text-muted:#A9C4DC; --border:#1B4E7E;
+  --primary:var(--celeste); --cta:#E04054; --accent:var(--gold);
+  --link:#8FCEF4; --error:#FFB4AB; --success:#8FD6AE; --focus:#F5C518;
+  --shadow-card:0 1px 3px rgba(0,0,0,.35);
+  --stars:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='26' height='26' viewBox='0 0 26 26'><path d='M13 3l2.2 6.5 6.8.3-5.4 4.2 1.9 6.6L13 16.6 7.5 20.6l1.9-6.6L4 9.8l6.8-.3z' fill='%23FFFFFF'/></svg>");
+}
+[data-theme="hc"]{
+  --bg:#000; --surface:#000; --surface-2:#000;
+  --text:#fff; --text-muted:#fff; --border:#fff;
+  --primary:#fff; --cta:#FF8A3C; --accent:#F5C518; --link:#F5C518;
+  --error:#FFB4AB; --success:#8FD6AE; --focus:#F5C518;
+  --shadow-card:none;
+  --stars:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='0' height='0'></svg>");
+}
+
+/* ============ BASE ============ */
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:var(--font-body);background:var(--bg);color:var(--text);font-size:1.0625rem;line-height:1.5;-webkit-font-smoothing:antialiased}
+a{color:var(--link);text-decoration:none}
+a:hover{text-decoration:underline}
+img{max-width:100%;display:block}
+h1,h2,h3,h4{font-family:var(--font-display);line-height:1.2;color:var(--text);letter-spacing:-.5px}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.skip{position:absolute;left:-9999px;top:0;z-index:999;background:var(--cta);color:#fff;padding:.5rem 1rem}
+.skip:focus{left:0}
+.icon{width:1em;height:1em;stroke:currentColor;fill:none;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round;flex:none;font-size:1.35rem}
+.overline{font-size:.8125rem;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);font-family:var(--font-display)}
+.container{max-width:1280px;margin:0 auto;padding:0 var(--sp-6)}
+.section{padding:var(--sp-16) 0}
+.section-head{display:flex;align-items:flex-end;justify-content:space-between;gap:var(--sp-4);margin-bottom:var(--sp-8);flex-wrap:wrap}
+.section-head h2{font-size:1.75rem}
+.chamfer{clip-path:polygon(0 0,calc(100% - var(--chamfer)) 0,100% var(--chamfer),100% 100%,var(--chamfer) 100%,0 calc(100% - var(--chamfer)))}
+
+/* ============ GOV BAR ============ */
+.govbar{background:var(--jade)}
+.govbar-inner{display:flex;gap:var(--sp-4);justify-content:space-between;align-items:center;min-height:34px;font-size:.8125rem}
+.govbar-links{display:flex;flex-wrap:wrap;gap:var(--sp-6);list-style:none}
+.govbar-links a,.govbar-actions a{color:#fff;opacity:.92}
+.govbar-links a:hover,.govbar-actions a:hover{opacity:1;text-decoration:underline}
+.govbar-actions{display:flex;gap:var(--sp-4);align-items:center;white-space:nowrap}
+.tbtn{border:1px solid rgba(255,255,255,.7);background:transparent;color:#fff;font:inherit;font-size:.8125rem;padding:.15rem .6rem;cursor:pointer}
+.tbtn:hover{background:rgba(255,255,255,.18)}
+
+/* ============ HEADER ============ */
+header{background:var(--navy);position:sticky;top:0;z-index:100;box-shadow:0 2px 10px rgba(0,0,0,.25)}
+.header-inner{display:flex;align-items:center;gap:var(--sp-4);min-height:78px}
+.brand{display:flex;align-items:center;gap:var(--sp-4);margin-right:auto}
+.brand img{height:62px;width:auto}
+.brand-name{color:#fff}
+.brand-name h1{color:#fff;font-size:1.05rem;letter-spacing:.06em;text-transform:uppercase;line-height:1.15}
+.brand-name .tagline{display:block;color:var(--gold);font-family:var(--font-display);font-size:.8rem;letter-spacing:.14em;font-weight:600}
+.mainnav{display:flex;gap:var(--sp-2);align-items:stretch}
+.mainnav>li{list-style:none;position:relative}
+.navlink{display:flex;align-items:center;gap:.35rem;color:#fff;padding:.6rem .7rem;border-radius:6px 6px 0 0;font-size:.925rem;font-weight:500;border-bottom:3px solid transparent}
+.navlink:hover{background:rgba(255,255,255,.08);text-decoration:none}
+.navlink .caret{width:1em;height:1em}
+.navlink[aria-expanded="true"] .caret{transform:rotate(180deg)}
+.navlink[aria-expanded="true"]{border-bottom-color:var(--gold)}
+.dropdown{position:absolute;top:100%;left:0;background:var(--surface);color:var(--text);min-width:280px;border-radius:0 10px 10px 10px;box-shadow:0 18px 40px rgba(0,0,0,.22);padding:var(--sp-4);opacity:0;visibility:hidden;transform:translateY(8px);transition:var(--dur-2) var(--ease)}
+.mainnav>li:hover .dropdown,.mainnav>li:focus-within .dropdown{opacity:1;visibility:visible;transform:none}
+.dropdown a{display:block;color:var(--text);padding:.5rem .6rem;border-radius:6px;border-left:3px solid transparent}
+.dropdown a:hover{background:var(--surface-2);text-decoration:none;border-left-color:var(--gold)}
+.header-actions{display:flex;align-items:center;gap:var(--sp-2)}
+.ghost-btn{background:none;border:1px solid rgba(255,255,255,.35);color:#fff;width:42px;height:42px;display:grid;place-items:center;cursor:pointer;border-radius:8px}
+.ghost-btn:hover{background:rgba(255,255,255,.12)}
+.burger{display:none}
+
+/* ============ HERO ============ */
+.hero{position:relative;height:min(640px,78vh);overflow:hidden;background:var(--navy)}
+.slide{position:absolute;inset:0;opacity:0;transition:opacity .8s var(--ease);background-size:cover;background-position:center}
+.slide.active{opacity:1}
+.slide::after{content:"";position:absolute;inset:0;background:linear-gradient(100deg,rgba(10,61,107,.88) 0%,rgba(10,61,107,.55) 45%,rgba(10,61,107,.12) 100%)}
+[data-theme="hc"] .slide::after{background:rgba(0,0,0,.92)}
+.slide-wrap{position:absolute;inset:0;display:flex;align-items:center}
+.slide-content{position:relative;z-index:2;max-width:640px;color:#fff;animation:slideUp .7s var(--ease) both}
+.slide-content h2{color:#fff;font-size:clamp(2rem,4.5vw,3.4rem);font-weight:800;margin:.8rem 0 1rem;letter-spacing:-1px}
+.slide-content p{color:rgba(255,255,255,.9);max-width:52ch;font-size:1.125rem}
+.hero-ctas{display:flex;gap:var(--sp-4);margin-top:var(--sp-8);flex-wrap:wrap}
+@keyframes slideUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
+.slide:not(.active) .slide-content{animation:none}
+.hero-controls{position:absolute;bottom:var(--sp-6);left:0;right:0;z-index:3}
+.hero-controls-inner{display:flex;align-items:center;justify-content:space-between}
+.hero-counter{display:flex;align-items:center;gap:var(--sp-3);color:#fff;font-family:var(--font-display)}
+.hero-counter .idx{color:var(--gold);font-size:1.5rem;font-weight:700}
+.hero-counter .bar{width:60px;height:3px;background:rgba(255,255,255,.4)}
+.hero-counter .bar i{display:block;height:100%;background:var(--gold)}
+.hero-dots{display:flex;gap:var(--sp-2)}
+.hero-dots button{width:12px;height:12px;border-radius:50%;border:0;background:rgba(255,255,255,.4);cursor:pointer;padding:0}
+.hero-dots button.active{background:var(--gold);transform:scale(1.15)}
+
+/* ============ BUTTONS ============ */
+.btn{--chamfer:10px;display:inline-flex;align-items:center;gap:.5rem;font-family:var(--font-body);font-weight:600;font-size:1rem;padding:.75rem 1.4rem;cursor:pointer;text-decoration:none;transition:transform var(--dur-1) var(--ease),filter var(--dur-1) var(--ease),opacity var(--dur-1)}
+.btn-lg{--chamfer:14px;font-size:1.1rem;padding:1rem 1.9rem}
+.btn:hover{text-decoration:none}
+.btn:active{transform:translateY(1px)}
+.btn-primary{background:var(--cta);color:#fff;filter:drop-shadow(var(--sha-btn))}
+.btn-primary:hover{filter:drop-shadow(var(--sha-btn)) brightness(1.08)}
+.btn-secondary{background:var(--primary);color:var(--bg)}
+.btn-secondary:hover{filter:brightness(1.1)}
+.btn-ghost{background:transparent;color:#fff;border:1.5px solid rgba(255,255,255,.65)}
+.btn-ghost:hover{background:rgba(255,255,255,.1)}
+.btn:focus-visible{outline:3px solid var(--focus);outline-offset:3px}
+
+/* ============ STRIPE ============ */
+.stripe{height:6px;background:repeating-linear-gradient(115deg,var(--red-eb) 0 28px,var(--navy) 28px 56px,var(--gold) 56px 84px)}
+
+/* ============ ÁREA DO ALUNO ============ */
+.svc-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--sp-6)}
+.svc{--chamfer:var(--chamfer)}
+.svc-face{background:var(--surface);box-shadow:var(--shadow-card);padding:var(--sp-6);display:flex;flex-direction:column;gap:var(--sp-4);min-height:100%;border:1px solid var(--border)}
+.svc-icon{background:var(--primary);color:#fff;width:56px;height:56px;display:grid;place-items:center;border-radius:14px;font-size:1.6rem;box-shadow:var(--sha-btn)}
+.svc h3{font-size:1.15rem}
+.svc p{color:var(--text-muted);font-size:.9rem;flex:1}
+.svc .go{color:var(--link);font-weight:600;font-size:.9rem;display:inline-flex;align-items:center;gap:.35rem}
+.svc.svc-special .svc-icon{background:var(--jade)}
+.sideband{height:6px;background:linear-gradient(90deg,var(--red-eb) 0%,var(--gold) 100%)}
+
+/* ============ NOTÍCIAS ============ */
+.news-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--sp-6)}
+.news{--chamfer:14px;background:var(--surface);box-shadow:var(--shadow-card);display:flex;flex-direction:column;overflow:hidden;border:1px solid var(--border)}
+.news .thumb{aspect-ratio:16/9;background-position:center;background-size:cover;position:relative}
+.news .thumb .badge{position:absolute;left:var(--sp-4);bottom:-1px;background:var(--gold);color:var(--ink);padding:.3rem .55rem;font-weight:700;line-height:1.2;text-align:center;font-family:var(--font-display)}
+.news .thumb .badge span{display:block;font-size:.72rem;text-transform:uppercase}
+.news .body{padding:var(--sp-6);display:flex;flex-direction:column;gap:var(--sp-3);flex:1}
+.news h3{font-size:1.2rem}
+.news .excerpt{color:var(--text-muted);font-size:.925rem;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;flex:1}
+.news .meta{font-size:.8rem;color:var(--text-muted);display:flex;align-items:center;gap:.5rem}
+
+/* ============ COMUNICADOS ============ */
+.com{background:var(--surface);box-shadow:var(--shadow-card);border:1px solid var(--border)}
+.com-item{display:grid;grid-template-columns:80px 1fr auto;gap:var(--sp-4);align-items:center;padding:var(--sp-4) var(--sp-6)}
+.com-item+.com-item{border-top:1px solid var(--border)}
+.com-date{--chamfer:8px;background:var(--gold);color:var(--ink);text-align:center;padding:.4rem .2rem;font-family:var(--font-display);font-weight:700;line-height:1.1}
+.com-date b{font-size:1.4rem}
+.com-date span{font-size:.7rem;text-transform:uppercase;display:block}
+.com-body{min-width:0}
+.com-tags{display:flex;gap:var(--sp-2);margin-bottom:.35rem;align-items:center}
+.pill{font-size:.72rem;font-weight:700;letter-spacing:.05em;padding:.12rem .5rem;border-radius:99px;color:#fff}
+.pill.de{background:var(--jade)}
+.pill.ca{background:var(--red-eb)}
+.pill.pdf{background:transparent;border:1px solid var(--border);color:var(--text-muted)}
+.com-body h3{font-size:1rem;line-height:1.35}
+.com-body h3 a{color:var(--text)}
+.com-body h3 a:hover{color:var(--link);text-decoration:none}
+.com-view{padding:.45rem .9rem;border:1px solid var(--border);background:transparent;color:var(--text);font:inherit;font-size:.85rem;cursor:pointer;border-radius:8px;white-space:nowrap}
+.com-view:hover{background:var(--surface-2)}
+.all-link{display:inline-flex;align-items:center;gap:.4rem;font-weight:600;color:var(--link)}
+
+/* ============ OUVIDORIA ============ */
+.ouvid{--chamfer:14px}
+.ouvid-face{background:var(--surface);border:1px solid var(--border);box-shadow:var(--shadow-card);padding:var(--sp-6);min-height:100%;display:flex;flex-direction:column;gap:var(--sp-4)}
+.ouvid-icon{width:52px;height:52px;border-radius:50%;display:grid;place-items:center;font-size:1.4rem;color:#fff}
+.o-elogio .ouvid-icon{background:var(--gold)}
+.o-solicita .ouvid-icon{background:var(--celeste)}
+.o-reclama .ouvid-icon{background:var(--navy)}
+.o-denuncia .ouvid-icon{background:var(--red-eb)}
+.ouvid h3{font-size:1.1rem}
+.ouvid p{color:var(--text-muted);font-size:.88rem;flex:1}
+.ouvid .btn{font-size:.9rem;padding:.6rem 1rem}
+.o-denuncia{--chamfer:var(--chamfer)}
+.o-denuncia .ouvid-face{border-color:var(--red-eb)}
+
+/* ============ FOOTER ============ */
+footer{background:var(--navy);color:#fff;margin-top:var(--sp-24);position:relative;overflow:hidden}
+footer::before{content:"";position:absolute;inset:0;background-image:var(--stars);opacity:.35;pointer-events:none}
+.foot-grid{position:relative;display:grid;grid-template-columns:2fr 1fr 1fr 1.2fr;gap:var(--sp-8);padding:var(--sp-16) 0 var(--sp-12)}
+.foot-brand img{height:88px;filter:grayscale(1) invert(1);opacity:.92}
+.foot-brand p{color:rgba(255,255,255,.78);margin-top:var(--sp-4);max-width:34ch;font-size:.9rem}
+.foot-brand .tagline{color:var(--gold);font-family:var(--font-display);font-weight:600;letter-spacing:.1em}
+footer h4{color:var(--gold);font-size:.8rem;text-transform:uppercase;letter-spacing:.16em;margin-bottom:var(--sp-4)}
+.foot-col a{display:block;color:rgba(255,255,255,.82);padding:.28rem 0;font-size:.9rem}
+.foot-col a:hover{color:#fff;text-decoration:underline}
+.foot-contact{font-size:.9rem;color:rgba(255,255,255,.82);line-height:1.7}
+.social{display:flex;gap:var(--sp-3);margin-top:var(--sp-4)}
+.social a{width:40px;height:40px;border:1px solid rgba(255,255,255,.3);display:grid;place-items:center;border-radius:10px;color:#fff;font-size:1.15rem}
+.social a:hover{background:rgba(255,255,255,.12);text-decoration:none}
+.foot-sels{display:flex;flex-wrap:wrap;gap:var(--sp-4);margin-top:var(--sp-6)}
+.foot-sels span{border:1.5px solid rgba(255,255,255,.55);color:#fff;padding:.3rem .7rem;font-size:.8rem;border-radius:8px}
+.foot-bottom{border-top:1px solid rgba(255,255,255,.15);padding:var(--sp-4) 0;font-size:.8rem;color:rgba(255,255,255,.6);position:relative}
+.foot-bottom-inner{display:flex;justify-content:space-between;gap:var(--sp-4);flex-wrap:wrap}
+
+/* ============ RESPONSIVE ============ */
+@media (max-width:1023px){
+  .mainnav,.header-actions .search{display:none}
+  .burger{display:grid}
+  .mobile-panel{display:none;position:absolute;top:100%;left:0;right:0;background:var(--surface);box-shadow:0 20px 40px rgba(0,0,0,.25);padding:var(--sp-6)}
+  header.nav-open .mobile-panel{display:block}
+  .mobile-panel>li{list-style:none}
+  .mobile-panel>li>a{display:flex;justify-content:space-between;color:var(--text);padding:.85rem .5rem;font-weight:600;border-bottom:1px solid var(--border)}
+  .mp-sub{display:none;padding:0 0 .8rem .8rem}
+  .mp-sub a{display:block;color:var(--text-muted);padding:.5rem .5rem}
+  li.mp-open .mp-sub{display:block}
+  .svg-grid,.news-grid{grid-template-columns:repeat(2,1fr)}
+  .foot-grid{grid-template-columns:1fr 1fr}
+}
+@media (max-width:640px){
+  .govbar-links{display:none}
+  .svc-grid,.news-grid,.foot-grid{grid-template-columns:1fr}
+  .hero{height:560px}
+  .com-item{grid-template-columns:72px 1fr}
+  .com-view{display:none}
+  .section{padding:var(--sp-12) 0}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation:none!important;transition:none!important}
+  html{scroll-behavior:auto}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Ir para o conteúdo</a>
+
+<div class="govbar">
+  <div class="govbar-inner container">
+    <ul class="govbar-links">
+      <li><a href="#">Ministério da Defesa</a></li>
+      <li><a href="#">Órgãos do Governo</a></li>
+      <li><a href="#">Acesso à Informação</a></li>
+      <li><a href="#">Legislação</a></li>
+      <li><a href="#">Acessibilidade</a></li>
+    </ul>
+    <div class="govbar-actions">
+      <button class="tbtn" id="toggle-theme" type="button" aria-pressed="false">Tema: Claro</button>
+      <button class="tbtn" id="toggle-hc" type="button" aria-pressed="false">Alto Contraste</button>
+    </div>
+  </div>
+</div>
+
+<header>
+  <div class="header-inner container">
+    <a class="brand" href="#" aria-label="Colégio Militar de Fortaleza — página inicial">
+      <img src="assets/brasao.png" alt="Brasão do Colégio Militar de Fortaleza">
+      <span class="brand-name">
+        <h1>Colégio Militar de Fortaleza</h1>
+        <span class="tagline">Casa de Eudoro Corrêa</span>
+      </span>
+    </a>
+
+    <nav aria-label="Navegação principal">
+      <ul class="mainnav">
+        <li>
+          <a class="navlink" href="#" aria-expanded="false" aria-haspopup="true">Institucional
+            <svg class="icon caret" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></a>
+          <div class="dropdown">
+            <a href="#">Histórico</a>
+            <a href="#">Missão, Visão e Valores</a>
+            <a href="#">Subordinação</a>
+            <a href="#">Estrutura Organizacional</a>
+            <a href="#">Comandante</a>
+          </div>
+        </li>
+        <li>
+          <a class="navlink" href="#" aria-expanded="false" aria-haspopup="true">Espaço Educacional
+            <svg class="icon caret" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></a>
+          <div class="dropdown">
+            <a href="#">Calendário Escolar 2026</a>
+            <a href="#">Livros e Materiais Escolares</a>
+          </div>
+        </li>
+        <li>
+          <a class="navlink" href="#" aria-expanded="false" aria-haspopup="true">Divisão de Ensino
+            <svg class="icon caret" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></a>
+          <div class="dropdown">
+            <a href="#">Projeto Pedagógico</a>
+            <a href="#">Atividades Desportivas</a>
+            <a href="#">Estudo Complementar</a>
+          </div>
+        </li>
+        <li>
+          <a class="navlink" href="#" aria-expanded="false" aria-haspopup="true">Corpo de Alunos
+            <svg class="icon caret" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></a>
+          <div class="dropdown">
+            <a href="#">Requerimento para Documentos</a>
+            <a href="#">Monitor Destaque</a>
+            <a href="#">Matrícula e Rematrícula</a>
+          </div>
+        </li>
+      </ul>
+    </nav>
+
+    <div class="header-actions">
+      <button class="ghost-btn search" type="button" aria-label="Buscar">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+      </button>
+      <button class="ghost-btn burger" id="burger" type="button" aria-label="Abrir menu" aria-expanded="false">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <ul class="mobile-panel container" id="mpanel">
+    <li>
+      <a href="#" data-sub="mp-institucional">Institucional <span aria-hidden="true">+</span></a>
+      <div class="mp-sub" id="mp-institucional">
+        <a href="#">Histórico</a><a href="#">Missão, Visão e Valores</a><a href="#">Comandante</a>
+      </div>
+    </li>
+    <li>
+      <a href="#" data-sub="mp-ensino">Divisão de Ensino <span aria-hidden="true">+</span></a>
+      <div class="mp-sub" id="mp-ensino">
+        <a href="#">Projeto Pedagógico</a><a href="#">Atividades Desportivas</a>
+      </div>
+    </li>
+    <li><a href="#">Corpo de Alunos <span aria-hidden="true">+</span></a></li>
+    <li><a href="#">Processo Seletivo <span aria-hidden="true">+</span></a></li>
+  </ul>
+</header>
+
+<main id="main">
+
+  <section class="hero" id="slider" aria-roledescription="carrossel" aria-label="Destaques">
+    <div class="slide active" role="tabpanel" data-img="assets/hero1.png">
+      <div class="slide-wrap container">
+        <div class="slide-content">
+          <p class="overline">Processo Seletivo · Edital 2027</p>
+          <h2>Faça parte da família verde-oliva</h2>
+          <p>Ingresso no Colégio Militar de Fortaleza: ensino público de excelência, com disciplina e preparo para a vida.</p>
+          <div class="hero-ctas">
+            <a class="btn btn-primary btn-lg" href="#">Realizar inscrição</a>
+            <a class="btn btn-ghost btn-lg" href="#">Conhecer o colégio</a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="slide" role="tabpanel" data-img="assets/hero2.png">
+      <div class="slide-wrap container">
+        <div class="slide-content">
+          <p class="overline">Matrícula e Rematrícula · 2027</p>
+          <h2>Orientações para alunos e responsáveis</h2>
+          <p>Acompanhe datas, documentos e requisitos para a renovação de matrícula dos seus filhos.</p>
+          <div class="hero-ctas">
+            <a class="btn btn-primary btn-lg" href="#">Ver orientações</a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="slide" role="tabpanel" data-img="assets/noticia1.jpg">
+      <div class="slide-wrap container">
+        <div class="slide-content">
+          <p class="overline">Calendário Acadêmico · 2026</p>
+          <h2>Um ano de avanço, um novo ciclo de conquistas</h2>
+          <p>Calendário escolar, avaliações e eventos esportivos em um só lugar, com avisos sempre atualizados.</p>
+          <div class="hero-ctas">
+            <a class="btn btn-primary btn-lg" href="#">Acessar calendário</a>
+            <a class="btn btn-ghost btn-lg" href="#">Comunicados</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="hero-controls">
+      <div class="hero-controls-inner container">
+        <div class="hero-counter" aria-live="polite" aria-atomic="true">
+          <span class="idx" id="slide-index">01</span><span>/ 03</span>
+          <span class="bar"><i id="slide-bar"></i></span>
+        </div>
+        <div class="hero-dots" role="tablist" aria-label="Escolher destaque">
+          <button id="d0" class="active" type="button" aria-label="Ir para o destaque 1"></button>
+          <button id="d1" type="button" aria-label="Ir para o destaque 2"></button>
+          <button id="d2" type="button" aria-label="Ir para o destaque 3"></button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="stripe" aria-hidden="true"></div>
+
+  <section class="section" aria-labelledby="h-aluno">
+    <div class="container">
+      <div class="section-head">
+        <div>
+          <p class="overline">Portal do estudante</p>
+          <h2 id="h-aluno">Área do Aluno</h2>
+        </div>
+      </div>
+      <div class="svc-grid">
+        <article class="svc">
+          <div class="svc-face chamfer">
+            <span class="svc-icon" aria-hidden="true">
+              <svg class="icon" viewBox="0 0 24 24"><path d="M2 10l10-5 10 5-10 5-10-5z"/><path d="M6 12v5c0 2.2 2.7 3.5 6 3.5s6-1.3 6-3.5v-5"/></svg>
+            </span>
+            <h3>Como Ingressar</h3>
+            <p>Regras, prazos e documentos do processo seletivo do CMF.</p>
+            <a class="go" href="#">Acessar <span aria-hidden="true">→</span></a>
+          </div>
+        </article>
+        <article class="svc">
+          <div class="svc-face chamfer">
+            <span class="svc-icon" aria-hidden="true">
+              <svg class="icon" viewBox="0 0 24 24"><path d="M3 7h18v11H3z"/><circle cx="12" cy="12.5" r="2"/><path d="M6 11v3M18 11v3"/></svg>
+            </span>
+            <h3>Setor Financeiro</h3>
+            <p>Pagamentos, taxas e orientações para responsáveis financeiros.</p>
+            <a class="go" href="#">Acessar <span aria-hidden="true">→</span></a>
+          </div>
+        </article>
+        <article class="svc svc-special">
+          <div class="svc-face chamfer">
+            <span class="svc-icon" aria-hidden="true">
+              <svg class="icon" viewBox="0 0 24 24"><path d="M5 17h14l-1.6 3H6.6L5 17z"/><path d="M12 20V7"/><path d="M12 7l6 7h-6z"/></svg>
+            </span>
+            <h3>Espaço Educacional</h3>
+            <p>Calendário escolar e livros para o ano letivo em andamento.</p>
+            <a class="go" href="#">Acessar <span aria-hidden="true">→</span></a>
+          </div>
+        </article>
+        <article class="svc">
+          <div class="svc-face chamfer">
+            <span class="svc-icon" aria-hidden="true">
+              <svg class="icon" viewBox="0 0 24 24"><path d="M6 3h12v18H6z"/><path d="M9 8h6M9 12h6M9 16h4"/></svg>
+            </span>
+            <h3>Normas e Documentos</h3>
+            <p>Requerimentos, legislação e documentos da vida escolar.</p>
+            <a class="go" href="#">Acessar <span aria-hidden="true">→</span></a>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="h-news" style="background:var(--surface-2)">
+    <div class="container">
+      <div class="section-head">
+        <div>
+          <p class="overline">Fique por dentro</p>
+          <h2 id="h-news">Últimas Notícias</h2>
+        </div>
+        <a class="all-link" href="#">Todas as notícias <span aria-hidden="true">→</span></a>
+      </div>
+      <div class="news-grid">
+        <article class="news chamfer">
+          <div class="thumb" style="background-image:url('assets/noticia1.jpg')">
+            <span class="badge" aria-hidden="true"><span>ago</span><b>14</b></span>
+          </div>
+          <div class="body">
+            <p class="overline" style="font-size:.7rem">Força Terrestre</p>
+            <h3>Exército Brasileiro atua em uma das maiores apreensões de cocaína da história</h3>
+            <p class="excerpt">Operação interagência na faixa de fronteira resultou na retenção de cerca de 260 toneladas de madeira com indícios da droga.</p>
+            <p class="meta">5 min de leitura</p>
+          </div>
+        </article>
+        <article class="news chamfer">
+          <div class="thumb" style="background:linear-gradient(135deg,var(--navy),var(--celeste));position:relative">
+            <div class="sideband" style="position:absolute;left:0;right:0;bottom:0" aria-hidden="true"></div>
+            <span class="badge" aria-hidden="true"><span>set</span><b>02</b></span>
+          </div>
+          <div class="body">
+            <p class="overline" style="font-size:.7rem">Ensino</p>
+            <h3>Jogos Regionais do Nordeste 2026 reúnem alunos do CMF em disputas</h3>
+            <p class="excerpt">Delegação do colégio participa das competições com espírito de equipe além da sala de aula.</p>
+            <p class="meta">3 min de leitura</p>
+          </div>
+        </article>
+        <article class="news chamfer">
+          <div class="thumb" style="background:linear-gradient(135deg,var(--jade),var(--gold));position:relative">
+            <div class="sideband" style="position:absolute;left:0;right:0;bottom:0;background:linear-gradient(90deg,var(--navy),var(--red-eb))" aria-hidden="true"></div>
+            <span class="badge" aria-hidden="true"><span>set</span><b>09</b></span>
+          </div>
+          <div class="body">
+            <p class="overline" style="font-size:.7rem">Comunidade escolar</p>
+            <h3>1ª Reunião de Pais e Responsáveis define alinhamento do semestre</h3>
+            <p class="excerpt">Encontro aproxima família e colégio no acompanhamento do desempenho acadêmico.</p>
+            <p class="meta">2 min de leitura</p>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="h-com">
+    <div class="container">
+      <div class="section-head">
+        <div>
+          <p class="overline">Avisos oficiais</p>
+          <h2 id="h-com">Comunicados</h2>
+        </div>
+        <a class="all-link" href="#">Ver todos os comunicados <span aria-hidden="true">→</span></a>
+      </div>
+      <div class="com">
+        <div class="com-item">
+          <div class="com-date chamfer" aria-hidden="true"><b>11</b><span>set</span></div>
+          <div class="com-body">
+            <div class="com-tags">
+              <span class="pill ca">CA</span>
+              <span class="pill de">DE</span>
+              <span class="pill pdf">PDF</span>
+            </div>
+            <h3><a href="#">Comunicado Nº 25 — Semana da 1ª Chamada da 2ª Avaliação de Estudo</a></h3>
+          </div>
+          <button class="com-view" type="button">Abrir PDF</button>
+        </div>
+        <div class="com-item">
+          <div class="com-date chamfer" aria-hidden="true"><b>08</b><span>set</span></div>
+          <div class="com-body">
+            <div class="com-tags">
+              <span class="pill ca">CA</span>
+              <span class="pill pdf">PDF</span>
+            </div>
+            <h3><a href="#">Comunicado Nº 24 — Jogos Regionais do Nordeste 2026</a></h3>
+          </div>
+          <button class="com-view" type="button">Abrir PDF</button>
+        </div>
+        <div class="com-item">
+          <div class="com-date chamfer" aria-hidden="true"><b>04</b><span>set</span></div>
+          <div class="com-body">
+            <div class="com-tags">
+              <span class="pill de">DE</span>
+              <span class="pill pdf">PDF</span>
+            </div>
+            <h3><a href="#">Comunicado Nº 22 — Mudança no horário das atividades escolares</a></h3>
+          </div>
+          <button class="com-view" type="button">Abrir PDF</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section ouvid" aria-labelledby="h-ouvid" style="background:var(--surface-2)">
+    <div class="container">
+      <div class="section-head">
+        <div>
+          <p class="overline">Ouvidoria e acesso à informação</p>
+          <h2 id="h-ouvid">Sua manifestação conta</h2>
+        </div>
+      </div>
+      <div class="svc-grid">
+        <article class="ouvid o-elogio">
+          <div class="ouvid-face chamfer">
+            <span class="ouvid-icon" aria-hidden="true">
+              <svg class="icon" viewBox="0 0 24 24"><path d="M12 20l-7-7a4.5 4.5 0 0 1 6.4-6.4l.6.6.6-.6A4.5 4.5 0 0 1 19 13l-7 7z"/></svg>
+            </span>
+            <h3>Elogio</h3>
+            <p>Reconheça a boa atuação de militares e servidores.</p>
+            <a class="btn btn-primary" href="#">Fazer elogio</a>
+          </div>
+        </article>
+        <article class="ouvid o-solicita">
+          <div class="ouvid-face chamfer">
+            <span class="ouvid-icon" aria-hidden="true">
+              <svg class="icon" viewBox="0 0 24 24"><path d="M4 4h16v13H8l-4 4z"/><path d="M8 9h8M8 13h5"/></svg>
+            </span>
+            <h3>Solicitação</h3>
+            <p>Peça informações ou serviços administrativos.</p>
+            <a class="btn btn-secondary" href="#">Solicitar</a>
+          </div>
+        </article>
+        <article class="ouvid o-reclama">
+          <div class="ouvid-face chamfer">
+            <span class="ouvid-icon" aria-hidden="true">
+              <svg class="icon" viewBox="0 0 24 24"><path d="M4 4h16v13H8l-4 4z"/><path d="M12 7v4M12 13.5v.5"/></svg>
+            </span>
+            <h3>Reclamação</h3>
+            <p>Registre problemas no atendimento ou nos serviços.</p>
+            <a class="btn btn-ghost" style="color:var(--text);border-color:var(--border)" href="#">Reclamar</a>
+          </div>
+        </article>
+        <article class="ouvid o-denuncia">
+          <div class="ouvid-face chamfer">
+            <span class="ouvid-icon" aria-hidden="true">
+              <svg class="icon" viewBox="0 0 24 24"><path d="M12 3l2.5 6 6 2-6 2-2.5 6-2.5-6-6-2 6-2z"/></svg>
+            </span>
+            <h3>Denúncia</h3>
+            <p>Canal sigiloso para irregularidades e desvios.</p>
+            <a class="btn btn-primary" href="#">Denunciar</a>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="container foot-grid">
+    <div class="foot-brand">
+      <img src="assets/brasao.png" alt="">
+      <p class="tagline">Casa de Eudoro Corrêa</p>
+      <p>Colégio Militar de Fortaleza — ensino de excelência, disciplina e civismo sob a tutela do Exército Brasileiro.</p>
+      <div class="social">
+        <a href="#" aria-label="Instagram do CMF">
+          <svg class="icon" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r=".8" fill="currentColor" stroke="none"/></svg>
+        </a>
+        <a href="#" aria-label="YouTube do CMF">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M3 8a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4v8a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4z"/><path d="M10 9l6 3-6 3z"/></svg>
+        </a>
+      </div>
+    </div>
+    <div class="foot-col">
+      <h4>Institucional</h4>
+      <a href="#">Histórico</a>
+      <a href="#">Missão, Visão e Valores</a>
+      <a href="#">Subordinação</a>
+      <a href="#">Estrutura Organizacional</a>
+      <a href="#">Comandante</a>
+    </div>
+    <div class="foot-col">
+      <h4>Navegação</h4>
+      <a href="#">Área do Aluno</a>
+      <a href="#">Comunicados</a>
+      <a href="#">Processo Seletivo</a>
+      <a href="#">Ouvidoria</a>
+      <a href="#">Acesso à Informação</a>
+    </div>
+    <div class="foot-col">
+      <h4>Contato</h4>
+      <p class="foot-contact">
+        Av. Senador Virgílio Távora, 1001<br>
+        Fortaleza — CE<br>
+        (85) 3349.0000<br>
+        cmf.cm.eb.mil.br
+      </p>
+      <div class="foot-sels">
+        <span>gov.br</span>
+        <span>Exército Brasileiro</span>
+        <span>10ª RM</span>
+      </div>
+    </div>
+  </div>
+  <div class="foot-bottom">
+    <div class="foot-bottom-inner container">
+      <span>© 2026 Colégio Militar de Fortaleza. Todos os direitos reservados.</span>
+      <span>Projeto: Design System "Eudoro Corrêa" · Protótipo 1.0</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var root=document.documentElement;
+  var saved=null;
+  try{saved=localStorage.getItem('cmf-theme');}catch(e){}
+  if(saved) root.setAttribute('data-theme',saved);
+
+  function setTheme(t){
+    root.setAttribute('data-theme',t);
+    var hc=t==='hc';
+    document.getElementById('toggle-hc').setAttribute('aria-pressed',hc);
+    document.getElementById('toggle-hc').textContent=hc?'Alto Contraste: Ativo':'Alto Contraste';
+    var dark=t==='eudoro';
+    document.getElementById('toggle-theme').setAttribute('aria-pressed',dark);
+    document.getElementById('toggle-theme').textContent=dark?'Tema: Escuro':'Tema: Claro';
+    try{localStorage.setItem('cmf-theme',root.getAttribute('data-theme'));}catch(e){}
+  }
+
+  document.getElementById('toggle-theme').addEventListener('click',function(){
+    var t=root.getAttribute('data-theme');
+    setTheme(t==='eudoro'?'fortaleza':(t==='hc'?'eudoro':'eudoro'));
+  });
+  document.getElementById('toggle-hc').addEventListener('click',function(){
+    var t=root.getAttribute('data-theme');
+    if(t==='hc'){ root.setAttribute('data-theme',saved&&saved!=='hc'?saved:'fortaleza');}
+    else{ saved=t; root.setAttribute('data-theme','hc'); }
+    try{localStorage.setItem('cmf-theme',root.getAttribute('data-theme'));}catch(e){}
+    var hc=root.getAttribute('data-theme')==='hc';
+    document.getElementById('toggle-hc').setAttribute('aria-pressed',hc);
+    document.getElementById('toggle-hc').textContent=hc?'Alto Contraste: Ativo':'Alto Contraste';
+  });
+  setTheme(root.getAttribute('data-theme'));
+
+  var burger=document.getElementById('burger');
+  var header=document.querySelector('header');
+  burger.addEventListener('click',function(){
+    var open=header.classList.toggle('nav-open');
+    burger.setAttribute('aria-expanded',open?'true':'false');
+    burger.setAttribute('aria-label',open?'Fechar menu':'Abrir menu');
+  });
+  document.querySelectorAll('[data-sub]').forEach(function(a){
+    a.addEventListener('click',function(e){
+      e.preventDefault();
+      var li=a.parentNode;
+      var was=li.classList.contains('mp-open');
+      document.querySelectorAll('#mpanel li.mp-open').forEach(function(x){x.classList.remove('mp-open');});
+      if(!was) li.classList.add('mp-open');
+    });
+  });
+
+  var slides=document.querySelectorAll('.slide');
+  var dots=document.querySelectorAll('.hero-dots button');
+  var idxEl=document.getElementById('slide-index');
+  var reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var cur=0,timer=null;
+
+  slides.forEach(function(s){ s.style.backgroundImage="url('"+s.getAttribute('data-img')+"')"; });
+
+  function show(i){
+    cur=(i+slides.length)%slides.length;
+    slides.forEach(function(s,ix){ s.classList.toggle('active',ix===cur); });
+    dots.forEach(function(d,ix){ d.classList.toggle('active',ix===cur); });
+    idxEl.textContent='0'+(cur+1);
+  }
+  function play(){ if(reduced||timer) return; timer=setInterval(function(){show(cur+1);},6000); }
+  function stop(){ if(timer){clearInterval(timer);timer=null;} }
+  dots.forEach(function(d,ix){
+    d.addEventListener('click',function(){stop();show(ix);});
+    d.addEventListener('mouseenter',stop);
+    d.addEventListener('mouseleave',play);
+  });
+  document.getElementById('slider').addEventListener('mouseenter',stop);
+  document.getElementById('slider').addEventListener('mouseleave',play);
+  document.getElementById('slider').addEventListener('focusin',stop);
+  document.getElementById('slider').addEventListener('focusout',play);
+  show(0);play();
+})();
+</script>
+</body>
+</html>

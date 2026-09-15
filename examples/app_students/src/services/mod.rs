@@ -58,11 +58,11 @@ macro_rules! servico_crud {
 }
 
 mod alunos;
+mod matriculas;
 mod professores;
 mod turmas;
-mod matriculas;
 
 pub use alunos::ServicoAluno;
+pub use matriculas::ServicoMatricula;
 pub use professores::ServicoProfessor;
 pub use turmas::ServicoTurma;
-pub use matriculas::ServicoMatricula;

@@ -1,4 +1,4 @@
-use gerax_http::{HttpServer, Router, ServerConfig, CorsConfig};
+use gerax_http::{CorsConfig, HttpServer, Router, ServerConfig};
 
 use crate::{AppResult, HttpRuntime};
 
@@ -95,7 +95,12 @@ where
     where
         Runtime: HttpRuntime<State>,
     {
-        let server = Runtime::build(self.state, self.router, self.server_config, self.cors_config)?;
+        let server = Runtime::build(
+            self.state,
+            self.router,
+            self.server_config,
+            self.cors_config,
+        )?;
         server.run().await?;
 
         Ok(())

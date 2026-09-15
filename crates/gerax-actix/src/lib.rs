@@ -6,14 +6,14 @@ pub use gerax_config::{
 };
 
 pub use gerax_http::{
-    CorsConfig, HttpServer, HttpServerBuilder, HttpServerError, Middleware, Next, Router, ServerConfig,
-    ServerResult,
+    CorsConfig, HttpServer, HttpServerBuilder, HttpServerError, Middleware, Next, Router,
+    ServerConfig, ServerResult,
 };
 
 pub mod builder;
-pub mod server;
 pub mod cors;
+pub mod server;
 
 pub use builder::ActixHttpServerBuilder;
-pub use server::ActixHttpServer;
 pub use cors::CorsMiddleware;
+pub use server::ActixHttpServer;

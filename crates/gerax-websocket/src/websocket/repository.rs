@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
-use gerax_db::Repository;
 use gerax_core::Entity;
+use gerax_db::Repository;
 
 use crate::websocket::handler::WsContext;
 

@@ -1,6 +1,4 @@
-use crate::handlers::professores::{
-    atualizar, criar, deletar, listar, obter,
-};
+use crate::handlers::professores::{atualizar, criar, deletar, listar, obter};
 use crate::state::AppState;
 use gerax_app::Router;
 

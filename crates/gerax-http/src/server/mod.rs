@@ -10,4 +10,3 @@ use async_trait::async_trait;
 pub trait HttpServer: Send {
     async fn run(self) -> ServerResult;
 }
-

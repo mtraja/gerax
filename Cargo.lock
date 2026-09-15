@@ -1949,6 +1949,34 @@ dependencies = [
 ]
 
 [[package]]
+name = "gerax-mcp"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "gerax-cqrs",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
+ "tokio",
+]
+
+[[package]]
+name = "gerax-mcp-http"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "bytes",
+ "futures",
+ "gerax-mcp",
+ "http 1.4.2",
+ "http-body-util",
+ "serde_json",
+ "tokio",
+ "tower",
+ "uuid",
+]
+
+[[package]]
 name = "gerax-mongodb"
 version = "0.1.0"
 dependencies = [

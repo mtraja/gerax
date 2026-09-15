@@ -1,6 +1,4 @@
-use crate::handlers::turmas::{
-    alunos, atualizar, criar, deletar, listar, obter,
-};
+use crate::handlers::turmas::{alunos, atualizar, criar, deletar, listar, obter};
 use crate::state::AppState;
 use gerax_app::Router;
 

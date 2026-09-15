@@ -11,10 +11,7 @@ mod error;
 mod loader;
 mod source;
 
-
 mod internal;
-
-
 
 // API pública principal
 
@@ -24,22 +21,13 @@ pub use config::Config;
 
 pub use document::ConfigDocument;
 
-pub use error::{
-    ConfigError,
-    ConfigResult,
-};
+pub use error::{ConfigError, ConfigResult};
 
 pub use loader::ConfigLoader;
-
-
 
 // Sources públicos
 
 pub use source::{
-    ConfigSource,
-    env::EnvSource,
-    json::JsonSource,
-    memory::MemorySource,
-    toml::TomlSource,
+    ConfigSource, env::EnvSource, json::JsonSource, memory::MemorySource, toml::TomlSource,
     yaml::YamlSource,
 };

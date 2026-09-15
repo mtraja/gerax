@@ -1,8 +1,8 @@
 use std::fmt;
 
 use serde::{Deserialize, Serialize};
-use tungstenite::protocol::CloseFrame as TungsteniteCloseFrame;
 use tungstenite::Bytes;
+use tungstenite::protocol::CloseFrame as TungsteniteCloseFrame;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct CloseFrame {
@@ -55,9 +55,7 @@ impl From<WsMessage> for tungstenite::Message {
         match value {
             WsMessage::Text(text) => tungstenite::Message::Text(text.into()),
             WsMessage::Binary(data) => tungstenite::Message::Binary(Bytes::from(data)),
-            WsMessage::Close(frame) => {
-                tungstenite::Message::Close(frame.map(|f| f.into()))
-            }
+            WsMessage::Close(frame) => tungstenite::Message::Close(frame.map(|f| f.into())),
             WsMessage::Ping => tungstenite::Message::Ping(Bytes::new()),
             WsMessage::Pong => tungstenite::Message::Pong(Bytes::new()),
         }

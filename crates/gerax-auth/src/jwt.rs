@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 
-use crate::traits::{Authenticator, AuthResult, AuthError};
-use crate::types::{Claims};
+use crate::traits::{AuthError, AuthResult, Authenticator};
+use crate::types::Claims;
 use gerax_http::routing::Context;
 
 /// Algoritmo suportado para validação de JWT.
@@ -24,24 +24,36 @@ impl JwtAuthenticator {
     }
 
     pub fn hs256(secret: impl Into<Vec<u8>>, leeway: u64) -> Self {
-        Self::new(Algorithm::HS256 { secret: secret.into() }, leeway)
+        Self::new(
+            Algorithm::HS256 {
+                secret: secret.into(),
+            },
+            leeway,
+        )
     }
 
     pub fn rs256(public_key: impl Into<Vec<u8>>, leeway: u64) -> Self {
-        Self::new(Algorithm::RS256 { public_key: public_key.into() }, leeway)
+        Self::new(
+            Algorithm::RS256 {
+                public_key: public_key.into(),
+            },
+            leeway,
+        )
     }
 
     /// Carrega chave secreta HS256 de um arquivo.
     pub fn hs256_from_file(path: impl AsRef<std::path::Path>, leeway: u64) -> AuthResult<Self> {
-        let secret = std::fs::read(path)
-            .map_err(|e| AuthError::Internal(format!("falha ao ler arquivo de secret HS256: {e}")))?;
+        let secret = std::fs::read(path).map_err(|e| {
+            AuthError::Internal(format!("falha ao ler arquivo de secret HS256: {e}"))
+        })?;
         Ok(Self::hs256(secret, leeway))
     }
 
     /// Carrega chave pública RS256 de um arquivo PEM.
     pub fn rs256_from_file(path: impl AsRef<std::path::Path>, leeway: u64) -> AuthResult<Self> {
-        let public_key = std::fs::read(path)
-            .map_err(|e| AuthError::Internal(format!("falha ao ler arquivo de chave pública RS256: {e}")))?;
+        let public_key = std::fs::read(path).map_err(|e| {
+            AuthError::Internal(format!("falha ao ler arquivo de chave pública RS256: {e}"))
+        })?;
         Ok(Self::rs256(public_key, leeway))
     }
 
@@ -53,7 +65,9 @@ impl JwtAuthenticator {
         let key = match &self.algorithm {
             Algorithm::HS256 { secret } => jsonwebtoken::DecodingKey::from_secret(secret),
             Algorithm::RS256 { public_key } => jsonwebtoken::DecodingKey::from_rsa_pem(public_key)
-                .map_err(|e| AuthError::Internal(format!("falha ao carregar chave pública RSA: {e}")))?,
+                .map_err(|e| {
+                    AuthError::Internal(format!("falha ao carregar chave pública RSA: {e}"))
+                })?,
         };
 
         let token_data = jsonwebtoken::decode::<Claims>(token, &key, &validation)
@@ -66,7 +80,9 @@ impl JwtAuthenticator {
         let key = match &self.algorithm {
             Algorithm::HS256 { secret } => jsonwebtoken::EncodingKey::from_secret(secret),
             Algorithm::RS256 { public_key } => jsonwebtoken::EncodingKey::from_rsa_pem(public_key)
-                .map_err(|e| AuthError::Internal(format!("falha ao carregar chave privada RSA: {e}")))?,
+                .map_err(|e| {
+                    AuthError::Internal(format!("falha ao carregar chave privada RSA: {e}"))
+                })?,
         };
 
         jsonwebtoken::encode(&jsonwebtoken::Header::default(), claims, &key)

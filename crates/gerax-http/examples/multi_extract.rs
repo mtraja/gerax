@@ -1,4 +1,4 @@
-use gerax_http::routing::{Context, HttpMethod, Request, Response, Router, State, Json};
+use gerax_http::routing::{Context, HttpMethod, Json, Request, Response, Router, State};
 use gerax_http::{ServerResult, handler};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
@@ -18,7 +18,10 @@ async fn health<S>(State(_state): State<S>) -> ServerResult<Response> {
 }
 
 #[handler]
-async fn create_user<S>(Json(payload): Json<CreateUserInput>, State(_state): State<S>) -> ServerResult<Response> {
+async fn create_user<S>(
+    Json(payload): Json<CreateUserInput>,
+    State(_state): State<S>,
+) -> ServerResult<Response> {
     let body = serde_json::to_vec(&payload).unwrap();
     Ok(Response {
         status: 201,

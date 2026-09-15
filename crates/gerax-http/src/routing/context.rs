@@ -1,8 +1,8 @@
+use super::Request;
+use super::extensions::Extensions;
+use super::pathparams::PathParams;
 use std::collections::HashMap;
 use std::sync::Arc;
-use super::pathparams::PathParams;
-use super::extensions::Extensions;
-use super::Request;
 
 pub struct Context<State> {
     pub state: Arc<State>,

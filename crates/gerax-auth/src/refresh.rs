@@ -41,7 +41,10 @@ impl Clone for RefreshTokenStore {
 
 impl RefreshTokenStore {
     pub fn new(store: Arc<dyn TokenStorage>, rotation_policy: RotationPolicy) -> Self {
-        Self { store, rotation_policy }
+        Self {
+            store,
+            rotation_policy,
+        }
     }
 
     pub async fn save(&self, token: RefreshToken) -> AuthResult<()> {
@@ -82,7 +85,10 @@ impl MemoryTokenStorage {
 #[async_trait::async_trait]
 impl TokenStorage for MemoryTokenStorage {
     async fn save(&self, token: RefreshToken) -> AuthResult<()> {
-        self.tokens.lock().unwrap().insert(token.token.clone(), token);
+        self.tokens
+            .lock()
+            .unwrap()
+            .insert(token.token.clone(), token);
         Ok(())
     }
 

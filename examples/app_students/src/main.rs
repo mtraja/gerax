@@ -17,8 +17,9 @@ use crate::state::AppState;
 async fn main() -> Result<(), AppError> {
     let _ = tracing_subscriber::fmt()
         .with_env_filter(
-            tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("gerax_postgres=debug,app_students=info"))
+            tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| {
+                tracing_subscriber::EnvFilter::new("gerax_postgres=debug,app_students=info")
+            }),
         )
         .try_init();
 
@@ -40,8 +41,7 @@ async fn main() -> Result<(), AppError> {
 
     let state = AppState::new(connection);
 
-    let cors = CorsConfig::new()
-    .allowed_origin("http://localhost:5173");
+    let cors = CorsConfig::new().allowed_origin("http://localhost:5173");
 
     App::builder(state)
         .router(router())

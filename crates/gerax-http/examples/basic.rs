@@ -1,5 +1,5 @@
-use gerax_http::routing::{Context, HttpMethod, Request, Response, Router, Scope};
 use gerax_http::middleware::{Middleware, Next};
+use gerax_http::routing::{Context, HttpMethod, Request, Response, Router, Scope};
 use gerax_http::{HttpServerError, ServerResult};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
@@ -29,11 +29,7 @@ where
         "logger"
     }
 
-    async fn handle(
-        &self,
-        ctx: Context<State>,
-        next: Next<State>,
-    ) -> ServerResult<Response> {
+    async fn handle(&self, ctx: Context<State>, next: Next<State>) -> ServerResult<Response> {
         println!(
             "[Logger] {:?} {}",
             ctx.request().method(),

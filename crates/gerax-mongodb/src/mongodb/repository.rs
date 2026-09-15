@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use bson::{doc, oid::ObjectId, Document};
+use bson::{Document, doc, oid::ObjectId};
 use futures::StreamExt;
 use gerax_core::Entity;
 use gerax_db::{DbError, Repository};
@@ -50,11 +50,13 @@ where
 
         match result {
             Some(mut doc) => {
-                let object_id = doc.get_object_id("_id").map_err(|e| DbError::serialization(e.to_string()))?;
+                let object_id = doc
+                    .get_object_id("_id")
+                    .map_err(|e| DbError::serialization(e.to_string()))?;
                 doc.insert("id", object_id.to_hex());
                 doc.remove("_id");
-                let entity = bson::from_document(doc)
-                    .map_err(|e| DbError::serialization(e.to_string()))?;
+                let entity =
+                    bson::from_document(doc).map_err(|e| DbError::serialization(e.to_string()))?;
                 Ok(Some(entity))
             }
             None => Ok(None),
@@ -71,11 +73,13 @@ where
 
         while let Some(result) = cursor.next().await {
             let mut doc = result.map_err(|e| DbError::connection(e))?;
-            let object_id = doc.get_object_id("_id").map_err(|e| DbError::serialization(e.to_string()))?;
+            let object_id = doc
+                .get_object_id("_id")
+                .map_err(|e| DbError::serialization(e.to_string()))?;
             doc.insert("id", object_id.to_hex());
             doc.remove("_id");
-            let entity = bson::from_document(doc)
-                .map_err(|e| DbError::serialization(e.to_string()))?;
+            let entity =
+                bson::from_document(doc).map_err(|e| DbError::serialization(e.to_string()))?;
             entities.push(entity);
         }
 
@@ -84,8 +88,8 @@ where
 
     async fn insert(&self, mut entity: T) -> Result<T, DbError> {
         let object_id = ObjectId::new();
-        let mut doc = bson::to_document(&entity)
-            .map_err(|e| DbError::serialization(e.to_string()))?;
+        let mut doc =
+            bson::to_document(&entity).map_err(|e| DbError::serialization(e.to_string()))?;
         doc.insert("_id", object_id);
         doc.remove("id");
 
@@ -104,8 +108,8 @@ where
             .ok_or_else(|| DbError::not_found("missing id"))?;
         let object_id = ObjectId::parse_str(&id).map_err(|_| DbError::not_found(&id))?;
 
-        let mut doc = bson::to_document(&entity)
-            .map_err(|e| DbError::serialization(e.to_string()))?;
+        let mut doc =
+            bson::to_document(&entity).map_err(|e| DbError::serialization(e.to_string()))?;
         doc.insert("_id", object_id);
         doc.remove("id");
 

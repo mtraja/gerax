@@ -1,5 +1,5 @@
 use super::codec::{Codec, CodecError};
-use capnp::message::{Allocator, Builder, HeapAllocator, ReaderOptions,};
+use capnp::message::{Allocator, Builder, HeapAllocator, ReaderOptions};
 use capnp::serialize;
 use capnp::serialize::OwnedSegments;
 
@@ -7,14 +7,11 @@ use capnp::serialize::OwnedSegments;
 /// Trait `CapnpSerializable` é placeholder até schema/compiler estar disponível.
 pub trait CapnpSerializable: Sized {
     /// Pega os dados da struct Rust e preenche o Builder do Cap'n Proto.
-    fn build_capnp_message(
-        &self, 
-        builder: &mut Builder<HeapAllocator>
-    ) -> Result<(), CodecError>;
+    fn build_capnp_message(&self, builder: &mut Builder<HeapAllocator>) -> Result<(), CodecError>;
 
     /// Lê os dados do Reader do Cap'n Proto e constrói uma instância da struct Rust.
     fn from_capnp_reader(
-        reader: &capnp::message::Reader<OwnedSegments>
+        reader: &capnp::message::Reader<OwnedSegments>,
     ) -> Result<Self, CodecError>;
 }
 
@@ -34,7 +31,9 @@ impl CapnpCodec {
     /// Lógica de deserialização Zero-Copy passando uma closure para consumir o Reader
     pub fn with_reader<F, R>(bytes: &[u8], f: F) -> Result<R, CodecError>
     where
-        F: FnOnce(&capnp::message::Reader<capnp::serialize::OwnedSegments>) -> Result<R, CodecError>,
+        F: FnOnce(
+            &capnp::message::Reader<capnp::serialize::OwnedSegments>,
+        ) -> Result<R, CodecError>,
     {
         let reader = serialize::read_message(bytes, ReaderOptions::new())
             .map_err(|e| CodecError(format!("Erro ao ler mensagem Capnp: {}", e)))?;
@@ -57,4 +56,3 @@ where
         Self::with_reader(bytes, |reader| T::from_capnp_reader(reader))
     }
 }
-

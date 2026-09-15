@@ -2,9 +2,9 @@ use std::future::Future;
 use std::pin::Pin;
 use std::sync::Arc;
 
-use gerax_http::routing::{Context, Response};
-use gerax_http::routing::Handler;
 use gerax_http::ServerResult;
+use gerax_http::routing::Handler;
+use gerax_http::routing::{Context, Response};
 
 use crate::traits::{AuthError, AuthResult};
 use crate::types::{Claims, RefreshToken, TokenPair};
@@ -26,9 +26,7 @@ pub trait AuthState: Send + Sync + 'static {
 /// Espera JSON no corpo com credenciais. A validação é delegada à closure
 /// `validate_credentials`, que retorna `Claims` em caso de sucesso.
 /// Gera e retorna um `TokenPair` (access_token + refresh_token).
-pub fn login<State, V, Fut>(
-    validate_credentials: V,
-) -> impl Handler<State>
+pub fn login<State, V, Fut>(validate_credentials: V) -> impl Handler<State>
 where
     State: AuthState,
     V: Fn(Context<State>) -> Fut + Send + Sync + 'static + Clone,
@@ -56,7 +54,8 @@ where
     let access_token = ctx.state().jwt().encode_token(&claims)?;
     let refresh_token = generate_refresh_token(&claims);
 
-    ctx.state().token_storage()
+    ctx.state()
+        .token_storage()
         .save(RefreshToken {
             token: refresh_token.clone(),
             user_id: claims.sub.clone(),
@@ -70,8 +69,7 @@ where
         refresh_token,
     };
 
-    let body = serde_json::to_vec(&token_pair)
-        .map_err(|e| AuthError::Internal(e.to_string()))?;
+    let body = serde_json::to_vec(&token_pair).map_err(|e| AuthError::Internal(e.to_string()))?;
 
     Ok(Response {
         status: 200,
@@ -121,7 +119,8 @@ where
     rotated.rotated = true;
     ctx.state().token_storage().save(rotated).await?;
 
-    ctx.state().token_storage()
+    ctx.state()
+        .token_storage()
         .save(RefreshToken {
             token: new_refresh_token.clone(),
             user_id: claims.sub.clone(),
@@ -135,8 +134,7 @@ where
         refresh_token: new_refresh_token,
     };
 
-    let body = serde_json::to_vec(&token_pair)
-        .map_err(|e| AuthError::Internal(e.to_string()))?;
+    let body = serde_json::to_vec(&token_pair).map_err(|e| AuthError::Internal(e.to_string()))?;
 
     Ok(Response {
         status: 200,
@@ -154,8 +152,8 @@ mod tests {
     use std::sync::Arc;
 
     use super::*;
-    use crate::types::Claims;
     use crate::MemoryTokenStorage;
+    use crate::types::Claims;
 
     #[derive(Clone)]
     struct MockAuthState {
@@ -219,7 +217,8 @@ mod tests {
         let claims = sample_claims();
         let refresh_token = generate_refresh_token(&claims);
 
-        state.store
+        state
+            .store
             .save(RefreshToken {
                 token: refresh_token.clone(),
                 user_id: claims.sub.clone(),

@@ -19,8 +19,8 @@ impl Response {
     }
 
     pub fn json<T: Serialize>(body: T) -> Result<Self, HttpServerError> {
-        let body = serde_json::to_vec(&body)
-            .map_err(|e| HttpServerError::HandlerError(e.to_string()))?;
+        let body =
+            serde_json::to_vec(&body).map_err(|e| HttpServerError::HandlerError(e.to_string()))?;
         let mut headers = HeaderMap::new();
         headers.insert("content-type", "application/json");
         Ok(Self {

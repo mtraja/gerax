@@ -1,5 +1,5 @@
-use gerax_http::routing::{Context, ExtractError};
 use gerax_http::routing::FromContext;
+use gerax_http::routing::{Context, ExtractError};
 
 use crate::types::Claims;
 

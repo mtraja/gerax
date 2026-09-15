@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 use gerax_db::{Connection, DbError};
-use mongodb::{Client, options::ClientOptions, Database};
+use mongodb::{Client, Database, options::ClientOptions};
 
 use crate::mongodb::MongoDbConfig;
 
@@ -29,15 +29,11 @@ impl Connection for MongoDbConnection {
         let options = ClientOptions::parse(&config.uri)
             .await
             .map_err(|e| DbError::connection(e))?;
-        let client = Client::with_options(options)
-            .map_err(|e| DbError::connection(e))?;
+        let client = Client::with_options(options).map_err(|e| DbError::connection(e))?;
 
         let database = client.database(&config.database);
 
-        Ok(Self {
-            client,
-            database,
-        })
+        Ok(Self { client, database })
     }
 
     async fn ping(&self) -> Result<(), DbError> {

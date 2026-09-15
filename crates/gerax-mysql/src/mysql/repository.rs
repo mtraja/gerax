@@ -38,16 +38,21 @@ where
     T: Entity + Serialize + for<'de> Deserialize<'de> + Send + Sync + 'static,
 {
     async fn find_by_id(&self, id: &str) -> Result<Option<T>, DbError> {
-        let mut conn = self.connection.pool().get_conn().await.map_err(|e| DbError::connection(e))?;
+        let mut conn = self
+            .connection
+            .pool()
+            .get_conn()
+            .await
+            .map_err(|e| DbError::connection(e))?;
         let query = format!("SELECT data FROM {} WHERE id = :id", self.table_name());
-        let row = conn.exec_first::<String, _, _>(query, params! { "id" => id })
+        let row = conn
+            .exec_first::<String, _, _>(query, params! { "id" => id })
             .await
             .map_err(|e| DbError::connection(e))?;
 
         match row {
             Some(data) => {
-                let entity = serde_json::from_str(&data)
-                    .map_err(|e| DbError::serialization(e))?;
+                let entity = serde_json::from_str(&data).map_err(|e| DbError::serialization(e))?;
                 Ok(Some(entity))
             }
             None => Ok(None),
@@ -55,14 +60,21 @@ where
     }
 
     async fn find_all(&self) -> Result<Vec<T>, DbError> {
-        let mut conn = self.connection.pool().get_conn().await.map_err(|e| DbError::connection(e))?;
+        let mut conn = self
+            .connection
+            .pool()
+            .get_conn()
+            .await
+            .map_err(|e| DbError::connection(e))?;
         let query = format!("SELECT data FROM {}", self.table_name());
-        let rows = conn.exec::<String, _, ()>(query, ()).await.map_err(|e| DbError::connection(e))?;
+        let rows = conn
+            .exec::<String, _, ()>(query, ())
+            .await
+            .map_err(|e| DbError::connection(e))?;
 
         let mut entities = Vec::new();
         for data in rows {
-            let entity = serde_json::from_str(&data)
-                .map_err(|e| DbError::serialization(e))?;
+            let entity = serde_json::from_str(&data).map_err(|e| DbError::serialization(e))?;
             entities.push(entity);
         }
         Ok(entities)
@@ -78,11 +90,18 @@ where
         });
         entity.set_id(id.clone());
 
-        let data = serde_json::to_string(&entity)
-            .map_err(|e| DbError::serialization(e))?;
+        let data = serde_json::to_string(&entity).map_err(|e| DbError::serialization(e))?;
 
-        let mut conn = self.connection.pool().get_conn().await.map_err(|e| DbError::connection(e))?;
-        let query = format!("INSERT INTO {} (id, data) VALUES (:id, :data)", self.table_name());
+        let mut conn = self
+            .connection
+            .pool()
+            .get_conn()
+            .await
+            .map_err(|e| DbError::connection(e))?;
+        let query = format!(
+            "INSERT INTO {} (id, data) VALUES (:id, :data)",
+            self.table_name()
+        );
         conn.exec_drop(query, params! { "id" => id, "data" => data })
             .await
             .map_err(|e| DbError::connection(e))?;
@@ -94,11 +113,18 @@ where
         let id = entity
             .id()
             .ok_or_else(|| DbError::not_found("missing id"))?;
-        let data = serde_json::to_string(&entity)
-            .map_err(|e| DbError::serialization(e))?;
+        let data = serde_json::to_string(&entity).map_err(|e| DbError::serialization(e))?;
 
-        let mut conn = self.connection.pool().get_conn().await.map_err(|e| DbError::connection(e))?;
-        let query = format!("UPDATE {} SET data = :data WHERE id = :id", self.table_name());
+        let mut conn = self
+            .connection
+            .pool()
+            .get_conn()
+            .await
+            .map_err(|e| DbError::connection(e))?;
+        let query = format!(
+            "UPDATE {} SET data = :data WHERE id = :id",
+            self.table_name()
+        );
         conn.exec_drop(query, params! { "id" => id, "data" => data })
             .await
             .map_err(|e| DbError::connection(e))?;
@@ -107,7 +133,12 @@ where
     }
 
     async fn delete(&self, id: &str) -> Result<(), DbError> {
-        let mut conn = self.connection.pool().get_conn().await.map_err(|e| DbError::connection(e))?;
+        let mut conn = self
+            .connection
+            .pool()
+            .get_conn()
+            .await
+            .map_err(|e| DbError::connection(e))?;
         let query = format!("DELETE FROM {} WHERE id = :id", self.table_name());
         conn.exec_drop(query, params! { "id" => id })
             .await

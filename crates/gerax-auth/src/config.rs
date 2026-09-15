@@ -62,7 +62,9 @@ impl From<AlgorithmConfig> for Algorithm {
     fn from(config: AlgorithmConfig) -> Self {
         match config {
             AlgorithmConfig::HS256 => Algorithm::HS256 { secret: Vec::new() },
-            AlgorithmConfig::RS256 => Algorithm::RS256 { public_key: Vec::new() },
+            AlgorithmConfig::RS256 => Algorithm::RS256 {
+                public_key: Vec::new(),
+            },
         }
     }
 }

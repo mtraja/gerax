@@ -91,7 +91,9 @@ impl Connection for PostgresConnection {
             .get("tls")
             .and_then(|v| v.as_str())
             .map(|v| match v.to_lowercase().as_str() {
-                "true" | "1" | "enable" | "enabled" | "native" | "native-tls" => PostgresTls::NativeTls,
+                "true" | "1" | "enable" | "enabled" | "native" | "native-tls" => {
+                    PostgresTls::NativeTls
+                }
                 "rustls" => PostgresTls::Rustls,
                 _ => PostgresTls::Disabled,
             })
@@ -137,9 +139,14 @@ mod tests {
             .system_env()
             .build();
 
-        assert!(result.is_err() || !result.unwrap().as_object().is_some_and(|o| {
-            o.contains_key("url") || o.contains_key("database_url") || o.contains_key("postgres_url")
-        }));
+        assert!(
+            result.is_err()
+                || !result.unwrap().as_object().is_some_and(|o| {
+                    o.contains_key("url")
+                        || o.contains_key("database_url")
+                        || o.contains_key("postgres_url")
+                })
+        );
     }
 
     #[tokio::test]
@@ -148,9 +155,7 @@ mod tests {
             std::env::set_var("GERAX_TEST_DATABASE_URL", "postgresql://localhost/test");
         }
 
-        let result: Result<Value, _> = Config::builder()
-            .system_env()
-            .build();
+        let result: Result<Value, _> = Config::builder().system_env().build();
 
         unsafe {
             std::env::remove_var("GERAX_TEST_DATABASE_URL");
@@ -175,10 +180,7 @@ mod tests {
             std::env::set_var("GERAX_TEST_DATABASE_URL", "postgresql://system/db");
         }
 
-        let result: Result<Value, _> = Config::builder()
-            .source(memory)
-            .system_env()
-            .build();
+        let result: Result<Value, _> = Config::builder().source(memory).system_env().build();
 
         unsafe {
             std::env::remove_var("GERAX_TEST_DATABASE_URL");
@@ -214,9 +216,6 @@ mod tests {
         let config = PostgresConfig::new("postgresql://invalid-host:12345/nonexistent");
         let result = PostgresConnection::connect_with_config(config).await;
         assert!(result.is_err());
-        assert!(matches!(
-            result,
-            Err(DbError::ConnectionError(_))
-        ));
+        assert!(matches!(result, Err(DbError::ConnectionError(_))));
     }
 }

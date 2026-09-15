@@ -17,4 +17,9 @@ impl EntidadeCrud<CriarProfessor, AtualizarProfessor> for Professor {
     }
 }
 
-servico_crud!(ServicoProfessor, Professor, CriarProfessor, AtualizarProfessor);
+servico_crud!(
+    ServicoProfessor,
+    Professor,
+    CriarProfessor,
+    AtualizarProfessor
+);

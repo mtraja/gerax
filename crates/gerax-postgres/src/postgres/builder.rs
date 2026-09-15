@@ -1,11 +1,11 @@
+use async_trait::async_trait;
+use gerax_core::Entity;
+use gerax_db::{Connection, DatabaseConfig, DbError, Repository, RepositoryBuilder};
 use std::marker::PhantomData;
 use std::sync::Arc;
-use async_trait::async_trait;
-use gerax_db::{Connection, DatabaseConfig, DbError, Repository, RepositoryBuilder};
-use gerax_core::Entity;
 
-use crate::postgres::connection::PostgresConnection;
 use crate::postgres::PostgresRepository;
+use crate::postgres::connection::PostgresConnection;
 
 /// Builder concreto para repositórios PostgreSQL.
 pub struct PostgresRepositoryBuilder<T> {
@@ -14,10 +14,10 @@ pub struct PostgresRepositoryBuilder<T> {
     _marker: PhantomData<T>,
 }
 
-impl<T:> PostgresRepositoryBuilder<T> 
-where 
-    T:Entity + Send + Sync + 'static {
-
+impl<T> PostgresRepositoryBuilder<T>
+where
+    T: Entity + Send + Sync + 'static,
+{
     pub fn new(config: DatabaseConfig) -> Self {
         Self {
             config,
@@ -37,9 +37,10 @@ where
 }
 
 #[async_trait]
-impl<T> RepositoryBuilder<T> for PostgresRepositoryBuilder<T> 
-where T: Entity + Send + Sync + 'static {
-    
+impl<T> RepositoryBuilder<T> for PostgresRepositoryBuilder<T>
+where
+    T: Entity + Send + Sync + 'static,
+{
     async fn build(&self) -> Result<Box<dyn Repository<T>>, DbError> {
         let connection = if let Some(ref conn) = self.connection {
             conn.clone()
@@ -81,6 +82,9 @@ mod tests {
         let config = DatabaseConfig::default();
         let builder = PostgresRepositoryBuilder::<User>::new(config);
 
-        assert_eq!(builder.config().url, "postgresql://user:password@host:port/name_db");
+        assert_eq!(
+            builder.config().url,
+            "postgresql://user:password@host:port/name_db"
+        );
     }
 }

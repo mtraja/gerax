@@ -4,8 +4,9 @@ use gerax_core::Entity;
 use crate::DbError;
 
 #[async_trait]
-pub trait Repository<T>: Send + Sync + 'static 
-where T: Entity + Send + Sync + 'static
+pub trait Repository<T>: Send + Sync + 'static
+where
+    T: Entity + Send + Sync + 'static,
 {
     async fn find_by_id(&self, id: &str) -> Result<Option<T>, DbError>;
     async fn find_all(&self) -> Result<Vec<T>, DbError>;
@@ -13,7 +14,6 @@ where T: Entity + Send + Sync + 'static
     async fn update(&self, entity: T) -> Result<(), DbError>;
     async fn delete(&self, id: &str) -> Result<(), DbError>;
 }
-
 
 #[async_trait]
 pub trait EntityRepository: Send + Sync + 'static {

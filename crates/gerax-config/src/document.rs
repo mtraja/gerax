@@ -42,14 +42,8 @@ impl ConfigDocument {
     }
 
     /// Faz merge recursivo.
-    pub(crate) fn merge(
-        &mut self,
-        other: ConfigDocument,
-    ) {
-        crate::internal::merge::merge(
-            &mut self.root,
-            other.root,
-        );
+    pub(crate) fn merge(&mut self, other: ConfigDocument) {
+        crate::internal::merge::merge(&mut self.root, other.root);
     }
 
     /// Desserializa para uma estrutura Rust.
@@ -58,11 +52,7 @@ impl ConfigDocument {
         T: DeserializeOwned,
     {
         serde_json::from_value(self.root.clone())
-            .map_err(|e| {
-                ConfigError::Deserialize(
-                    e.to_string(),
-                )
-            })
+            .map_err(|e| ConfigError::Deserialize(e.to_string()))
     }
 }
 

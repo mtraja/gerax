@@ -1,6 +1,6 @@
-use std::collections::HashMap;
 use serde::de::DeserializeOwned;
 use serde_urlencoded;
+use std::collections::HashMap;
 use urlencoding;
 
 use super::ExtractError;

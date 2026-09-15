@@ -84,12 +84,7 @@ where
 
     async fn on_message(&self, ctx: WsContext<State>, msg: WsMessage) -> WsResult<()>;
 
-    async fn on_close(
-        &self,
-        _ctx: WsContext<State>,
-        _code: u16,
-        _reason: String,
-    ) -> WsResult<()> {
+    async fn on_close(&self, _ctx: WsContext<State>, _code: u16, _reason: String) -> WsResult<()> {
         Ok(())
     }
 

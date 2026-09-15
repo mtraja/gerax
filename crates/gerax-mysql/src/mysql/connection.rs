@@ -1,7 +1,7 @@
-use mysql_async::prelude::Queryable;
 use async_trait::async_trait;
 use gerax_db::{Connection, DbError};
-use mysql_async::{Pool, Opts};
+use mysql_async::prelude::Queryable;
+use mysql_async::{Opts, Pool};
 
 use crate::mysql::MySqlConfig;
 
@@ -23,15 +23,18 @@ impl Connection for MySqlConnection {
     {
         let config = MySqlConfig::from_env()?;
         let url = format!("mysql://{}", config.url);
-        let opts = Opts::from_url(&url)
-            .map_err(|e| DbError::connection(e))?;
+        let opts = Opts::from_url(&url).map_err(|e| DbError::connection(e))?;
         let pool = Pool::new(opts);
 
         Ok(Self { pool })
     }
 
     async fn ping(&self) -> Result<(), DbError> {
-        let mut conn = self.pool.get_conn().await.map_err(|e| DbError::connection(e))?;
+        let mut conn = self
+            .pool
+            .get_conn()
+            .await
+            .map_err(|e| DbError::connection(e))?;
         conn.ping().await.map_err(|e| DbError::connection(e))?;
         Ok(())
     }

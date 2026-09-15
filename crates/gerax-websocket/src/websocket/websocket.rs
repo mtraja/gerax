@@ -1,12 +1,12 @@
 use std::sync::Arc;
 
-use futures_util::{stream::StreamExt, SinkExt};
+use futures_util::{SinkExt, stream::StreamExt};
 use gerax_http::ServerResult;
 use tokio::net::TcpListener;
-use tokio::sync::{mpsc, Mutex, Notify};
+use tokio::sync::{Mutex, Notify, mpsc};
 use tokio_tungstenite::accept_async;
 
-use crate::websocket::handler::{WsContext, WsHandler, WsResult, ServerError};
+use crate::websocket::handler::{ServerError, WsContext, WsHandler, WsResult};
 use crate::websocket::message::WsMessage;
 
 pub struct WebSocketServer<State> {
@@ -42,10 +42,7 @@ where
             state,
             addr,
             handler,
-            shutdown: Arc::new((
-                std::sync::atomic::AtomicBool::new(false),
-                Notify::new(),
-            )),
+            shutdown: Arc::new((std::sync::atomic::AtomicBool::new(false), Notify::new())),
             bound_addr: Arc::new(Mutex::new(None)),
         }
     }
@@ -59,9 +56,9 @@ where
             .await
             .map_err(|e| gerax_http::HttpServerError::InitializationFailed(e.to_string()))?;
 
-        let bound = listener.local_addr().map_err(|e| {
-            gerax_http::HttpServerError::InitializationFailed(e.to_string())
-        })?;
+        let bound = listener
+            .local_addr()
+            .map_err(|e| gerax_http::HttpServerError::InitializationFailed(e.to_string()))?;
         *self.bound_addr.lock().await = Some(bound);
 
         loop {
@@ -111,7 +108,10 @@ where
                 let frame: tungstenite::Message = msg.into();
                 if let Err(e) = sink.send(frame).await {
                     let _ = send_handler
-                        .on_error(send_ctx.clone(), ServerError::ConnectionError(e.to_string()))
+                        .on_error(
+                            send_ctx.clone(),
+                            ServerError::ConnectionError(e.to_string()),
+                        )
                         .await;
                     break;
                 }
@@ -159,7 +159,9 @@ where
     }
 
     pub async fn stop(&self) -> ServerResult<()> {
-        self.shutdown.0.store(true, std::sync::atomic::Ordering::SeqCst);
+        self.shutdown
+            .0
+            .store(true, std::sync::atomic::Ordering::SeqCst);
         self.shutdown.1.notify_one();
         Ok(())
     }

@@ -1,12 +1,12 @@
 use std::marker::PhantomData;
 use std::sync::Arc;
 
-use gerax_db::{Connection, DbError, Repository, RepositoryBuilder};
 use gerax_core::Entity;
+use gerax_db::{Connection, DbError, Repository, RepositoryBuilder};
 
+use crate::mysql::MySqlConfig;
 use crate::mysql::MySqlConnection;
 use crate::mysql::MySqlRepository;
-use crate::mysql::MySqlConfig;
 
 /// Builder concreto para repositórios MySQL.
 pub struct MySqlRepositoryBuilder<T> {

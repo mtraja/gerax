@@ -1,10 +1,10 @@
 use std::sync::Arc;
 
+use gerax_http::ServerResult;
 use gerax_http::middleware::{Middleware, Next};
 use gerax_http::routing::{Context, Response};
-use gerax_http::ServerResult;
 
-use crate::traits::{Authenticator, Authorizer, AuthError};
+use crate::traits::{AuthError, Authenticator, Authorizer};
 
 /// Middleware de autenticação/autorização plugável em qualquer adapter `gerax-http`.
 ///
@@ -162,7 +162,11 @@ mod tests {
     #[tokio::test]
     async fn middleware_allows_public_path() {
         let authenticator = JwtAuthenticator::hs256("secret", 0);
-        let middleware = AuthMiddleware::new(authenticator, None::<MockAuthorizer>, vec!["/public".into()]);
+        let middleware = AuthMiddleware::new(
+            authenticator,
+            None::<MockAuthorizer>,
+            vec!["/public".into()],
+        );
         let ctx = build_context("/public/page");
 
         let result = middleware

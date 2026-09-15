@@ -1,8 +1,6 @@
 use std::sync::Arc;
 
-use gerax_websocket::{
-    ServerError, WebSocketServer, WsContext, WsHandler, WsMessage,
-};
+use gerax_websocket::{ServerError, WebSocketServer, WsContext, WsHandler, WsMessage};
 
 struct EchoHandler;
 
@@ -18,11 +16,7 @@ impl WsHandler<()> for EchoHandler {
 #[tokio::main]
 async fn main() {
     let handler = Arc::new(EchoHandler);
-    let server = WebSocketServer::new(
-        "127.0.0.1:8080".parse().unwrap(),
-        Arc::new(()),
-        handler,
-    );
+    let server = WebSocketServer::new("127.0.0.1:8080".parse().unwrap(), Arc::new(()), handler);
 
     println!("WebSocket echo server running on ws://127.0.0.1:8080");
     server.run().await.unwrap();
