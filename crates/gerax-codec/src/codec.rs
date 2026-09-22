@@ -71,6 +71,24 @@ impl From<wincode::ReadError> for CodecError {
     }
 }
 
+impl From<quick_xml::Error> for CodecError {
+    fn from(e: quick_xml::Error) -> Self {
+        CodecError(format!("{}", e))
+    }
+}
+
+impl From<quick_xml::de::DeError> for CodecError {
+    fn from(e: quick_xml::de::DeError) -> Self {
+        CodecError(format!("{}", e))
+    }
+}
+
+impl From<quick_xml::se::SeError> for CodecError {
+    fn from(e: quick_xml::se::SeError) -> Self {
+        CodecError(format!("{}", e))
+    }
+}
+
 /// Trait que define o contrato do Codec
 pub trait Codec<T> {
     fn serialize(&self, value: &T) -> Result<Vec<u8>, CodecError>;

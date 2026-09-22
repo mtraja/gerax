@@ -4,6 +4,7 @@ pub mod json;
 pub mod protobuf;
 pub mod toml;
 pub mod wincode;
+pub mod xml;
 pub mod yaml;
 
 pub use capnp::{CapnpCodec, CapnpSerializable};
@@ -12,4 +13,5 @@ pub use json::JsonCodec;
 pub use protobuf::ProtobufCodec;
 pub use toml::TomlCodec;
 pub use wincode::WincodeCodec;
+pub use xml::XmlCodec;
 pub use yaml::YamlCodec;

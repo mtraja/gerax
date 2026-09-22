@@ -23,6 +23,13 @@ use gerax_http::{HttpServerError, ServerResult};
 /// let router = Router::new()
 ///     .post("/graphql", executor);
 /// ```
+///
+/// ## Autenticação
+///
+/// O handler repassa o `Context<State>` do `gerax-http` completo para o
+/// [`Executor`]. Dessa forma as `Claims` injetadas pelo
+/// `gerax_auth::AuthMiddleware` ficam acessíveis nos resolvers através de
+/// `ctx.data_opt::<Claims>()`.
 pub struct GraphqlHandler<State> {
     executor: Box<dyn Executor<State>>,
 }
@@ -82,8 +89,7 @@ where
             Ok(req) => req,
             Err(e) => return Self::to_response(Err(e)),
         };
-        let state = context.state();
-        let result = self.executor.execute(request, &*state).await;
+        let result = self.executor.execute(request, &context).await;
         Self::to_response(result)
     }
 }
@@ -106,7 +112,7 @@ mod tests {
         async fn execute(
             &self,
             request: GraphqlRequest,
-            _state: &(),
+            _context: &Context<()>,
         ) -> Result<GraphqlResponse, GraphqlError> {
             Ok(GraphqlResponse {
                 data: Some(json!({ "query": request.query })),
@@ -122,7 +128,7 @@ mod tests {
         async fn execute(
             &self,
             _request: GraphqlRequest,
-            _state: &(),
+            _context: &Context<()>,
         ) -> Result<GraphqlResponse, GraphqlError> {
             Err(GraphqlError::Execution("resolver failed".to_string()))
         }

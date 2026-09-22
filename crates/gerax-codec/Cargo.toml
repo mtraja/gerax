@@ -21,3 +21,4 @@ prost.workspace = true
 capnp.workspace = true
 toml.workspace = true
 wincode.workspace = true
+quick-xml.workspace = true

@@ -1,5 +1,6 @@
 use crate::GraphqlError;
 use async_graphql::{Schema as AsyncSchema, Variables};
+use gerax_auth::Claims;
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 
@@ -125,12 +126,14 @@ impl<Q: 'static, M: 'static, S: 'static> Schema<Q, M, S> {
         M: GraphqlMutationRoot,
         S: GraphqlSubscriptionRoot,
     {
-        self.execute_with_state(query, variables, std::sync::Arc::new(()))
-            .await
+        self.execute_with_data::<()>(query, variables, None, None).await
     }
 
     /// Executa uma query GraphQL com acesso ao estado da aplicação.
-    pub async fn execute_with_state<State: Send + Sync + 'static>(
+    ///
+    /// O estado é inserido por valor no contexto GraphQL; resolvers o acessam
+    /// através de `ctx.data::<State>()`. Por isso `State: Clone`.
+    pub async fn execute_with_state<State: Send + Sync + Clone + 'static>(
         &self,
         query: &str,
         variables: Option<Map<String, Value>>,
@@ -141,11 +144,37 @@ impl<Q: 'static, M: 'static, S: 'static> Schema<Q, M, S> {
         M: GraphqlMutationRoot,
         S: GraphqlSubscriptionRoot,
     {
+        self.execute_with_data(query, variables, Some(state), None)
+            .await
+    }
+
+    /// Executa uma query GraphQL com estado e claims de autenticação.
+    ///
+    /// As `Claims` inseridas pelo `gerax_auth::AuthMiddleware` no contexto HTTP
+    /// são repassadas aqui para ficarem acessíveis nos resolvers através de
+    /// `ctx.data_opt::<Claims>()`.
+    pub async fn execute_with_data<State: Send + Sync + Clone + 'static>(
+        &self,
+        query: &str,
+        variables: Option<Map<String, Value>>,
+        state: Option<std::sync::Arc<State>>,
+        claims: Option<Claims>,
+    ) -> Result<GraphqlExecutedResponse, GraphqlError>
+    where
+        Q: GraphqlQueryRoot,
+        M: GraphqlMutationRoot,
+        S: GraphqlSubscriptionRoot,
+    {
         let vars = variables.map(|m| Variables::from_json(Value::Object(m)));
-        let request = async_graphql::Request::new(query)
-            .data(state)
-            .variables(vars.unwrap_or_default());
-        let response = self.inner.execute(request).await;
+        let mut request_builder =
+            async_graphql::Request::new(query).variables(vars.unwrap_or_default());
+        if let Some(state) = state {
+            request_builder = request_builder.data((*state).clone());
+        }
+        if let Some(claims) = claims {
+            request_builder = request_builder.data(claims);
+        }
+        let response = self.inner.execute(request_builder).await;
 
         let errors = response
             .errors

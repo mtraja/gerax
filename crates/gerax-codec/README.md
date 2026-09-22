@@ -24,6 +24,7 @@ let msg = codec.deserialize(&bytes)?;
 | `JsonCodec` | JSON | `serde_json` |
 | `YamlCodec` | YAML | `serde_yml` |
 | `TomlCodec` | TOML | `toml` |
+| `XmlCodec` | XML | `quick-xml` |
 | `ProtobufCodec` | Protobuf | `prost` |
 | `CapnpCodec` | Cap'n Proto | `capnp` |
 

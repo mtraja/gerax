@@ -1,0 +1,25 @@
+[package]
+name = "gerax-eda"
+
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+description = "Event-Driven Architecture (EDA) para o Gerax"
+
+[dependencies]
+gerax-es.workspace = true
+async-trait.workspace = true
+thiserror.workspace = true
+chrono = { workspace = true, features = ["serde"] }
+serde.workspace = true
+serde_json.workspace = true
+
+[dev-dependencies]
+tokio.workspace = true
+gerax-cqrs.workspace = true
+serde = { workspace = true, features = ["derive"] }

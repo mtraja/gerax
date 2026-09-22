@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::sync::Arc;
 
 use async_graphql::{Object, SimpleObject, Subscription};
 use async_stream::stream;
@@ -112,8 +113,9 @@ impl SubscriptionRoot {
     }
 }
 
+#[derive(Clone)]
 pub struct AppState {
-    pub messages: RwLock<HashMap<String, Message>>,
+    pub messages: Arc<tokio::sync::RwLock<HashMap<String, Message>>>,
     pub tx: broadcast::Sender<Message>,
 }
 
@@ -121,7 +123,7 @@ impl AppState {
     pub fn new() -> Self {
         let (tx, _) = broadcast::channel(100);
         Self {
-            messages: RwLock::new(HashMap::new()),
+            messages: Arc::new(tokio::sync::RwLock::new(HashMap::new())),
             tx,
         }
     }

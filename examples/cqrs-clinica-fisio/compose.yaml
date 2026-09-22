@@ -1,0 +1,23 @@
+name: cqrs_clinica_fisio
+
+services:
+  postgres:
+    image: docker.io/library/postgres:17-alpine
+    container_name: cqrs_clinica_fisio_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: gerax
+      POSTGRES_PASSWORD: gerax
+      POSTGRES_DB: clinica_fisio
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --locale=C"
+    ports:
+      - "127.0.0.1:5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gerax -d clinica_fisio"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+    driver: local

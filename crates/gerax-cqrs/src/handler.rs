@@ -77,7 +77,7 @@ mod tests {
     impl CommandHandler for CreateAlunoHandler {
         type Command = CreateAluno;
 
-        async fn handle(&self, command: CreateAluno) -> Result<Aluno, CqrsError> {
+        async fn handle(&self, command: Self::Command) -> Result<Aluno, CqrsError> {
             Ok(Aluno {
                 id: 1,
                 nome: command.nome,
@@ -91,7 +91,7 @@ mod tests {
     impl QueryHandler for GetAlunoHandler {
         type Query = GetAluno;
 
-        async fn handle(&self, query: GetAluno) -> Result<Option<Aluno>, CqrsError> {
+        async fn handle(&self, query: Self::Query) -> Result<Option<Aluno>, CqrsError> {
             if query.id == 1 {
                 Ok(Some(Aluno {
                     id: 1,

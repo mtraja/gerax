@@ -25,14 +25,15 @@ impl GraphiQL {
 </head>
 <body>
     <div id="graphiql">Loading...</div>
+    <script crossorigin src="https://cdn.jsdelivr.net/npm/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/graphiql/graphiql.min.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/graphiql/graphiql.min.css"/>
     <script>
         const root = document.getElementById('graphiql');
         const fetcher = GraphiQL.createFetcher({{ url: '{}' }});
-        ReactDOM.render(
-            React.createElement(GraphiQL, {{ fetcher: fetcher }}),
-            root
+        ReactDOM.createRoot(root).render(
+            React.createElement(GraphiQL, {{ fetcher: fetcher }})
         );
     </script>
 </body>

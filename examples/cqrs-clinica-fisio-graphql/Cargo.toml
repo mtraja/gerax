@@ -1,0 +1,23 @@
+[package]
+name = "cqrs-clinica-fisio-graphql"
+version.workspace = true
+edition.workspace = true
+description = "Exemplo hexagonal: gerax-cqrs + PostgreSQL + API GraphQL em axum (gerax-graphql) para uma clínica de fisioterapia"
+
+[dependencies]
+async-graphql.workspace = true
+async-trait.workspace = true
+axum.workspace = true
+gerax-core.workspace = true
+gerax-cqrs = { path = "../../crates/gerax-cqrs" }
+gerax-db.workspace = true
+gerax-graphql.workspace = true
+gerax-macros = { path = "../../crates/gerax-macros" }
+gerax-postgres.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sqlx.workspace = true
+tokio.workspace = true
+tower-http.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true

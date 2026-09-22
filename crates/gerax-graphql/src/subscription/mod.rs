@@ -1,6 +1,8 @@
 use std::sync::Arc;
 
 use async_trait::async_trait;
+use gerax_auth::Claims;
+use gerax_http::routing::{Context, HttpMethod, Request};
 use gerax_websocket::websocket::graphql::{
     GraphQLClientMessage, GraphQLDataPayload, GraphQLErrorPayload, GraphQLServerMessage,
 };
@@ -69,7 +71,15 @@ where
                     extensions: None,
                 };
 
-                match executor.execute(request, ctx.state().as_ref()).await {
+                let mut graphql_ctx = Context::new(
+                    ctx.state(),
+                    Request::new(HttpMethod::Post, "/graphql".to_string(), Vec::new()),
+                );
+                if let Some(claims) = ctx.extensions().get::<Claims>() {
+                    graphql_ctx.extensions_mut().insert(claims.as_ref().clone());
+                }
+
+                match executor.execute(request, &graphql_ctx).await {
                     Ok(response) => {
                         let data = response.data.unwrap_or(Value::Null);
                         let server_msg = GraphQLServerMessage::Data {
@@ -245,7 +255,7 @@ mod tests {
         async fn execute(
             &self,
             _request: GraphqlRequest,
-            _state: &(),
+            _context: &crate::GraphqlContext<()>,
         ) -> Result<GraphqlResponse, GraphqlError> {
             Ok(GraphqlResponse::default())
         }

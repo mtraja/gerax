@@ -32,6 +32,7 @@ members = [
     "crates/gerax-rpc",
     "crates/gerax-cqrs",
     "crates/gerax-es",
+    "crates/gerax-eda",
     "crates/gerax-rag",
     "crates/gerax-mcp",
     "crates/gerax-mcp-http",
@@ -40,7 +41,6 @@ members = [
     "examples/myapp",
     "examples/app_postgres",
     "examples/app_students",
-    "examples/app_students_v2",
     "examples/app-mongo",
     "examples/graphql-demo",
     "examples/actix-test",
@@ -48,6 +48,8 @@ members = [
     "examples/actix-dep-test",
     "examples/graphql-build-test",
     "examples/cqrs-demo",
+    "examples/cqrs-clinica-fisio",
+    "examples/cqrs-clinica-fisio-graphql",
 ]
 
 [workspace.package]
@@ -89,6 +91,8 @@ gerax-ai = { path = "crates/gerax-ai" }
 
 gerax-mysql = { path = "crates/gerax-mysql" }
 
+gerax-graphql = { path = "crates/gerax-graphql" }
+
 gerax-capnp = { path = "crates/gerax-capnp" }
 gerax-websocket = { path = "crates/gerax-websocket" }
 gerax-openapi = { path = "crates/gerax-openapi" }
@@ -96,6 +100,7 @@ gerax-codec = { path = "crates/gerax-codec" }
 gerax-rpc = { path = "crates/gerax-rpc" }
 gerax-cqrs = { path = "crates/gerax-cqrs" }
 gerax-es = { path = "crates/gerax-es" }
+gerax-eda = { path = "crates/gerax-eda" }
 gerax-rag = { path = "crates/gerax-rag" }
 gerax-mcp = { path = "crates/gerax-mcp" }
 gerax-mcp-http = { path = "crates/gerax-mcp-http" }
@@ -103,6 +108,7 @@ gerax-mcp-http = { path = "crates/gerax-mcp-http" }
 actix-web = { version = "4", features = ["macros"] }
 actix-cors = "0.7"
 axum = { version = "0.8", features = ["macros"] }
+tower-http = { version = "0.6", features = ["cors"] }
 poem = { version = "3" }
 async-trait = "0.1.91"
 serde = { version = "1.0", features = ["derive"] }
@@ -119,6 +125,7 @@ tokio-postgres = { version = "0.7", features = ["with-chrono-0_4"] }
 sqlx = { version = "0.8", default-features = false, features = ["postgres", "runtime-tokio", "macros", "json", "uuid"] }
 bson = { version = "2", features = ["chrono-0_4"] }
 tokio = { version = "1", features = ["full"] }
+quick-xml = { version = "0.38", features = ["serialize"] }
 
 tonic = { version = "0.14", features = ["tls-native-roots"] }
 tonic-build = "0.14"
