@@ -224,9 +224,7 @@ mod tests {
     use std::sync::{Arc, Mutex};
 
     use async_trait::async_trait;
-    use gerax_cqrs::{
-        CommandBus, HandlerRegistry, QueryBus, register_commands, register_queries,
-    };
+    use gerax_cqrs::{CommandBus, HandlerRegistry, QueryBus, register_commands, register_queries};
     use serde_json::json;
 
     use crate::adapters::inbound::graphql::schema;
@@ -365,7 +363,14 @@ mod tests {
         }
     }
 
-    fn estado() -> Result<(AppState, Arc<FakePacienteRepository>, Arc<FakeTerapiaRepository>), gerax_cqrs::CqrsError> {
+    fn estado() -> Result<
+        (
+            AppState,
+            Arc<FakePacienteRepository>,
+            Arc<FakeTerapiaRepository>,
+        ),
+        gerax_cqrs::CqrsError,
+    > {
         let paciente_repo = Arc::new(FakePacienteRepository::new());
         let terapia_repo = Arc::new(FakeTerapiaRepository::new());
 
@@ -439,9 +444,14 @@ mod tests {
     #[tokio::test]
     async fn query_obtem_paciente_por_id() {
         let (state, repo, _) = estado().unwrap();
-        let mut paciente =
-            Paciente::novo("João".into(), "00000000000".into(), "1980-01-01".into(), "85".into(), "joao@email.com".into())
-                .unwrap();
+        let mut paciente = Paciente::novo(
+            "João".into(),
+            "00000000000".into(),
+            "1980-01-01".into(),
+            "85".into(),
+            "joao@email.com".into(),
+        )
+        .unwrap();
         paciente.id = Some(PacienteId::new("p1".to_string()).unwrap());
         let salvo = repo.create(&paciente).await.unwrap();
         let id = salvo.id.clone().unwrap().to_string();
@@ -516,10 +526,16 @@ mod tests {
         )
         .await;
 
-        let resposta = executar(&state, "{ terapiasDoPaciente(pacienteId: \"1\") { id tipo } }").await;
+        let resposta = executar(
+            &state,
+            "{ terapiasDoPaciente(pacienteId: \"1\") { id tipo } }",
+        )
+        .await;
         assert_eq!(
             resposta.data,
-            Some(json!({ "terapiasDoPaciente": [{ "id": "1", "tipo": "Fisioterapia Esportiva" }] }))
+            Some(
+                json!({ "terapiasDoPaciente": [{ "id": "1", "tipo": "Fisioterapia Esportiva" }] })
+            )
         );
     }
 }

@@ -21,10 +21,7 @@ impl fmt::Display for DomainError {
 impl std::error::Error for DomainError {}
 
 /// Valida e normaliza um texto obrigatório.
-pub(crate) fn texto_obrigatorio(
-    campo: &'static str,
-    valor: String,
-) -> Result<String, DomainError> {
+pub(crate) fn texto_obrigatorio(campo: &'static str, valor: String) -> Result<String, DomainError> {
     let valor = valor.trim().to_owned();
     if valor.is_empty() {
         Err(DomainError::CampoObrigatorio(campo))

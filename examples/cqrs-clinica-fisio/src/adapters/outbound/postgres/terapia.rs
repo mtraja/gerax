@@ -114,18 +114,11 @@ impl TerapiaRepository for PostgresTerapiaRepository {
     }
 
     async fn list(&self) -> Result<Vec<Terapia>, ApplicationError> {
-        let items = self
-            .repo
-            .find_all()
-            .await
-            .map_err(ApplicationError::from)?;
+        let items = self.repo.find_all().await.map_err(ApplicationError::from)?;
         Ok(items.into_iter().map(|e| e.into()).collect())
     }
 
-    async fn list_by_paciente(
-        &self,
-        paciente_id: &str,
-    ) -> Result<Vec<Terapia>, ApplicationError> {
+    async fn list_by_paciente(&self, paciente_id: &str) -> Result<Vec<Terapia>, ApplicationError> {
         let connection = self.repo.connection();
         let tabela = TerapiaEntity::collection_name();
         let query = format!(
@@ -150,9 +143,6 @@ impl TerapiaRepository for PostgresTerapiaRepository {
     }
 
     async fn delete(&self, id: &str) -> Result<(), ApplicationError> {
-        self.repo
-            .delete(id)
-            .await
-            .map_err(ApplicationError::from)
+        self.repo.delete(id).await.map_err(ApplicationError::from)
     }
 }

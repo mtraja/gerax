@@ -114,18 +114,11 @@ impl PacienteRepository for PostgresPacienteRepository {
     }
 
     async fn list(&self) -> Result<Vec<Paciente>, ApplicationError> {
-        let items = self
-            .repo
-            .find_all()
-            .await
-            .map_err(ApplicationError::from)?;
+        let items = self.repo.find_all().await.map_err(ApplicationError::from)?;
         Ok(items.into_iter().map(|e| e.into()).collect())
     }
 
     async fn delete(&self, id: &str) -> Result<(), ApplicationError> {
-        self.repo
-            .delete(id)
-            .await
-            .map_err(ApplicationError::from)
+        self.repo.delete(id).await.map_err(ApplicationError::from)
     }
 }

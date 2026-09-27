@@ -1,7 +1,9 @@
 use serde::{Deserialize, Serialize};
 
 use super::error::DomainError;
-use super::value_objects::{Descricao, PacienteId, QtdSessoes, SessoesSemanais, TerapiaId, TipoTerapia};
+use super::value_objects::{
+    Descricao, PacienteId, QtdSessoes, SessoesSemanais, TerapiaId, TipoTerapia,
+};
 
 /// Entidade `Terapia`: plano de fisioterapia vinculado a um `Paciente`.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -71,14 +73,7 @@ mod tests {
 
     #[test]
     fn nova_rejeita_tipo_vazio() {
-        let err = Terapia::nova(
-            "p1".into(),
-            "  ".into(),
-            "descrição".into(),
-            2,
-            8,
-        )
-        .unwrap_err();
+        let err = Terapia::nova("p1".into(), "  ".into(), "descrição".into(), 2, 8).unwrap_err();
         assert_eq!(err, DomainError::CampoObrigatorio("tipo"));
     }
 

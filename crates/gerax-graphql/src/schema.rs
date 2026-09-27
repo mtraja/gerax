@@ -126,7 +126,8 @@ impl<Q: 'static, M: 'static, S: 'static> Schema<Q, M, S> {
         M: GraphqlMutationRoot,
         S: GraphqlSubscriptionRoot,
     {
-        self.execute_with_data::<()>(query, variables, None, None).await
+        self.execute_with_data::<()>(query, variables, None, None)
+            .await
     }
 
     /// Executa uma query GraphQL com acesso ao estado da aplicação.

@@ -12,6 +12,6 @@ pub use error::DomainError;
 pub use paciente::Paciente;
 pub use terapia::Terapia;
 pub use value_objects::{
-    Cpf, DataNascimento, Descricao, Email, Nome, PacienteId, QtdSessoes, SessoesSemanais,
-    Telefone, TerapiaId, TipoTerapia,
+    Cpf, DataNascimento, Descricao, Email, Nome, PacienteId, QtdSessoes, SessoesSemanais, Telefone,
+    TerapiaId, TipoTerapia,
 };

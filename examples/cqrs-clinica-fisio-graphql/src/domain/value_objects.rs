@@ -110,7 +110,8 @@ impl Email {
         let dominio = partes.next();
         let tem_extra = partes.next().is_some();
         let valido = matches!((local, dominio), (Some(local), Some(dominio))
-            if !local.is_empty() && !dominio.is_empty()) && !tem_extra;
+            if !local.is_empty() && !dominio.is_empty())
+            && !tem_extra;
         if valido {
             Ok(Self(valor))
         } else {

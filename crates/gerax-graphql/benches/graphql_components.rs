@@ -107,8 +107,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         query: "{ answer }".to_string(),
         ..GraphqlRequest::default()
     };
+    let executor_context = Context::new(
+        Arc::new(()),
+        Request::new(HttpMethod::Post, "/graphql".to_string(), Vec::new()),
+    );
     measure("executor_execute", iterations, || {
-        consume_result(runtime.block_on(executor.execute(request.clone(), &())));
+        consume_result(runtime.block_on(executor.execute(request.clone(), &executor_context)));
     });
 
     let resolver = QueryResolver::<()>::new();

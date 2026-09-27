@@ -26,8 +26,8 @@ impl<R: TerapiaRepository, P: PacienteRepository> CriarTerapiaHandler<R, P> {
 }
 
 #[async_trait]
-impl<R: TerapiaRepository + 'static, P: PacienteRepository + 'static>
-    CommandHandler for CriarTerapiaHandler<R, P>
+impl<R: TerapiaRepository + 'static, P: PacienteRepository + 'static> CommandHandler
+    for CriarTerapiaHandler<R, P>
 {
     type Command = CriarTerapia;
 
@@ -84,7 +84,11 @@ impl<R: TerapiaRepository + Send + Sync + 'static> CommandHandler for AtualizarT
                 ApplicationError::not_found(format!("terapia {}", command.id)).into_cqrs()
             })?;
         terapia
-            .atualizar(command.descricao, command.sessao_semanal, command.qtd_sessoes)
+            .atualizar(
+                command.descricao,
+                command.sessao_semanal,
+                command.qtd_sessoes,
+            )
             .map_err(|e| ApplicationError::from(e).into_cqrs())?;
         self.repo.update(&terapia).await.map_err(|e| e.into_cqrs())
     }
@@ -105,7 +109,10 @@ impl<R: TerapiaRepository + Send + Sync + 'static> CommandHandler for DeletarTer
     type Command = DeletarTerapia;
 
     async fn handle(&self, command: DeletarTerapia) -> Result<(), CqrsError> {
-        self.repo.delete(&command.id).await.map_err(|e| e.into_cqrs())
+        self.repo
+            .delete(&command.id)
+            .await
+            .map_err(|e| e.into_cqrs())
     }
 }
 

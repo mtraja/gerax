@@ -19,7 +19,9 @@ pub async fn listar_pacientes(
     State(state): State<AppState>,
 ) -> Result<Json<Vec<PacienteResponse>>, ApiError> {
     let pacientes = state.query_bus.execute(ListarPacientes).await?;
-    Ok(Json(pacientes.into_iter().map(PacienteResponse::from).collect()))
+    Ok(Json(
+        pacientes.into_iter().map(PacienteResponse::from).collect(),
+    ))
 }
 
 pub async fn criar_paciente(
@@ -72,10 +74,7 @@ pub async fn deletar_paciente(
     State(state): State<AppState>,
     Path(id): Path<String>,
 ) -> Result<StatusCode, ApiError> {
-    state
-        .command_bus
-        .dispatch(DeletarPaciente { id })
-        .await?;
+    state.command_bus.dispatch(DeletarPaciente { id }).await?;
     Ok(StatusCode::NO_CONTENT)
 }
 
@@ -87,14 +86,18 @@ pub async fn listar_terapias_do_paciente(
         .query_bus
         .execute(ListarTerapiasDoPaciente { paciente_id })
         .await?;
-    Ok(Json(terapias.into_iter().map(TerapiaResponse::from).collect()))
+    Ok(Json(
+        terapias.into_iter().map(TerapiaResponse::from).collect(),
+    ))
 }
 
 pub async fn listar_terapias(
     State(state): State<AppState>,
 ) -> Result<Json<Vec<TerapiaResponse>>, ApiError> {
     let terapias = state.query_bus.execute(ListarTerapias).await?;
-    Ok(Json(terapias.into_iter().map(TerapiaResponse::from).collect()))
+    Ok(Json(
+        terapias.into_iter().map(TerapiaResponse::from).collect(),
+    ))
 }
 
 pub async fn criar_terapia(

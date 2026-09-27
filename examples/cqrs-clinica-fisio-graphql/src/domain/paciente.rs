@@ -35,7 +35,12 @@ impl Paciente {
         })
     }
 
-    pub fn atualizar(&mut self, nome: String, telefone: String, email: String) -> Result<(), DomainError> {
+    pub fn atualizar(
+        &mut self,
+        nome: String,
+        telefone: String,
+        email: String,
+    ) -> Result<(), DomainError> {
         self.nome = Nome::new(nome)?;
         self.telefone = Telefone::new(telefone)?;
         self.email = Email::new(email)?;
@@ -96,7 +101,11 @@ mod tests {
     fn atualizar_altera_campos_permitidos() {
         let mut paciente = exemplo();
         paciente
-            .atualizar("Maria Silva Souza".into(), "(85) 98888-1111".into(), "m.souza@email.com".into())
+            .atualizar(
+                "Maria Silva Souza".into(),
+                "(85) 98888-1111".into(),
+                "m.souza@email.com".into(),
+            )
             .unwrap();
         assert_eq!(paciente.nome.as_str(), "Maria Silva Souza");
         assert_eq!(paciente.telefone.as_str(), "(85) 98888-1111");

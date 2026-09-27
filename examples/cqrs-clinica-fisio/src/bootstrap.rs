@@ -9,12 +9,10 @@ use gerax_postgres::PostgresConnection;
 use tokio::net::TcpListener;
 
 use crate::adapters::inbound::http::router;
-use crate::adapters::outbound::postgres::{
-    PostgresPacienteRepository, PostgresTerapiaRepository,
-};
+use crate::adapters::outbound::postgres::{PostgresPacienteRepository, PostgresTerapiaRepository};
 use crate::application::handlers::paciente::{
-    AtualizarPacienteHandler, CriarPacienteHandler, DeletarPacienteHandler,
-    ListarPacientesHandler, ObterPacienteHandler,
+    AtualizarPacienteHandler, CriarPacienteHandler, DeletarPacienteHandler, ListarPacientesHandler,
+    ObterPacienteHandler,
 };
 use crate::application::handlers::terapia::{
     AtualizarTerapiaHandler, CriarTerapiaHandler, DeletarTerapiaHandler,

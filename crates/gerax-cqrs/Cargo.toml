@@ -16,6 +16,7 @@ async-trait.workspace = true
 thiserror.workspace = true
 gerax-es = { path = "../gerax-es", optional = true }
 
+
 [features]
 default = []
 event-sourcing = ["dep:gerax-es"]

@@ -21,7 +21,7 @@ impl<R: PacienteRepository> CriarPacienteHandler<R> {
 }
 
 #[async_trait]
-impl<R: PacienteRepository  + 'static> CommandHandler for CriarPacienteHandler<R> {
+impl<R: PacienteRepository + 'static> CommandHandler for CriarPacienteHandler<R> {
     type Command = CriarPaciente;
 
     async fn handle(&self, command: CriarPaciente) -> Result<Paciente, CqrsError> {
@@ -82,7 +82,10 @@ impl<R: PacienteRepository + Send + Sync + 'static> CommandHandler for DeletarPa
     type Command = DeletarPaciente;
 
     async fn handle(&self, command: DeletarPaciente) -> Result<(), CqrsError> {
-        self.repo.delete(&command.id).await.map_err(|e| e.into_cqrs())
+        self.repo
+            .delete(&command.id)
+            .await
+            .map_err(|e| e.into_cqrs())
     }
 }
 
