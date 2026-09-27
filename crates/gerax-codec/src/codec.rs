@@ -89,6 +89,18 @@ impl From<quick_xml::se::SeError> for CodecError {
     }
 }
 
+impl From<rmp_serde::encode::Error> for CodecError {
+    fn from(e: rmp_serde::encode::Error) -> Self {
+        CodecError(format!("{}", e))
+    }
+}
+
+impl From<rmp_serde::decode::Error> for CodecError {
+    fn from(e: rmp_serde::decode::Error) -> Self {
+        CodecError(format!("{}", e))
+    }
+}
+
 /// Trait que define o contrato do Codec
 pub trait Codec<T> {
     fn serialize(&self, value: &T) -> Result<Vec<u8>, CodecError>;

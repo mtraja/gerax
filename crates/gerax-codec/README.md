@@ -2,7 +2,7 @@
 
 Integração do Gerax com codec.
 
-Fornece a trait `Codec<T>` e implementações para JSON, YAML, TOML, Protobuf e Cap'n Proto.
+Fornece a trait `Codec<T>` e implementações para JSON, YAML, TOML, XML, MessagePack, Protobuf e Cap'n Proto.
 
 ## Uso
 
@@ -25,8 +25,29 @@ let msg = codec.deserialize(&bytes)?;
 | `YamlCodec` | YAML | `serde_yml` |
 | `TomlCodec` | TOML | `toml` |
 | `XmlCodec` | XML | `quick-xml` |
+| `MessagePackCodec` | MessagePack | `rmp-serde` |
 | `ProtobufCodec` | Protobuf | `prost` |
 | `CapnpCodec` | Cap'n Proto | `capnp` |
+| `WincodeCodec` | binário | `wincode` |
+
+## MessagePack
+
+```rust
+use gerax_codec::{Codec, MessagePackCodec};
+use serde::{Deserialize, Serialize};
+
+#[derive(Serialize, Deserialize, PartialEq, Debug)]
+struct Event { id: u64, tags: Vec<String> }
+
+let codec = MessagePackCodec;
+let bytes = codec.serialize(&Event { id: 1, tags: vec!["a".into()] })?;
+let event: Event = codec.deserialize(&bytes)?;
+assert_eq!(event.id, 1);
+```
+
+A serialização padrão usa a representação **compacta** (structs como arrays).
+Para interoperabilidade com consumidores que esperam mapas nomeados, use
+`MessagePackCodec::serialize_named`. A desserialização aceita ambas as formas.
 
 ## Erros
 

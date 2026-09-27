@@ -6,8 +6,8 @@
 Fornece a trait `Codec<T>` e implementações para múltiplos formatos, permitindo que
 tipos de domínio sejam codificados/decodificados sem acoplamento a um formato específico.
 
-**Estado atual:** Core funcional (JSON, YAML, TOML, Protobuf), Cap'n Proto como stub,
-sem testes, sem fábrica de codecs, sem feature flags.
+**Estado atual:** Core funcional (JSON, YAML, TOML, MessagePack, Protobuf), Cap'n Proto como stub,
+sem fábrica de codecs, sem feature flags.
 
 ---
 
@@ -44,6 +44,8 @@ sem testes, sem fábrica de codecs, sem feature flags.
 3. **TOML (`src/toml.rs`)** — Pronto. Adicionar testes de round-trip.
 4. **Protobuf (`src/protobuf.rs`)** — Pronto. Adicionar doc comment no bound `Default`.
 5. **Cap'n Proto (`src/capnp.rs`)** — Manter como stub documentado até schema/capnpc.
+6. **MessagePack (`src/messagepack.rs`)** — Pronto (via `rmp-serde`). Testes de round-trip
+   compacto e nomeado já cobertos. Falta apenas padronizar com os demais codecs de texto.
 
 **Para cada codec:**
 - Teste serialize + deserialize round-trip com struct simples.
@@ -61,7 +63,7 @@ sem testes, sem fábrica de codecs, sem feature flags.
 1. Criar `src/factory.rs` com enum `CodecKind` e função `fn codec(kind: CodecKind) -> Box<dyn Codec<T>>`.
 2. Suportar codecs habilitados via feature flags na factory.
 3. Avaliar necessidade de `BincodeCodec` (feature `bincode` opcional).
-4. Avaliar necessidade de `MessagePackCodec` (feature `rmp` opcional).
+4. `MessagePackCodec` — **concluído** (`src/messagepack.rs`, feature futura `rmp`).
 
 **Critério de aceitação:** `CodecKind::Json` retorna `JsonCodec`, etc., sem alocação desnecessária para tipos concretos.
 
@@ -72,7 +74,7 @@ sem testes, sem fábrica de codecs, sem feature flags.
 **Tarefas:**
 1. Testes de integração em `tests/`:
    - `codec_text.rs` — JSON, YAML, TOML round-trip.
-   - `codec_binary.rs` — Protobuf round-trip.
+   - `codec_binary.rs` — MessagePack, Protobuf round-trip.
    - `codec_error.rs` — verificar `From` impls e mensagens.
 2. Adicionar `criterion` como dev-dependency (feature `bench`).
 3. Benchmark serialize/deserialize para cada codec com struct média (3 campos, 1 Vec).
@@ -107,6 +109,7 @@ gerax-codec/
 │   ├── json.rs
 │   ├── yaml.rs
 │   ├── toml.rs
+│   ├── messagepack.rs
 │   ├── protobuf.rs
 │   ├── capnp.rs
 │   └── bincode.rs      # futuro, feature-gated
@@ -121,7 +124,7 @@ gerax-codec/
 **Convenções:**
 - Cada codec deve implementar `Codec<T>` e ser `pub struct` sem campos.
 - Erros devem ser convertidos via `?` graças a `From` impls em `CodecError`.
-- Features devem ser nomeadas por formato: `json`, `yaml`, `toml`, `protobuf`, `capnp`.
+- Features devem ser nomeadas por formato: `json`, `yaml`, `toml`, `msgpack`, `protobuf`, `capnp`.
 - Feature default: `["json", "protobuf"]`.
 
 ---
