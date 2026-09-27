@@ -14,6 +14,7 @@ description = "Event Sourcing para o Gerax"
 [dependencies]
 async-trait.workspace = true
 chrono = { workspace = true, features = ["serde"] }
+gerax-macros = { workspace = true }
 serde.workspace = true
 serde_json.workspace = true
 uuid.workspace = true

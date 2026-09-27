@@ -36,8 +36,8 @@ use gerax_eda::{
     Event, EventBusPublisher, EventEnvelope, EventHandler, EventHandlerError, InMemoryEventBus,
 };
 use gerax_es::{
-    Aggregate, AggregateRepository, EventPublisher, EventSourcedRepository, EventStore,
-    InMemoryEventStore, JsonEventSerializer, Version,
+    Aggregate, AggregateApplier, AggregateRepository, EventPublisher, EventSourcedRepository,
+    EventStore, InMemoryEventStore, JsonEventSerializer, Version,
 };
 use serde::{Deserialize, Serialize};
 
@@ -65,7 +65,7 @@ impl Event for AlunoMatriculado {
 }
 
 /// Aggregate `Matricula` (Event Sourcing via gerax-es).
-#[derive(Debug)]
+#[derive(Debug, Aggregate)]
 struct Matricula {
     id: String,
     turma_id: String,
@@ -73,46 +73,14 @@ struct Matricula {
     pending: Vec<AlunoMatriculado>,
 }
 
-impl Aggregate for Matricula {
-    type Id = String;
+impl AggregateApplier for Matricula {
     type Event = AlunoMatriculado;
     type Error = MatriculaError;
-
-    fn aggregate_type() -> &'static str {
-        "Matricula"
-    }
-
-    fn empty(id: Self::Id) -> Self {
-        Self {
-            id,
-            turma_id: String::new(),
-            version: Version::initial(),
-            pending: Vec::new(),
-        }
-    }
-
-    fn id(&self) -> &Self::Id {
-        &self.id
-    }
-
-    fn version(&self) -> Version {
-        self.version
-    }
 
     fn apply(&mut self, event: &Self::Event) -> Result<(), Self::Error> {
         self.turma_id = event.turma_id.clone();
         self.version = self.version.next();
         Ok(())
-    }
-
-    fn raise(&mut self, event: Self::Event) -> Result<(), Self::Error> {
-        self.apply(&event)?;
-        self.pending.push(event);
-        Ok(())
-    }
-
-    fn take_events(&mut self) -> Vec<Self::Event> {
-        std::mem::take(&mut self.pending)
     }
 }
 

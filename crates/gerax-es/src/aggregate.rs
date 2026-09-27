@@ -2,15 +2,45 @@
 
 use crate::version::Version;
 
+/// Aplica um evento de domínio ao estado interno de um Aggregate.
+///
+/// Esta trait concentra a **lógica de domínio**: a transição de estado a
+/// partir de eventos. A parte mecânica do Aggregate fica em [`Aggregate`].
+///
+/// O método [`AggregateApplier::apply`] deve:
+///
+/// - alterar o estado interno conforme o evento;
+/// - atualizar a versão ([`Version`]);
+/// - **não** adicionar o evento aos eventos pendentes (isso é papel de
+///   [`Aggregate::raise`]).
+pub trait AggregateApplier: Sized {
+    /// Tipo do Evento de domínio produzido pelo Aggregate.
+    type Event;
+
+    /// Tipo de erro produzido pelas operações do Aggregate.
+    type Error;
+
+    /// Aplica um evento ao estado do Aggregate.
+    ///
+    /// Deve alterar o estado interno, atualizar a versão e **não**
+    /// adicionar o evento aos eventos pendentes.
+    fn apply(&mut self, event: &Self::Event) -> Result<(), Self::Error>;
+}
+
 /// Raiz de um Aggregate no contexto de Event Sourcing.
 ///
 /// Um Aggregate deve ser capaz de:
 ///
 /// 1. ser criado vazio ([`Aggregate::empty`]);
-/// 2. aplicar eventos históricos ([`Aggregate::apply`]);
+/// 2. aplicar eventos históricos ([`AggregateApplier::apply`]);
 /// 3. gerar novos eventos ([`Aggregate::raise`]);
 /// 4. manter eventos pendentes ([`Aggregate::take_events`]);
 /// 5. controlar sua versão ([`Aggregate::version`]).
+///
+/// A lógica de transição de estado vive em [`AggregateApplier`]. Os
+/// demais métodos são **mecânicos** e podem ser obtidos com o derive
+/// `#[derive(Aggregate)]` (re-exportado por `gerax-es`), que assume os
+/// campos `id`, `version` e `pending`.
 ///
 /// Implementações concretas devem permanecer **síncronas** e não
 /// conhecer infraestrutura (bancos de dados, bus async, HTTP, runtime
@@ -18,20 +48,14 @@ use crate::version::Version;
 ///
 /// ## `apply` vs `raise`
 ///
-/// - [`Aggregate::apply`] é usado para **eventos históricos**: altera o
-///   estado, atualiza a versão e **não** adiciona o evento aos eventos
-///   pendentes.
+/// - [`AggregateApplier::apply`] é usado para **eventos históricos**:
+///   altera o estado, atualiza a versão e **não** adiciona o evento aos
+///   eventos pendentes.
 /// - [`Aggregate::raise`] é usado para **novos eventos**: aplica o
 ///   evento ao estado (`apply`) e o adiciona aos eventos pendentes.
-pub trait Aggregate: Sized {
+pub trait Aggregate: Sized + AggregateApplier {
     /// Tipo do identificador do Aggregate.
     type Id;
-
-    /// Tipo do Evento de domínio produzido pelo Aggregate.
-    type Event;
-
-    /// Tipo de erro produzido pelas operações do Aggregate.
-    type Error;
 
     /// Nome canônico do tipo do Aggregate (ex.: `"Student"`).
     fn aggregate_type() -> &'static str;
@@ -44,12 +68,6 @@ pub trait Aggregate: Sized {
 
     /// Versão atual do Aggregate no Event Stream.
     fn version(&self) -> Version;
-
-    /// Aplica um evento ao estado do Aggregate.
-    ///
-    /// Deve alterar o estado interno, atualizar a versão e **não**
-    /// adicionar o evento aos eventos pendentes.
-    fn apply(&mut self, event: &Self::Event) -> Result<(), Self::Error>;
 
     /// Gera um novo evento.
     ///
@@ -69,6 +87,7 @@ pub trait Aggregate: Sized {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::Aggregate;
 
     #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
     enum StudentError {
@@ -82,7 +101,8 @@ mod tests {
         Renamed { name: String },
     }
 
-    #[derive(Debug)]
+    #[derive(Debug, Aggregate)]
+    #[aggregate(aggregate_type = "Student")]
     struct Student {
         id: String,
         name: String,
@@ -91,32 +111,9 @@ mod tests {
         pending: Vec<StudentEvent>,
     }
 
-    impl Aggregate for Student {
-        type Id = String;
+    impl AggregateApplier for Student {
         type Event = StudentEvent;
         type Error = StudentError;
-
-        fn aggregate_type() -> &'static str {
-            "Student"
-        }
-
-        fn empty(id: Self::Id) -> Self {
-            Self {
-                id,
-                name: String::new(),
-                version: Version::initial(),
-                created: false,
-                pending: Vec::new(),
-            }
-        }
-
-        fn id(&self) -> &Self::Id {
-            &self.id
-        }
-
-        fn version(&self) -> Version {
-            self.version
-        }
 
         fn apply(&mut self, event: &Self::Event) -> Result<(), Self::Error> {
             match event {
@@ -133,16 +130,6 @@ mod tests {
             }
             self.version = self.version.next();
             Ok(())
-        }
-
-        fn raise(&mut self, event: Self::Event) -> Result<(), Self::Error> {
-            self.apply(&event)?;
-            self.pending.push(event);
-            Ok(())
-        }
-
-        fn take_events(&mut self) -> Vec<Self::Event> {
-            std::mem::take(&mut self.pending)
         }
     }
 

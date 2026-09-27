@@ -38,8 +38,8 @@ use gerax_eda::{
     Event, EventBusPublisher, EventEnvelope, EventHandler, EventHandlerError, InMemoryEventBus,
 };
 use gerax_es::{
-    Aggregate, AggregateRepository, EventPublisher, EventSourcedRepository, EventStore,
-    InMemoryEventStore, JsonEventSerializer, Version,
+    Aggregate, AggregateApplier, AggregateRepository, EventPublisher, EventSourcedRepository,
+    EventStore, InMemoryEventStore, JsonEventSerializer, Version,
 };
 use serde::{Deserialize, Serialize};
 
@@ -69,7 +69,7 @@ impl Event for StudentEvent {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Aggregate)]
 struct Student {
     id: String,
     name: String,
@@ -78,32 +78,9 @@ struct Student {
     pending: Vec<StudentEvent>,
 }
 
-impl Aggregate for Student {
-    type Id = String;
+impl AggregateApplier for Student {
     type Event = StudentEvent;
     type Error = StudentError;
-
-    fn aggregate_type() -> &'static str {
-        "Student"
-    }
-
-    fn empty(id: Self::Id) -> Self {
-        Self {
-            id,
-            name: String::new(),
-            version: Version::initial(),
-            created: false,
-            pending: Vec::new(),
-        }
-    }
-
-    fn id(&self) -> &Self::Id {
-        &self.id
-    }
-
-    fn version(&self) -> Version {
-        self.version
-    }
 
     fn apply(&mut self, event: &Self::Event) -> Result<(), Self::Error> {
         match event {
@@ -120,16 +97,6 @@ impl Aggregate for Student {
         }
         self.version = self.version.next();
         Ok(())
-    }
-
-    fn raise(&mut self, event: Self::Event) -> Result<(), Self::Error> {
-        self.apply(&event)?;
-        self.pending.push(event);
-        Ok(())
-    }
-
-    fn take_events(&mut self) -> Vec<Self::Event> {
-        std::mem::take(&mut self.pending)
     }
 }
 

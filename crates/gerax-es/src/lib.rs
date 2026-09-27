@@ -26,6 +26,8 @@
 //!
 //! - [`Aggregate`] — raiz do Aggregate: estado, versão e eventos pendentes.
 //!   Domínio é **síncrono**; a infraestrutura (repository, store) é **async**.
+//! - [`AggregateApplier`] — lógica de domínio (`apply`); o restante pode
+//!   ser derivado com `#[derive(Aggregate)]`.
 //! - [`Version`] — posição do Aggregate no Event Stream (0 = vazio).
 //! - [`StoredEvent`] / [`EventId`] — evento **persistido** no Event Store.
 //! - [`EventMetadata`] — metadata extensível (causation/correlation future).
@@ -115,6 +117,32 @@
 //!   ├── PostgresEventStore        (feature "postgres")
 //!   └── MongoDbEventStore         (feature "mongodb")
 //! ```
+//!
+//! ## Uso do derive `Aggregate`
+//!
+//! Para gerar o boilerplate do Aggregate, implemente [`AggregateApplier`]
+//! com a lógica de domínio e derive o restante:
+//!
+//! ```ignore
+//! use gerax_es::{Aggregate, AggregateApplier, Version};
+//!
+//! #[derive(Debug, Aggregate)]
+//! #[aggregate(aggregate_type = "Student")]
+//! struct Student {
+//!     id: String,
+//!     name: String,
+//!     version: Version,
+//!     pending: Vec<StudentEvent>,
+//! }
+//!
+//! impl AggregateApplier for Student { /* apply: transição de estado */ }
+//! ```
+//!
+//! Requisitos: campos `id`, `version: Version` e `pending: Vec<Event>`;
+//! demais campos implementam `Default`.
+
+// Habilita `::gerax_es::...` dentro do próprio crate (unit tests usam o derive).
+extern crate self as gerax_es;
 
 pub mod aggregate;
 pub mod error;
@@ -137,13 +165,14 @@ pub mod version;
 #[cfg(any(feature = "postgres", feature = "mongodb"))]
 pub mod adapters;
 
-pub use aggregate::Aggregate;
+pub use aggregate::{Aggregate, AggregateApplier};
 pub use error::{
     ConcurrencyError, EventStoreError, PublishError, RepositoryError, SerializationError,
     SnapshotStoreError,
 };
 pub use event::{EventId, StoredEvent};
 pub use event_store::EventStore;
+pub use gerax_macros::Aggregate;
 pub use memory::InMemoryEventStore;
 pub use metadata::EventMetadata;
 pub use publisher::EventPublisher;
