@@ -284,6 +284,7 @@ pub use envelope::EventEnvelope;
 pub use erased::{ErasedEvent, ErasedEventHandler};
 pub use error::{EventBusError, EventHandlerError, HandlerFailure};
 pub use event::{Event, IntegrationEvent};
+pub use gerax_es::EventId;
 pub use handler::EventHandler;
 pub use in_memory::InMemoryEventBus;
 pub use metadata::{CausationId, CorrelationId, EventMetadata};
