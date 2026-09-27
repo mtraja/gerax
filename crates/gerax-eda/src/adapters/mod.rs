@@ -8,9 +8,9 @@
 //! ```text
 //! gerax-eda             (core: bus, handlers, envelope)
 //!     │
+//!     ├── gerax-eda-rabbitmq   (implementado)
 //!     ├── gerax-eda-kafka      (futuro)
 //!     ├── gerax-eda-nats       (futuro)
-//!     ├── gerax-eda-rabbitmq   (futuro)
 //!     └── outros
 //! ```
 //!
@@ -22,6 +22,10 @@
 //! 3. respeita a mesma semântica de entrega documentada em
 //!    [`crate::InMemoryEventBus`].
 //!
-//! Nesta primeira versão não há adapters externos — apenas a
-//! estrutura preparada para recebê-los (ver também
-//! [`crate::EventBusPublisher`], ponto de evolução para Outbox).
+//! O primeiro adapter concreto é
+//! `gerax-eda-rabbitmq` ([Amqp/AMQP 0-9-1] via lapin). Ele **não**
+//! implementa [`crate::EventBus`] porque serializar exige
+//! `E: Serialize` (bound que a porta não expressa); expõe `publish`
+//! inerente com o mesmo contrato e registra handlers por `event_type`.
+//!
+//! [Amqp/AMQP 0-9-1]: https://www.rabbitmq.com/amqp-0-9-1-reference

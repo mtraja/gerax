@@ -1,0 +1,35 @@
+# RabbitMQ de desenvolvimento para a biblioteca `gerax-rabbitmq-stream`.
+#
+# Uso:
+#   podman-compose -f compose.stream.yaml up -d     (ou: docker compose -f compose.stream.yaml up -d)
+#
+# - Streams : localhost:5552   (protocolo binário — o `gerax-rabbitmq` AMQP
+#                                  continua em 5672, são brokers separados)
+# - Management UI (guest/guest): http://localhost:15673
+#                                  (15672 fica com o broker AMQP do
+#                                   `compose.yaml` da raiz)
+#
+# Diferença para o `compose.yaml` do `gerax-rabbitmq`: aqui o plugin
+# `rabbitmq_stream` é **habilitado** e o host é anunciado como
+# `localhost`, para que o cliente encontre o stream ao conectar.
+#
+# Apenas para desenvolvimento/testes — nunca para produção (§39).
+services:
+  rabbitmq-stream:
+    # Nome completo (registry/library/tag): o Podman exige, e o Docker
+    # Compose aceita. `4-management` = imagem oficial com UI.
+    image: docker.io/library/rabbitmq:4-management
+    container_name: gerax-rabbitmq-stream
+    ports:
+      - "5552:5552"
+      - "15673:15672"
+    environment:
+      RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS: "-rabbitmq_stream advertised_host localhost"
+    command: >
+      bash -c "rabbitmq-plugins enable --offline rabbitmq_stream rabbitmq_stream_management
+      && rabbitmq-server"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "check_port_connectivity"]
+      interval: 5s
+      timeout: 10s
+      retries: 30

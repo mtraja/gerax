@@ -1,0 +1,25 @@
+# RabbitMQ de desenvolvimento para a biblioteca `gerax-rabbitmq`.
+#
+# Uso:
+#   docker compose up -d        (ou podman-compose up -d)
+#
+# - AMQP  : localhost:5672
+# - Management UI (guest/guest): http://localhost:15672
+#
+# Apenas para desenvolvimento local — nunca para produção (§39).
+services:
+  rabbitmq:
+    image: rabbitmq:management
+    container_name: gerax-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: gerax
+      RABBITMQ_DEFAULT_PASS: gerax
+      RABBITMQ_DEFAULT_VHOST: /
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
