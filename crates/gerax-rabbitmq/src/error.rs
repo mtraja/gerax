@@ -63,11 +63,12 @@ impl RabbitMqError {
 
 /// Conversão para o erro da porta [`gerax_eda::EventBus`] (ponte).
 ///
-/// O adapter **não** implementa [`gerax_eda::EventBus`] (a serialização
-/// exige `E: Serialize`, um bound que a porta não expressa — ver
-/// [`crate::RabbitMqEventBus`]). Quando a aplicação orquestra a
-/// transição `EventStore → outbox → broker`, esta conversão mantém os
-/// erros de infraestrutura dentro do contrato da porta.
+/// O impl da porta em [`crate::RabbitMqEventBus`] usa esta conversão
+/// para mapear falhas de transporte para
+/// [`gerax_eda::EventBusError::PublishFailed`]. Quando a aplicação
+/// orquestra a transição `EventStore → outbox → broker`, a mesma
+/// conversão mantém os erros de infraestrutura dentro do contrato
+/// da porta.
 impl From<RabbitMqError> for gerax_eda::EventBusError {
     fn from(value: RabbitMqError) -> Self {
         gerax_eda::EventBusError::PublishFailed(value.to_string())

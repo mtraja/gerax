@@ -54,18 +54,19 @@
 //!
 //! let event_bus = RabbitMqEventBus::from_connection(&connection, config.clone()).await?;
 //!
-//! event_bus.publish(AlunoCriado { aluno_id: "a-1".into() }).await?;
+//! event_bus.publish_event(AlunoCriado { aluno_id: "a-1".into() }).await?;
 //! # Ok(())
 //! # }
 //! ```
 //!
-//! # Por que `RabbitMqEventBus` não implementa `gerax_eda::EventBus`?
+//! # Porta `gerax_eda::EventBus`
 //!
-//! A porta exige apenas `E: Event`, enquanto publicar em RabbitMQ exige
-//! `E: Serialize` (e consumir, `E: DeserializeOwned`). O adapter expõe
-//! a mesma semântica na forma inerente
-//! [`RabbitMqEventBus::publish`] (ver [`bus`] e o doc de
-//! `gerax-eda/src/adapters/mod.rs`).
+//! [`RabbitMqEventBus`] implementa a porta [`gerax_eda::EventBus`]:
+//! o bound `E: Event + Clone + Serialize` do `publish` da porta é o
+//! mesmo que o adapter precisa para serializar o payload ao wire. O
+//! método inerente [`RabbitMqEventBus::publish_event`] oferece a
+//! mesma publicação com o erro tipado [`RabbitMqError`] — ver
+//! [`bus`].
 
 // Módulos (topology fica privado — internals não fazem parte da API
 // pública, `§28`).

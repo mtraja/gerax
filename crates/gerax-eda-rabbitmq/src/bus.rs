@@ -1,10 +1,17 @@
 //! Produtor: `RabbitMqEventBus`.
 //!
-//! Um producer funcional para eventos `gerax-eda` sobre RabbitMQ.
+//! Um producer funcional para eventos `gerax-eda` sobre RabbitMQ —
+//! implementa a porta [`EventBus`](gerax_eda::EventBus) (o bound
+//! `E: Event + Clone + Serialize` do `publish` da porta é o mesmo que
+//! serializar o payload ao wire exige) e também expõe os métodos
+//! inerentes [`RabbitMqEventBus::publish_envelope`] e
+//! [`RabbitMqEventBus::publish_new`] com o erro tipado
+//! [`RabbitMqError`].
 
 use std::sync::Arc;
 
-use gerax_eda::{Event, EventEnvelope};
+use async_trait::async_trait;
+use gerax_eda::{Event, EventEnvelope, EventBus, EventBusError};
 use lapin::options::{BasicPublishOptions, ConfirmSelectOptions, ExchangeDeclareOptions};
 use lapin::{Channel, Confirmation, Connection, ConnectionProperties};
 use serde::Serialize;
@@ -17,10 +24,9 @@ use crate::map::properties_from_envelope;
 
 /// Publica envelopes em um exchange RabbitMQ.
 ///
-/// O adapter **não** implementa [`EventBus`](gerax_eda::EventBus):
-/// serializar exige `E: Serialize`, um bound que a porta `EventBus`
-/// não conhece (ver [`crate::EventCodec`]). Em troca, `publish` é um
-/// método inerente com exatamente o mesmo contrato.
+/// Implementa [`EventBus`](gerax_eda::EventBus) — delegando a
+/// publicação ao mesmo mecanismo de [`Self::publish_envelope`] — e
+/// mantém os métodos inerentes com o erro do adapter.
 ///
 /// # Confirm
 ///
@@ -84,7 +90,13 @@ impl<C: EventCodec> RabbitMqEventBus<C> {
     ///
     /// Falha com [`RabbitMqError::InvalidEvent`] quando o código do
     /// evento não condiz com `metadata.event_type`.
-    pub async fn publish<E>(&self, envelope: &EventEnvelope<E>) -> Result<(), RabbitMqError>
+    ///
+    /// Conveniência inerente; quando o chamador é genérico em
+    /// [`EventBus`](gerax_eda::EventBus), use a porta.
+    pub async fn publish_envelope<E>(
+        &self,
+        envelope: &EventEnvelope<E>,
+    ) -> Result<(), RabbitMqError>
     where
         E: Event + Serialize,
     {
@@ -133,7 +145,40 @@ impl<C: EventCodec> RabbitMqEventBus<C> {
         E: Event + Serialize,
     {
         let envelope = EventEnvelope::new(event);
-        self.publish(&envelope).await?;
+        self.publish_envelope(&envelope).await?;
         Ok(envelope)
+    }
+}
+
+#[async_trait]
+impl<C: EventCodec> EventBus for RabbitMqEventBus<C> {
+    async fn publish<E>(&self, envelope: EventEnvelope<E>) -> Result<(), EventBusError>
+    where
+        E: Event + Clone + Serialize,
+    {
+        if envelope.metadata.event_type != envelope.event.event_type() {
+            return Err(EventBusError::InvalidEvent(format!(
+                "metadata.event_type `{}` does not match event.event_type `{}`",
+                envelope.metadata.event_type,
+                envelope.event.event_type(),
+            )));
+        }
+        self.publish_envelope(&envelope).await.map_err(Into::into)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn requer_event_bus<C: EventCodec>()
+    where
+        RabbitMqEventBus<C>: EventBus,
+    {
+    }
+
+    #[test]
+    fn rabbit_mq_event_bus_satisfaz_a_porta_event_bus() {
+        requer_event_bus::<JsonEventCodec>();
     }
 }

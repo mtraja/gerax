@@ -1,21 +1,12 @@
 //! `EventBus` do adapter sobre o producer (§25).
 //!
-//! ## Por que não `impl EventBus`
-//!
-//! [`gerax_eda::EventBus::publish`] tem a assinatura
-//!
-//! ```text
-//! async fn publish<E>(&self, event: EventEnvelope<E>)
-//!     where E: Event + Clone
-//! ```
-//!
-//! e **não** exige `E: Serialize`. Mas serializar o payload exige
-//! `serde::Serialize` (o [`EventSerializer`] do §10). Um impl
-//! impossível, ou um impl que erra a porta, é pior do que uma
-//! fachada: por isso [`RabbitMqStreamEventBus`] expõe
-//! [`publish`](Self::publish) com o bound correto e o próprio tipo de
-//! erro ([`RabbitMqStreamError`]), convertível em
-//! [`gerax_eda::EventBusError`].
+//! [`RabbitMqStreamEventBus`] implementa
+//! [`gerax_eda::EventBus`]: o bound `E: Event + Clone + Serialize` do
+//! `publish` da porta é o mesmo que o adapter precisa para serializar
+//! o payload ao stream. Falhas de produção convertem
+//! [`RabbitMqStreamError`] em [`gerax_eda::EventBusError`] via
+//! [`From`]; a validação de consistência do envelope vira
+//! [`gerax_eda::EventBusError::InvalidEvent`].
 //!
 //! ```text
 //! EventEnvelope<E> ──EventSerializer──► Message ──producer──► Stream
@@ -33,7 +24,8 @@
 
 use std::sync::Arc;
 
-use gerax_eda::{Event, EventEnvelope};
+use async_trait::async_trait;
+use gerax_eda::{Event, EventEnvelope, EventBus, EventBusError};
 use serde::Serialize;
 use tracing::{error, info};
 
@@ -50,13 +42,13 @@ use crate::subscription::RabbitMqStreamSubscription;
 /// pronto.
 ///
 /// ```rust,no_run
-/// use gerax_eda::{Event, EventEnvelope};
+/// use gerax_eda::{Event, EventEnvelope, EventBus};
 /// use gerax_rabbitmq_stream::{
 ///     PublishMode, RabbitMqStreamConfig, RabbitMqStreamEventBusBuilder, StreamConfig,
 /// };
 /// use serde::Serialize;
 ///
-/// #[derive(Serialize)]
+/// #[derive(Clone, Serialize)]
 /// struct AlunoMatriculado {
 ///     aluno_id: u64,
 /// }
@@ -116,19 +108,6 @@ where
         &self.producer
     }
 
-    /// Publica um evento no stream (§9).
-    ///
-    /// O envelope do `gerax-eda` é convertido no envelope de
-    /// transporte (§11) e publicado conforme o
-    /// [`PublishMode`](crate::PublishMode) configurado.
-    pub async fn publish<E>(&self, event: EventEnvelope<E>) -> Result<(), RabbitMqStreamError>
-    where
-        E: Event + Serialize,
-    {
-        let envelope = TransportEnvelope::from_eda(&event, self.serializer.as_ref())?;
-        self.producer.publish(&envelope).await
-    }
-
     /// Registra uma assinatura para consumo posterior (§18).
     pub fn add_subscription(&mut self, subscription: RabbitMqStreamSubscription<S>) {
         self.subscriptions.push(subscription);
@@ -181,6 +160,27 @@ where
     }
 }
 
+#[async_trait]
+impl<S> EventBus for RabbitMqStreamEventBus<S>
+where
+    S: EventSerializer + 'static,
+{
+    async fn publish<E>(&self, event: EventEnvelope<E>) -> Result<(), EventBusError>
+    where
+        E: Event + Clone + Serialize,
+    {
+        if event.metadata.event_type != event.event.event_type() {
+            return Err(EventBusError::InvalidEvent(format!(
+                "metadata.event_type `{}` does not match event.event_type `{}`",
+                event.metadata.event_type,
+                event.event.event_type(),
+            )));
+        }
+        let envelope = TransportEnvelope::from_eda(&event, self.serializer.as_ref())?;
+        self.producer.publish(&envelope).await.map_err(Into::into)
+    }
+}
+
 impl<S> std::fmt::Debug for RabbitMqStreamEventBus<S>
 where
     S: EventSerializer,
@@ -191,5 +191,21 @@ where
             .field("mode", &self.producer.mode())
             .field("subscriptions", &self.subscriptions.len())
             .finish()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn requer_event_bus<S>()
+    where
+        RabbitMqStreamEventBus<S>: EventBus,
+    {
+    }
+
+    #[test]
+    fn rabbit_mq_stream_event_bus_satisfaz_a_porta_event_bus() {
+        requer_event_bus::<JsonEventSerializer>();
     }
 }

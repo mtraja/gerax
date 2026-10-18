@@ -65,13 +65,20 @@ let config = RabbitMqConfig::new(uri, "gerax.events");
 let connection = RabbitMqConnection::connect(config.clone()).await?;
 let bus = RabbitMqEventBus::from_connection(&connection, config).await?;
 
-bus.publish(AlunoMatriculado { aluno_id: "a-1".into() }).await?;
+bus.publish_event(AlunoMatriculado { aluno_id: "a-1".into() }).await?;
 ```
 
 Cada evento vira um [`EventEnvelope`] novo e é roteado pelo
 `event_type` (routing key). `publish_envelope` permite preservar
 `correlation_id`/`causation_id`/headers do fluxo; `publish_message`
 consome envelopes de transporte já existentes (integrações de Outbox).
+
+`RabbitMqEventBus` também implementa a porta
+[`gerax_eda::EventBus`]: chamadores genéricos em `B: EventBus`
+(publicação via `EventBusPublisher`, código multi-broker) publicam
+com `bus.publish(EventEnvelope::new(evento))` — a porta valida a
+consistência do envelope e converte falhas de transporte em
+`EventBusError::PublishFailed`.
 
 ## Point-to-Point
 

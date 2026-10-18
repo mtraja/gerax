@@ -6,7 +6,7 @@ mod common;
 use std::time::Duration;
 
 use common::{CollectHandler, TestBroker, gate_broker, next_with_timeout, unique};
-use gerax_eda::{EventEnvelope, EventHandler, EventHandlerError};
+use gerax_eda::{EventEnvelope, EventBus, EventHandler, EventHandlerError};
 use gerax_rabbitmq_stream::{
     ConsumerConfig, JsonEventSerializer, PublishMode, RabbitMqStreamConfig,
     RabbitMqStreamConnection, RabbitMqStreamEventBusBuilder, StartOffset, StreamConfig,

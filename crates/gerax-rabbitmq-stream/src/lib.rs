@@ -45,7 +45,7 @@
 //! ## Exemplo mínimo
 //!
 //! ```rust,no_run
-//! use gerax_eda::{Event, EventEnvelope, EventHandler, EventHandlerError};
+//! use gerax_eda::{Event, EventEnvelope, EventBus, EventHandler, EventHandlerError};
 //! use gerax_rabbitmq_stream::{
 //!     ConsumerConfig, JsonEventSerializer, PublishMode, RabbitMqStreamConfig,
 //!     RabbitMqStreamEventBusBuilder, StartOffset, StreamConfig,

@@ -4,7 +4,7 @@
 
 mod common;
 
-use gerax_eda::EventEnvelope;
+use gerax_eda::{EventEnvelope, EventId, EventMetadata, EventBus, EventBusError};
 use gerax_rabbitmq::{
     EnvelopeCodec, JsonEnvelopeCodec, RabbitMqConfig, RabbitMqConnection, RabbitMqEventBus,
 };
@@ -160,7 +160,7 @@ async fn publish_roteia_por_event_type() {
         .await
         .expect("binding b");
 
-    bus.publish(AlunoMatriculado {
+    bus.publish_event(AlunoMatriculado {
         aluno_id: "a-1".into(),
         curso: "fisica".into(),
     })
@@ -185,5 +185,54 @@ async fn publish_roteia_por_event_type() {
     if let Some(delivery) = in_a {
         delivery.ack(BasicAckOptions::default()).await.expect("ack");
     }
+    connection.close().await.ok();
+}
+
+#[tokio::test]
+async fn publica_via_porta_event_bus_e_valida_envelope() {
+    let Some(uri) = gate_rabbitmq() else {
+        return;
+    };
+    let name = unique("porta");
+    let config = common::config(&uri, &name);
+    let connection = RabbitMqConnection::connect(config.clone())
+        .await
+        .expect("conexão");
+    let bus = RabbitMqEventBus::from_connection(&connection, config.clone())
+        .await
+        .expect("bus");
+
+    // publica através da porta genérica (impl EventBus)
+    async fn publicar<B: EventBus>(
+        bus: &B,
+        envelope: EventEnvelope<AlunoMatriculado>,
+    ) -> Result<(), EventBusError> {
+        bus.publish(envelope).await
+    }
+
+    publicar(
+        &bus,
+        EventEnvelope::new(AlunoMatriculado {
+            aluno_id: "a-porta".into(),
+            curso: "fisica".into(),
+        }),
+    )
+    .await
+    .expect("publicação via porta");
+
+    // envelope inconsistente → InvalidEvent (validação da porta)
+    let inconsistente = EventEnvelope {
+        id: EventId::new(),
+        event: AlunoMatriculado {
+            aluno_id: "a-x".into(),
+            curso: "fisica".into(),
+        },
+        metadata: EventMetadata::new("outro.tipo"),
+    };
+    let err = publicar(&bus, inconsistente)
+        .await
+        .expect_err("envelope inconsistente rejeitado");
+    assert!(matches!(err, EventBusError::InvalidEvent(_)));
+
     connection.close().await.ok();
 }

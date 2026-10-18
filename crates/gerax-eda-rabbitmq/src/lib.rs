@@ -44,14 +44,15 @@
 //! Consumidores **devem ser idempotentes** por `EventEnvelope.id`
 //! (a identificação existe justamente para isso).
 //!
-//! ## Por que não implementa `gerax_eda::EventBus`
+//! ## Porta `gerax_eda::EventBus`
 //!
-//! Publicar exige `E: Serialize` e desserializar exige
-//! `E: DeserializeOwned`, bounds que a porta genérica
-//! [`EventBus::publish`](gerax_eda::EventBus::publish) não pode
-//! expressar (o código do evento passa pelo registry). O adapter
-//! entrega a mesma semântica através de métodos inerentes e um codec
-//! plugável ([`EventCodec`]).
+//! [`RabbitMqEventBus`] implementa a porta
+//! [`EventBus`](gerax_eda::EventBus): o bound
+//! `E: Event + Clone + Serialize` do `publish` da porta é o mesmo que
+//! o adapter precisa para serializar o payload ao wire. O método
+//! inerente [`RabbitMqEventBus::publish_envelope`] oferece a mesma
+//! publicação com o erro tipado [`RabbitMqError`] — o consumo
+//! continua plugável via codec ([`EventCodec`]).
 //!
 //! ## Exemplo
 //!

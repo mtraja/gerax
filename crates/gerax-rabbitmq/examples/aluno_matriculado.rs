@@ -104,7 +104,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             aluno_id: format!("a-{i}"),
             curso: "matematica".into(),
         };
-        bus.publish(aluno).await?;
+        bus.publish_event(aluno).await?;
         println!("  [bus] publicado aluno.matriculado a-{i}");
     }
 

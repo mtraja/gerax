@@ -48,7 +48,7 @@ async fn consumer_entrega_evento_tipado_ao_handler() {
 
     let before = std::time::SystemTime::now();
 
-    bus.publish(AlunoMatriculado {
+    bus.publish_event(AlunoMatriculado {
         aluno_id: "a-1".into(),
         curso: "matematica".into(),
     })
@@ -106,7 +106,7 @@ async fn retry_republishes_com_atraso_e_sem_loop() {
     let bus = common::bus_for(&connection, &config).await;
     let handle = spawn_consume(consumer);
 
-    bus.publish(AlunoMatriculado {
+    bus.publish_event(AlunoMatriculado {
         aluno_id: "a-1".into(),
         curso: "matematica".into(),
     })
@@ -175,7 +175,7 @@ async fn falha_nao_retentavel_vai_para_dlq() {
     let bus = common::bus_for(&connection, &config).await;
     let handle = spawn_consume(consumer);
 
-    bus.publish(AlunoMatriculado {
+    bus.publish_event(AlunoMatriculado {
         aluno_id: "dlq-1".into(),
         curso: "x".into(),
     })
@@ -245,7 +245,7 @@ async fn evento_sem_handler_reject_vai_para_dlq() {
     let handle = spawn_consume(consumer);
 
     // nenhum handler registrado para `aluno.desmatriculado`
-    bus.publish(AlunoMatriculado {
+    bus.publish_event(AlunoMatriculado {
         aluno_id: "unknown-1".into(),
         curso: "y".into(),
     })
@@ -317,7 +317,7 @@ async fn evento_sem_handler_ack_descarta_sem_dlq() {
     let bus = common::bus_for(&connection, &config).await;
     let handle = spawn_consume(consumer);
 
-    bus.publish(AlunoMatriculado {
+    bus.publish_event(AlunoMatriculado {
         aluno_id: "unknown-2".into(),
         curso: "z".into(),
     })

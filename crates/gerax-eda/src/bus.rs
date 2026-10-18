@@ -3,6 +3,7 @@
 use std::sync::Arc;
 
 use async_trait::async_trait;
+use serde::Serialize;
 
 use crate::envelope::EventEnvelope;
 use crate::error::EventBusError;
@@ -37,8 +38,9 @@ use crate::event::Event;
 /// ```rust,no_run
 /// use gerax_eda::{Event, EventBus, EventEnvelope, EventHandler,
 ///                 EventHandlerError, InMemoryEventBus};
+/// use serde::Serialize;
 ///
-/// #[derive(Debug, Clone)]
+/// #[derive(Debug, Clone, Serialize)]
 /// struct AlunoMatriculado { aluno_id: String }
 ///
 /// impl Event for AlunoMatriculado {
@@ -69,25 +71,32 @@ use crate::event::Event;
 /// ```
 #[async_trait]
 pub trait EventBus: Send + Sync {
-    /// Publica um envelope para todos os handlers registrados do tipo.
+    /// Publica um envelope para distribuição.
     ///
-    /// Semântica (documentada em [`crate::InMemoryEventBus`]):
+    /// Contrato da porta — vale para **todas** as implementações
+    /// (dispatch local e adapters de broker: RabbitMQ, NATS, Kafka…):
     ///
-    /// 1. valida `metadata.event_type` contra [`Event::event_type`];
-    /// 2. erro [`EventBusError::HandlerNotFound`] se não houver
-    ///    handlers;
-    /// 3. executa **todos** os handlers em ordem de registro, com
-    ///    falhas isoladas por handler;
-    /// 4. retry conforme [`crate::RetryPolicy`] apenas para erros
-    ///    `Retryable`;
-    /// 5. retorna `Err(HandlerFailed)` agregando as falhas — nunca
-    ///    falha silenciosamente omitindo entregas.
+    /// 1. valida `metadata.event_type` contra [`Event::event_type`] →
+    ///    [`EventBusError::InvalidEvent`];
+    /// 2. entrega/publica o evento com semântica *at-least-once* e
+    ///    **nunca falha silenciosamente** — falha de transporte vira
+    ///    [`EventBusError::PublishFailed`];
+    /// 3. a semântica de **entrega** é específica da implementação:
+    ///    [`crate::InMemoryEventBus`] faz dispatch local (fan-out a
+    ///    handlers registrados, [`EventBusError::HandlerNotFound`],
+    ///    retry, middleware); adapters de broker publicam no
+    ///    transporte — não há handlers locais, e retry/DLQ pertencem
+    ///    ao consumer do adapter (ver [`crate::adapters`]).
     ///
-    /// Exige `Clone` porque o evento é entregue a N handlers: cada um
-    /// recebe o seu [`EventEnvelope`] próprio.
+    /// O bound `Serialize` existe porque toda implementação precisa
+    /// representar o payload fora do tipo Rust — brokers o levam ao
+    /// wire; [`crate::InMemoryEventBus`] aceita o bound sem usá-lo.
+    ///
+    /// O bound `Clone` suporta o dispatch local: o evento é entregue
+    /// a N handlers, cada um com o seu [`EventEnvelope`] próprio.
     async fn publish<E>(&self, event: EventEnvelope<E>) -> Result<(), EventBusError>
     where
-        E: Event + Clone;
+        E: Event + Clone + Serialize;
 }
 
 /// Permite compartilhar qualquer bus por referência
@@ -99,7 +108,7 @@ where
 {
     async fn publish<E>(&self, event: EventEnvelope<E>) -> Result<(), EventBusError>
     where
-        E: Event + Clone,
+        E: Event + Clone + Serialize,
     {
         (**self).publish(event).await
     }
@@ -112,7 +121,7 @@ mod tests {
     use crate::subscriber::EventSubscriber;
     use std::sync::Arc;
 
-    #[derive(Debug, Clone)]
+    #[derive(Debug, Clone, Serialize)]
     struct AlunoMatriculado;
 
     impl Event for AlunoMatriculado {
@@ -142,7 +151,7 @@ mod tests {
     impl EventBus for NullBus {
         async fn publish<E>(&self, _event: EventEnvelope<E>) -> Result<(), EventBusError>
         where
-            E: Event + Clone,
+            E: Event + Clone + Serialize,
         {
             Err(EventBusError::HandlerNotFound {
                 event_type: "null".into(),

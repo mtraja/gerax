@@ -26,7 +26,7 @@
 use std::time::Duration;
 
 use async_trait::async_trait;
-use gerax_eda::{Event, EventEnvelope, EventHandler, EventHandlerError};
+use gerax_eda::{Event, EventEnvelope, EventBus, EventHandler, EventHandlerError};
 use gerax_rabbitmq_stream::{
     ConsumerConfig, PublishMode, RabbitMqStreamConfig, RabbitMqStreamEventBusBuilder, StartOffset,
     StreamConfig,

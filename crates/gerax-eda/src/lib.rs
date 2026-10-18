@@ -153,9 +153,9 @@
 //! - resultado (`Ok`/`HandlerFailed`) disponível ao publicador;
 //! - isolamento de falhas sem perda silenciosa de entregas.
 //!
-//! Bridges externos (Kafka etc., crates futuras) podem oferecer
-//! entrega realmente assíncrona — a porta [`EventBus`] comporta isso
-//! sem alterar handlers.
+//! Bridges externos (Kafka etc., crates futuras) implementam a porta
+//! [`EventBus`] e podem oferecer entrega realmente assíncrona — a
+//! porta comporta isso sem alterar handlers.
 //!
 //! ## Delivery semantics
 //!
@@ -208,7 +208,9 @@
 //! ├── InMemoryEventBus       implementação concreta (sem broker)
 //! ├── EventMiddleware        hooks before/after por tentativa
 //! ├── RetryPolicy/EventDelivery  retry e identificação de entrega
-//! └── adapters/              ponto para brokers externos futuros
+//! └── adapters/              adapters de broker implementam EventBus
+//!                            (crates separadas: RabbitMQ, futuro
+//!                            Kafka/NATS)
 //! ```
 //!
 //! ## Exemplo
@@ -218,8 +220,9 @@
 //!     Event, EventEnvelope, EventHandler, EventHandlerError,
 //!     EventBus, InMemoryEventBus,
 //! };
+//! use serde::Serialize;
 //!
-//! #[derive(Debug, Clone)]
+//! #[derive(Debug, Clone, Serialize)]
 //! struct AlunoMatriculado { aluno_id: String }
 //!
 //! impl Event for AlunoMatriculado {

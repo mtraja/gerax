@@ -2,6 +2,7 @@
 
 use async_trait::async_trait;
 use gerax_es::{EventPublisher as EsEventPublisher, EventSerializer, PublishError, StoredEvent};
+use serde::Serialize;
 
 use crate::bus::EventBus;
 use crate::envelope::EventEnvelope;
@@ -82,7 +83,7 @@ impl<B, S> EsEventPublisher for EventBusPublisher<B, S>
 where
     B: EventBus,
     S: EventSerializer + Send + Sync,
-    S::Event: Event + Clone,
+    S::Event: Event + Clone + Serialize,
     S::Error: std::fmt::Display,
 {
     async fn publish(&self, events: &[StoredEvent]) -> Result<(), PublishError> {

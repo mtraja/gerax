@@ -3,6 +3,7 @@
 use std::sync::{Arc, RwLock};
 
 use async_trait::async_trait;
+use serde::Serialize;
 
 use crate::bus::EventBus;
 use crate::context::EventContext;
@@ -70,13 +71,18 @@ impl BusState {
 ///    deduplica nem assume *exactly-once*. Consumidores devem ser
 ///    idempotentes (ver `lib.rs`).
 ///
+/// O bound `Serialize` exigido pela porta [`EventBus`] é aceito mas
+/// **não utilizado**: o dispatch local entrega o evento tipado aos
+/// handlers — nada é serializado.
+///
 /// ## Exemplo
 ///
 /// ```rust,no_run
 /// use gerax_eda::{Event, EventBus, EventEnvelope, EventHandler, EventHandlerError,
 ///                 InMemoryEventBus};
+/// use serde::Serialize;
 ///
-/// #[derive(Debug, Clone)]
+/// #[derive(Debug, Clone, Serialize)]
 /// struct AlunoMatriculado { aluno_id: String }
 ///
 /// impl Event for AlunoMatriculado {
@@ -200,7 +206,7 @@ impl EventSubscriber for InMemoryEventBus {
 impl EventBus for InMemoryEventBus {
     async fn publish<E>(&self, event: EventEnvelope<E>) -> Result<(), EventBusError>
     where
-        E: Event + Clone,
+        E: Event + Clone + Serialize,
     {
         // 1. consistência do envelope com o evento.
         let event_type = event.event.event_type();
@@ -288,7 +294,7 @@ mod tests {
 
     use crate::metadata::EventMetadata;
 
-    #[derive(Debug, Clone, PartialEq)]
+    #[derive(Debug, Clone, PartialEq, Serialize)]
     struct AlunoMatriculado {
         aluno_id: String,
     }
@@ -299,7 +305,7 @@ mod tests {
         }
     }
 
-    #[derive(Debug, Clone)]
+    #[derive(Debug, Clone, Serialize)]
     struct TurmaCriada;
 
     impl Event for TurmaCriada {

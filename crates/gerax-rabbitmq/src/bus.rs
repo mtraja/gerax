@@ -1,28 +1,32 @@
-//! `RabbitMqEventBus` — a porta `EventBus` implementada com RabbitMQ.
+//! `RabbitMqEventBus` — a porta [`EventBus`](gerax_eda::EventBus)
+//! implementada com RabbitMQ.
 //!
-//! # Por que `gerax_eda::EventBus` não é implementada?
+//! A porta `EventBus::publish` exige `E: Event + Clone + Serialize` —
+//! o bound que qualquer broker precisa para levar o payload ao wire.
+//! [`RabbitMqEventBus`] **implementa a porta** delegando ao mesmo
+//! mecanismo dos métodos inerentes ([`MessageEnvelope`], codec,
+//! publisher confirms) e convertendo [`RabbitMqError`] em
+//! [`gerax_eda::EventBusError`] via [`From`].
 //!
-//! O contribuinte de eventos da porta exige apenas `E: Event`:
+//! Semântica do impl da porta:
 //!
-//! ```rust,ignore
-//! async fn publish<E>(&self, event: E) -> Result<(), EventBusError>
-//! where E: Event;
-//! ```
+//! - valida a consistência `metadata.event_type` ×
+//!   [`Event::event_type`] → [`gerax_eda::EventBusError::InvalidEvent`];
+//! - publica no exchange com *publisher confirm* — falha de
+//!   transporte vira [`gerax_eda::EventBusError::PublishFailed`],
+//!   nunca silêncio;
+//! - **não há handlers locais**: `HandlerNotFound`, retry e
+//!   middleware são semântica do `InMemoryEventBus`, não do broker
+//!   (retry/DLQ no consumer — ver
+//!   [`RabbitMqConsumer`](crate::RabbitMqConsumer)).
 //!
-//! Publicar em RabbitMQ demanda serializar o **payload** do evento
-//! (`E: Serialize`) e, no consumo, desserializá-lo de volta
-//! (`E: DeserializeOwned`) — bounds que a porta não expressa. O adapter
-//! **não enfraquece nem aumenta** o contrato: oferece o mesmo
-//! comportamento com a assinatura precisa (`E: Event + Serialize`) na
-//! forma inerente [`Self::publish`]. Documentado também em
-//! `gerax-eda/src/adapters/mod.rs`.
-//!
-//! `RabbitMqError` converte para [`gerax_eda::EventBusError`]
-//! ([`From`]), então a aplicação pode orquestrar
-//! `EventStore → outbox → broker` mantendo o erro dentro do contrato
-//! da porta (`§22`/`§23`).
+//! O adaptador também expõe os métodos inerentes
+//! [`Self::publish_event`], [`Self::publish_envelope`] e
+//! [`Self::publish_message`] com o erro tipado `RabbitMqError` —
+//! para o chamador que prefere o erro do adapter ao erro da porta.
 
-use gerax_eda::{Event, EventEnvelope};
+use async_trait::async_trait;
+use gerax_eda::{Event, EventEnvelope, EventBus, EventBusError};
 use serde::Serialize;
 
 use crate::config::RabbitMqConfig;
@@ -84,7 +88,11 @@ impl<C: EnvelopeCodec> RabbitMqEventBus<C> {
 
     /// Publica um evento tipado em um envelope novo
     /// ([`EventEnvelope::new`]) roteado por `event_type`.
-    pub async fn publish<E>(&self, event: E) -> Result<(), RabbitMqError>
+    ///
+    /// Conveniência sobre [`Self::publish_envelope`] com o erro do
+    /// adapter; quando o chamador é genérico em
+    /// [`EventBus`](gerax_eda::EventBus), use a porta.
+    pub async fn publish_event<E>(&self, event: E) -> Result<(), RabbitMqError>
     where
         E: Event + Serialize,
     {
@@ -112,5 +120,38 @@ impl<C: EnvelopeCodec> RabbitMqEventBus<C> {
     /// Publicador interno (para cenários de baixo nível).
     pub fn publisher(&self) -> &RabbitMqPublisher<C> {
         &self.publisher
+    }
+}
+
+#[async_trait]
+impl<C: EnvelopeCodec> EventBus for RabbitMqEventBus<C> {
+    async fn publish<E>(&self, envelope: EventEnvelope<E>) -> Result<(), EventBusError>
+    where
+        E: Event + Clone + Serialize,
+    {
+        if envelope.metadata.event_type != envelope.event.event_type() {
+            return Err(EventBusError::InvalidEvent(format!(
+                "metadata.event_type `{}` does not match event.event_type `{}`",
+                envelope.metadata.event_type,
+                envelope.event.event_type(),
+            )));
+        }
+        self.publish_envelope(envelope).await.map_err(Into::into)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn requer_event_bus<C: EnvelopeCodec>()
+    where
+        RabbitMqEventBus<C>: EventBus,
+    {
+    }
+
+    #[test]
+    fn rabbit_mq_event_bus_satisfaz_a_porta_event_bus() {
+        requer_event_bus::<JsonEnvelopeCodec>();
     }
 }
