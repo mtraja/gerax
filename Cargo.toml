@@ -36,6 +36,7 @@ members = [
     "crates/gerax-eda-rabbitmq",
     "crates/gerax-rabbitmq",
     "crates/gerax-rabbitmq-stream",
+    "crates/gerax-nats",
     "crates/gerax-rag",
     "crates/gerax-mcp",
     "crates/gerax-mcp-http",
@@ -107,6 +108,7 @@ gerax-eda = { path = "crates/gerax-eda" }
 gerax-eda-rabbitmq = { path = "crates/gerax-eda-rabbitmq" }
 gerax-rabbitmq = { path = "crates/gerax-rabbitmq" }
 gerax-rabbitmq-stream = { path = "crates/gerax-rabbitmq-stream" }
+gerax-nats = { path = "crates/gerax-nats" }
 gerax-rag = { path = "crates/gerax-rag" }
 gerax-mcp = { path = "crates/gerax-mcp" }
 gerax-mcp-http = { path = "crates/gerax-mcp-http" }
@@ -141,6 +143,7 @@ urlencoding = "2"
 uuid = { version = "1", features = ["v4", "serde"] }
 chrono = "0.4"
 lapin = "4"
+async-nats = { version = "0.50", default-features = false, features = ["nuid", "server_2_10"] }
 matchit = "0.7"
 http = "1"
 bytes = "1"
