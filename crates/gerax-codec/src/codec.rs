@@ -101,6 +101,12 @@ impl From<rmp_serde::decode::Error> for CodecError {
     }
 }
 
+impl From<serde_toon::Error> for CodecError {
+    fn from(e: serde_toon::Error) -> Self {
+        CodecError(format!("{}", e))
+    }
+}
+
 /// Trait que define o contrato do Codec
 pub trait Codec<T> {
     fn serialize(&self, value: &T) -> Result<Vec<u8>, CodecError>;

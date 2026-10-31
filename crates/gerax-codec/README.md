@@ -2,7 +2,7 @@
 
 Integração do Gerax com codec.
 
-Fornece a trait `Codec<T>` e implementações para JSON, YAML, TOML, XML, MessagePack, Protobuf e Cap'n Proto.
+Fornece a trait `Codec<T>` e implementações para JSON, YAML, TOML, XML, TOON, MessagePack, Protobuf e Cap'n Proto.
 
 ## Uso
 
@@ -25,6 +25,7 @@ let msg = codec.deserialize(&bytes)?;
 | `YamlCodec` | YAML | `serde_yml` |
 | `TomlCodec` | TOML | `toml` |
 | `XmlCodec` | XML | `quick-xml` |
+| `ToonCodec` | TOON | `serde_toon_format` |
 | `MessagePackCodec` | MessagePack | `rmp-serde` |
 | `ProtobufCodec` | Protobuf | `prost` |
 | `CapnpCodec` | Cap'n Proto | `capnp` |
@@ -48,6 +49,24 @@ assert_eq!(event.id, 1);
 A serialização padrão usa a representação **compacta** (structs como arrays).
 Para interoperabilidade com consumidores que esperam mapas nomeados, use
 `MessagePackCodec::serialize_named`. A desserialização aceita ambas as formas.
+
+## TOON
+
+TOON (Token-Oriented Object Notation) é um formato textual alternativo ao JSON,
+otimizado para prompts de LLMs. A serialização é feita via `serde_toon_format`.
+
+```rust
+use gerax_codec::{Codec, ToonCodec};
+use serde::{Deserialize, Serialize};
+
+#[derive(Serialize, Deserialize, PartialEq, Debug)]
+struct User { name: String, age: u32 }
+
+let codec = ToonCodec;
+let bytes = codec.serialize(&User { name: "Ada".into(), age: 37 })?;
+let user: User = codec.deserialize(&bytes)?;
+assert_eq!(user.age, 37);
+```
 
 ## Erros
 
