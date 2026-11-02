@@ -1,6 +1,6 @@
 //! Envelope de eventos publicados.
 
-use gerax_es::{EventId, StoredEvent};
+use gerax_es::{EventId, StoredEvent, Version};
 
 use crate::event::Event;
 use crate::metadata::EventMetadata;
@@ -11,6 +11,8 @@ use crate::metadata::EventMetadata;
 /// ```text
 /// EventEnvelope
 ///  ├── id              EventId (uuid; preservado se persistido)
+///  ├── aggregate_id    aggregate dono do evento (quando persistido)
+///  ├── version         versão do aggregate na stream (quando persistida)
 ///  ├── event           payload tipado (E)
 ///  └── metadata
 ///       ├── event_type
@@ -28,12 +30,26 @@ use crate::metadata::EventMetadata;
 ///
 /// [`EventEnvelope::new`] gera um novo [`EventId`]. Quando o evento já
 /// foi persistido no `gerax-es`, use [`EventEnvelope::from_stored`]:
-/// o identificador, o timestamp e a metadata do
+/// o identificador, o aggregate, a versão, o timestamp e a metadata do
 /// [`StoredEvent`] são **preservados** — nenhum UUID novo é gerado.
 #[derive(Debug, Clone, PartialEq)]
 pub struct EventEnvelope<E> {
     /// Identificador único desta entrega do evento.
     pub id: EventId,
+    /// Identificador do aggregate dono do evento, quando conhecido.
+    ///
+    /// `None` para envelopes criados com [`EventEnvelope::new`] (evento
+    /// ainda não persistido); preenchido por
+    /// [`EventEnvelope::from_stored`] e pelos builders
+    /// [`EventEnvelope::with_aggregate`] /
+    /// [`EventEnvelope::with_aggregate_id`].
+    pub aggregate_id: Option<String>,
+    /// Versão do aggregate na stream, quando conhecida.
+    ///
+    /// `None` para eventos ainda não persistidos; preenchida por
+    /// [`EventEnvelope::from_stored`] ou
+    /// [`EventEnvelope::with_version`].
+    pub version: Option<Version>,
     /// Payload tipado do evento.
     pub event: E,
     /// Metadata de rastreio e extensão.
@@ -47,12 +63,15 @@ where
     /// Cria um envelope para um evento recém-publicado.
     ///
     /// - `id` — novo [`EventId`] (UUID v4);
+    /// - `aggregate_id` e `version` — `None` (evento ainda não persistido);
     /// - `metadata.event_type` — derivado de [`Event::event_type`];
     /// - `metadata.occurred_at` — agora.
     pub fn new(event: E) -> Self {
         let metadata = EventMetadata::new(event.event_type());
         Self {
             id: EventId::new(),
+            aggregate_id: None,
+            version: None,
             event,
             metadata,
         }
@@ -60,10 +79,11 @@ where
 
     /// Constrói o envelope a partir de um evento **já persistido**.
     ///
-    /// Preserva `event_id` e `occurred_at` do [`StoredEvent`] e
-    /// copia correlação/causação quando presentes na metadata
-    /// persistida (`gerax-es` guarda metadata como mapa genérico;
-    /// chaves string de outros valores viram headers do envelope).
+    /// Preserva `event_id`, `aggregate_id`, `version` e `occurred_at`
+    /// do [`StoredEvent`] e copia correlação/causação quando presentes
+    /// na metadata persistida (`gerax-es` guarda metadata como mapa
+    /// genérico; chaves string de outros valores viram headers do
+    /// envelope).
     pub fn from_stored(event: E, stored: &StoredEvent) -> Self {
         let mut metadata = EventMetadata {
             event_type: stored.event_type.clone(),
@@ -88,9 +108,34 @@ where
 
         Self {
             id: stored.event_id.clone(),
+            aggregate_id: Some(stored.aggregate_id.clone()),
+            version: Some(stored.version),
             event,
             metadata,
         }
+    }
+
+    /// Define o aggregate dono do evento e a versão na stream (builder).
+    pub fn with_aggregate(
+        mut self,
+        aggregate_id: impl Into<String>,
+        version: Version,
+    ) -> Self {
+        self.aggregate_id = Some(aggregate_id.into());
+        self.version = Some(version);
+        self
+    }
+
+    /// Define apenas o identificador do aggregate (builder).
+    pub fn with_aggregate_id(mut self, aggregate_id: impl Into<String>) -> Self {
+        self.aggregate_id = Some(aggregate_id.into());
+        self
+    }
+
+    /// Define apenas a versão do aggregate na stream (builder).
+    pub fn with_version(mut self, version: Version) -> Self {
+        self.version = Some(version);
+        self
     }
 
     /// Define a correlação do envelope (builder).
@@ -109,6 +154,16 @@ where
     pub fn with_header(mut self, key: impl Into<String>, value: impl Into<String>) -> Self {
         self.metadata.insert_header(key, value);
         self
+    }
+
+    /// Identificador do aggregate dono do evento, se conhecido.
+    pub fn aggregate_id(&self) -> Option<&str> {
+        self.aggregate_id.as_deref()
+    }
+
+    /// Versão do aggregate na stream, se conhecida.
+    pub fn version(&self) -> Option<Version> {
+        self.version
     }
 
     /// Nome lógico do evento (conveniência sobre `metadata.event_type`).
@@ -165,6 +220,8 @@ mod tests {
         assert!(envelope.metadata.occurred_at >= before);
         assert!(envelope.metadata.occurred_at <= after);
         assert!(envelope.metadata.correlation_id.is_none());
+        assert!(envelope.aggregate_id.is_none());
+        assert!(envelope.version.is_none());
     }
 
     #[test]
@@ -198,11 +255,32 @@ mod tests {
     }
 
     #[test]
-    fn from_stored_preserva_id_e_timestamp_sem_gerar_novo_uuid() {
+    fn builders_definem_aggregate_e_versao() {
+        let envelope = EventEnvelope::new(aluno())
+            .with_aggregate("aluno-1", Version::new(3));
+
+        assert_eq!(envelope.aggregate_id(), Some("aluno-1"));
+        assert_eq!(envelope.version(), Some(Version::new(3)));
+    }
+
+    #[test]
+    fn builders_individuais_definem_aggregate_e_versao() {
+        let envelope = EventEnvelope::new(aluno())
+            .with_aggregate_id("aluno-2")
+            .with_version(Version::new(5));
+
+        assert_eq!(envelope.aggregate_id(), Some("aluno-2"));
+        assert_eq!(envelope.version(), Some(Version::new(5)));
+    }
+
+    #[test]
+    fn from_stored_preserva_id_timestamp_aggregate_e_versao_sem_gerar_novo_uuid() {
         let persistido = stored("aluno.matriculado", StoredMetadata::new());
         let envelope = EventEnvelope::from_stored(aluno(), &persistido);
 
         assert_eq!(envelope.id, persistido.event_id);
+        assert_eq!(envelope.aggregate_id(), Some("a-1"));
+        assert_eq!(envelope.version(), Some(Version::new(1)));
         assert_eq!(envelope.metadata.occurred_at, persistido.occurred_at);
         assert_eq!(envelope.metadata.event_type, "aluno.matriculado");
     }

@@ -22,12 +22,16 @@ use std::collections::HashMap;
 
 use chrono::{DateTime, Utc};
 use gerax_eda::{CausationId, CorrelationId, Event, EventEnvelope, EventMetadata};
-use gerax_es::EventId;
+use gerax_es::{EventId, Version};
 use lapin::BasicProperties;
 use lapin::types::{AMQPValue, FieldTable, ShortString};
 
 /// Header que carrega o `causation_id` (reservado pelo adapter).
 pub(crate) const HEADER_CAUSATION_ID: &str = "x-causation-id";
+/// Header que carrega o `aggregate_id` (reservado pelo adapter).
+pub(crate) const HEADER_AGGREGATE_ID: &str = "x-aggregate-id";
+/// Header que carrega a `version` do aggregate (reservado pelo adapter).
+pub(crate) const HEADER_AGGREGATE_VERSION: &str = "x-aggregate-version";
 /// `app_id` fixo gravado nas mensagens publicadas.
 pub(crate) const APP_ID: &str = "gerax-eda-rabbitmq";
 
@@ -41,6 +45,18 @@ pub(crate) fn properties_from_envelope<E: Event>(envelope: &EventEnvelope<E>) ->
         headers.insert(
             HEADER_CAUSATION_ID.into(),
             AMQPValue::LongString(causation.to_string().into()),
+        );
+    }
+    if let Some(aggregate_id) = &envelope.aggregate_id {
+        headers.insert(
+            HEADER_AGGREGATE_ID.into(),
+            AMQPValue::LongString(aggregate_id.clone().into()),
+        );
+    }
+    if let Some(version) = envelope.version {
+        headers.insert(
+            HEADER_AGGREGATE_VERSION.into(),
+            AMQPValue::LongString(version.value().to_string().into()),
         );
     }
     for (key, value) in &envelope.metadata.headers {
@@ -104,21 +120,32 @@ pub(crate) fn envelope_from_properties<E: Event>(
 
     let mut headers = HashMap::new();
     let mut causation_id = None;
+    let mut aggregate_id = None;
+    let mut version = None;
     if let Some(headers_table) = properties.headers() {
         for (key, value) in headers_table {
             let Some(text) = amqp_value_as_string(value) else {
                 continue;
             };
-            if key.as_str() == HEADER_CAUSATION_ID {
-                causation_id = Some(CausationId::new(text));
-            } else if let Some(name) = key.as_str().strip_prefix("x-") {
-                headers.insert(name.to_string(), text);
+            match key.as_str() {
+                HEADER_CAUSATION_ID => causation_id = Some(CausationId::new(text)),
+                HEADER_AGGREGATE_ID => aggregate_id = Some(text),
+                HEADER_AGGREGATE_VERSION => {
+                    version = text.parse::<u64>().ok().map(Version::new);
+                }
+                _ => {
+                    if let Some(name) = key.as_str().strip_prefix("x-") {
+                        headers.insert(name.to_string(), text);
+                    }
+                }
             }
         }
     }
 
     EventEnvelope {
         id,
+        aggregate_id,
+        version,
         event: payload,
         metadata: EventMetadata {
             event_type,

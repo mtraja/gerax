@@ -90,9 +90,9 @@ impl MessageEnvelope {
         Ok(Self {
             event_id: Some(envelope.id.as_uuid().to_string()),
             event_type: envelope.metadata.event_type.clone(),
-            aggregate_id: None,
+            aggregate_id: envelope.aggregate_id.clone(),
             aggregate_type: None,
-            version: None,
+            version: envelope.version.map(|version| version.value()),
             occurred_at: envelope.metadata.occurred_at,
             correlation_id: envelope
                 .metadata

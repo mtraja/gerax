@@ -196,7 +196,7 @@
 //! gerax-eda
 //! ├── Event                  trait de evento (nome lógico estável)
 //! ├── IntegrationEvent       marcador de contrato externo
-//! ├── EventEnvelope<E>       id + payload + metadata
+//! ├── EventEnvelope<E>       id + aggregate + payload + metadata
 //! ├── EventMetadata          event_type, occurred_at, correlation,
 //! │                          causation, headers
 //! ├── EventBus               porta de publicação
@@ -287,7 +287,7 @@ pub use envelope::EventEnvelope;
 pub use erased::{ErasedEvent, ErasedEventHandler};
 pub use error::{EventBusError, EventHandlerError, HandlerFailure};
 pub use event::{Event, IntegrationEvent};
-pub use gerax_es::EventId;
+pub use gerax_es::{EventId, Version};
 pub use handler::EventHandler;
 pub use in_memory::InMemoryEventBus;
 pub use metadata::{CausationId, CorrelationId, EventMetadata};

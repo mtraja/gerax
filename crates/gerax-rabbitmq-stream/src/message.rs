@@ -300,11 +300,14 @@ impl MessageEnvelope {
             metadata.insert_header(key.clone(), value.clone());
         }
 
-        Ok(EdaEnvelope {
+        let mut envelope = EdaEnvelope {
             id: EventId::from_uuid(self.event_id),
+            aggregate_id: self.aggregate_id.clone(),
+            version: self.version.map(gerax_eda::Version::new),
             event,
             metadata,
-        })
+        };
+        Ok(envelope)
     }
 
     /// Converte o envelope em uma mensagem do protocolo de streams.

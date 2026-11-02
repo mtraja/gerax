@@ -46,7 +46,8 @@ use crate::event::Event;
 /// partir de `StoredEvent.event_type` + `StoredEvent.payload`. O
 /// envelope é montado com
 /// [`EventEnvelope::from_stored`], preservando `event_id`,
-/// `occurred_at` e a metadata de correlação persistida.
+/// `aggregate_id`, `version`, `occurred_at` e a metadata de correlação
+/// persistida.
 ///
 /// ## Quais eventos publicar?
 ///

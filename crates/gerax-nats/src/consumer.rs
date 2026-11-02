@@ -418,6 +418,8 @@ impl NatsConsumer {
                 let event = delivered.envelope.payload::<E>()?;
                 let event_envelope = EventEnvelope {
                     id: delivered.envelope.event_id(),
+                    aggregate_id: delivered.envelope.aggregate_id.clone(),
+                    version: delivered.envelope.version.map(gerax_es::Version::new),
                     event,
                     metadata: delivered.envelope.to_eda_metadata(),
                 };

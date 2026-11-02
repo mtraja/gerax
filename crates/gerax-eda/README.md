@@ -9,7 +9,8 @@ RabbitMQ ou qualquer broker externo.
 
 - `Event` — trait de evento com nome lógico estável (`event_type`).
 - `IntegrationEvent` — marcador de contrato público, separado do Domain Event.
-- `EventEnvelope<E>` — identificação + payload + metadata do evento.
+- `EventEnvelope<E>` — identificação + aggregate/versão + payload + metadata
+  do evento.
 - `EventMetadata` — `event_type`, `occurred_at`, `correlation_id`,
   `causation_id` e `headers`.
 - `EventBus` (publicar) e `EventSubscriber` (assinar) — portas desacopladas.
@@ -95,7 +96,7 @@ EventBus                      distribuição
 | Módulo | Responsabilidade |
 | --- | --- |
 | `event` | Trait `Event` e marcador `IntegrationEvent`. |
-| `envelope` | `EventEnvelope<E>` (id + payload + metadata). |
+| `envelope` | `EventEnvelope<E>` (id + aggregate_id/version + payload + metadata). |
 | `metadata` | `EventMetadata`, `CorrelationId`, `CausationId`. |
 | `bus` | Porta `EventBus` (`publish`). |
 | `subscriber` | Porta `EventSubscriber` (`register`). |

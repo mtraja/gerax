@@ -455,6 +455,8 @@ mod tests {
 
         let envelope = EventEnvelope {
             id: gerax_es::EventId::new(),
+            aggregate_id: None,
+            version: None,
             event: aluno(),
             metadata: EventMetadata::new("outro.tipo"),
         };

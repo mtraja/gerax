@@ -223,6 +223,8 @@ async fn publica_via_porta_event_bus_e_valida_envelope() {
     // envelope inconsistente → InvalidEvent (validação da porta)
     let inconsistente = EventEnvelope {
         id: EventId::new(),
+        aggregate_id: None,
+        version: None,
         event: AlunoMatriculado {
             aluno_id: "a-x".into(),
             curso: "fisica".into(),

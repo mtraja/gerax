@@ -99,6 +99,8 @@ where
 
         let event_envelope = EventEnvelope {
             id: envelope.event_id(),
+            aggregate_id: envelope.aggregate_id.clone(),
+            version: envelope.version.map(gerax_es::Version::new),
             event,
             metadata: envelope.to_eda_metadata(),
         };
