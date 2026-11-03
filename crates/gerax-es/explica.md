@@ -689,6 +689,105 @@ Isso reduz custo operacional, evita dual-write entre bancos e mantém o rebuild 
 
 ---
 
+## 13. Aplicação multi-serviço com gateway Axum
+
+### Visão geral
+
+```mermaid
+flowchart LR
+    Client --> Gateway[Axum Gateway<br/>gerax-axum / gerax-http]
+    Gateway -->|HTTP| S1[Service A<br/>CQRS + ES]
+    Gateway -->|HTTP| S2[Service B<br/>CQRS + ES]
+    S1 --> RepoA[AggregateRepository]
+    S2 --> RepoB[AggregateRepository]
+    RepoA --> KS[KurrentDbEventStore<br/>gerax-es]
+    RepoB --> KS
+    KS --> KDB[(KurrentDB<br/>streams: Type-Id)]
+    RepoA -.EventPublisher.-> EDA[EventBusPublisher<br/>gerax-eda]
+    EDA --> Bus[InMemoryEventBus<br/>ou broker]
+    Bus --> ProjA[Projection A<br/>MongoDB]
+    Bus --> ProjB[Projection B<br/>PostgreSQL]
+    S1 --> ReadA[(MongoDB<br/>read model)]
+    S2 --> ReadB[(PostgreSQL<br/>read model)]
+```
+
+### Papéis dos componentes
+
+- **Gateway (Axum)**: roteamento, autenticação, agregação. Usa `gerax-axum`/`gerax-http`.
+- **Services**: binários Rust com `CommandBus`/`QueryBus` (`gerax-cqrs`), agregados (`gerax-es`) e handlers.
+- **Write side**: comandos → `CommandHandler` → `Aggregate::raise` → `EventSourcedRepository::save` → `KurrentDbEventStore::append` (optimistic concurrency por stream `Type-Id`).
+- **Read side**: projections consomem `StoredEvent` via `EventBusPublisher` (`gerax-eda`) e atualizam read models (Mongo/Postgres) consultados por queries.
+- **EDA**: `InMemoryEventBus` (ou adapter futuro) distribui eventos para N handlers (diário, notificações, projections).
+
+### Fluxo de comando
+
+```text
+HTTP POST /alunos
+  → Axum handler
+    → CommandBus.dispatch(CreateAluno)
+      → CommandHandler (validação + agregado)
+        → repo.save(&mut aluno)              // append no KurrentDB
+          → EventBusPublisher.publish        // StoredEvent
+            → InMemoryEventBus → handlers    // projections, notificações
+  → 201 Created
+```
+
+### Fluxo de query
+
+```text
+HTTP GET /alunos/{id}
+  → Axum handler
+    → QueryBus.execute(GetAluno)
+      → QueryHandler lê read model (Mongo/Postgres)
+  → 200 OK
+```
+
+### Dependências (Cargo.toml por serviço)
+
+```toml
+[dependencies]
+gerax-cqrs = { path = "...", features = ["event-sourcing"] }
+gerax-es    = { path = "...", features = ["kurrentdb"] }
+gerax-eda   = { path = "..." }
+gerax-axum  = { path = "..." }   # ou gerax-http
+gerax-mongodb  = { path = "..." } # read model
+gerax-postgres = { path = "..." } # read model
+```
+
+### Wiring típico (main.rs de um serviço)
+
+```rust
+let store = KurrentDbEventStore::connect(KDB_URL).await?;
+let repo = EventSourcedRepository::new(store, JsonEventSerializer::new());
+let bus = InMemoryEventBus::new();
+let publisher = EventBusPublisher::new(bus.clone(), JsonEventSerializer::new());
+
+bus.register::<AlunoCreated, _>(AtualizarReadModelMongo::new(mongo.clone()));
+
+let mut registry = HandlerRegistry::new();
+register_commands!(registry, CreateAlunoHandler::new(repo.clone(), publisher));
+register_queries!(registry, GetAlunoHandler::new(mongo.clone()));
+let registry = Arc::new(registry);
+
+let app = Router::new()
+    .route("/alunos", post(create).get(list))
+    .route("/alunos/:id", get(get))
+    .with_state(AppState {
+        command_bus: CommandBus::new(registry.clone()),
+        query_bus: QueryBus::new(registry),
+    });
+axum::serve(listener, app).await?;
+```
+
+### Regras de isolamento
+
+- Cada serviço tem seu próprio DB (write = KurrentDB streams por aggregate; read = Mongo/Postgres próprios).
+- Não compartilhe read models entre serviços; use EDA para sincronizar.
+- Concorrência otimista no `append` evita lost updates.
+- Consumidores idempotentes (at-least-once delivery).
+
+---
+
 ## 12. Referências no repositório
 
 - `crates/gerax-es/examples/student.rs` — Event Sourcing puro.
