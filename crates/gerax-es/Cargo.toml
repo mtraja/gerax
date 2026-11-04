@@ -25,7 +25,6 @@ sqlx = { workspace = true, features = ["chrono"], optional = true }
 mongodb = { workspace = true, optional = true }
 bson = { workspace = true, optional = true }
 futures = { workspace = true, optional = true }
-kurrentdb = { workspace = true, optional = true }
 
 [dev-dependencies]
 tokio.workspace = true
@@ -34,6 +33,3 @@ tokio.workspace = true
 default = []
 postgres = ["dep:sqlx"]
 mongodb = ["dep:mongodb", "dep:bson", "dep:futures"]
-kurrentdb = ["dep:kurrentdb"]
-# Alias de compatibilidade para a feature anterior (`EventStoreDB`).
-eventstore = ["kurrentdb"]

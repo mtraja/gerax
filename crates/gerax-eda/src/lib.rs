@@ -272,6 +272,7 @@ pub mod envelope;
 pub mod erased;
 pub mod error;
 pub mod event;
+pub mod event_relay;
 pub mod handler;
 pub mod in_memory;
 pub mod metadata;
@@ -287,6 +288,13 @@ pub use envelope::EventEnvelope;
 pub use erased::{ErasedEvent, ErasedEventHandler};
 pub use error::{EventBusError, EventHandlerError, HandlerFailure};
 pub use event::{Event, IntegrationEvent};
+pub use event_relay::IntegrationEvent as IntegrationEnvelope;
+pub use event_relay::{
+    DeliveryAction, EventDispatch, EventDispatcher, EventRelay, EventSource, HandlerError,
+    IntegrationEventHandler, IntegrationPublisher, PermanentFailureAction, PublishError,
+    PublisherHandler, RelayError, RelayOutcome, RelayRetryPolicy, RelayStats, SourceError,
+    SourceEvent,
+};
 pub use gerax_es::{EventId, Version};
 pub use handler::EventHandler;
 pub use in_memory::InMemoryEventBus;

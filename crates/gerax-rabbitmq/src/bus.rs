@@ -26,7 +26,7 @@
 //! para o chamador que prefere o erro do adapter ao erro da porta.
 
 use async_trait::async_trait;
-use gerax_eda::{Event, EventEnvelope, EventBus, EventBusError};
+use gerax_eda::{Event, EventBus, EventBusError, EventEnvelope};
 use serde::Serialize;
 
 use crate::config::RabbitMqConfig;

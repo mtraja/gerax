@@ -32,6 +32,7 @@ members = [
     "crates/gerax-rpc",
     "crates/gerax-cqrs",
     "crates/gerax-es",
+    "crates/gerax-kurrentdb",
     "crates/gerax-eda",
     "crates/gerax-eda-rabbitmq",
     "crates/gerax-rabbitmq",

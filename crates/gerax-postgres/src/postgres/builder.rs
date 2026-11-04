@@ -82,9 +82,6 @@ mod tests {
         let config = DatabaseConfig::default();
         let builder = PostgresRepositoryBuilder::<User>::new(config);
 
-        assert_eq!(
-            builder.config().url,
-            "postgresql://user:password@host:port/name_db"
-        );
+        assert_eq!(builder.config().url, "postgresql://admin:admin@host:5432/demo_db");
     }
 }

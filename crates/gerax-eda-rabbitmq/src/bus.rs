@@ -11,7 +11,7 @@
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use gerax_eda::{Event, EventEnvelope, EventBus, EventBusError};
+use gerax_eda::{Event, EventBus, EventBusError, EventEnvelope};
 use lapin::options::{BasicPublishOptions, ConfirmSelectOptions, ExchangeDeclareOptions};
 use lapin::{Channel, Confirmation, Connection, ConnectionProperties};
 use serde::Serialize;

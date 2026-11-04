@@ -25,7 +25,7 @@
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use gerax_eda::{Event, EventEnvelope, EventBus, EventBusError};
+use gerax_eda::{Event, EventBus, EventBusError, EventEnvelope};
 use serde::Serialize;
 use tracing::{error, info};
 

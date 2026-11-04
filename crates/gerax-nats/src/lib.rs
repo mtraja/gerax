@@ -153,6 +153,7 @@ pub mod config;
 pub mod envelope;
 pub mod error;
 pub mod event_bus;
+pub mod integration_publisher;
 pub mod publisher;
 pub mod subject;
 
@@ -168,6 +169,7 @@ pub use config::{
 pub use envelope::NatsEnvelope;
 pub use error::NatsError;
 pub use event_bus::NatsEventBus;
+pub use integration_publisher::NatsIntegrationPublisher;
 pub use publisher::{NatsPublisher, PublishMode};
 pub use subject::SubjectBuilder;
 

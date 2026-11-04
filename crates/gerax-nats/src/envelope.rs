@@ -66,6 +66,8 @@ pub struct NatsEnvelope {
     pub aggregate_type: Option<String>,
     /// Versão do aggregate nesta stream (quando conhecida).
     pub version: Option<u64>,
+    /// Revisão original na stream (0-based), preservada pelo relay.
+    pub stream_revision: Option<u64>,
     /// Instante em que o evento ocorreu.
     pub occurred_at: DateTime<Utc>,
     /// Identificador de correlação do fluxo, se conhecido.
@@ -94,6 +96,7 @@ impl NatsEnvelope {
             aggregate_id: envelope.aggregate_id.clone(),
             aggregate_type: None,
             version: envelope.version.map(|version| version.value()),
+            stream_revision: None,
             occurred_at: envelope.metadata.occurred_at,
             correlation_id: envelope
                 .metadata
@@ -138,12 +141,56 @@ impl NatsEnvelope {
             aggregate_id: Some(event.aggregate_id.clone()),
             aggregate_type: Some(event.aggregate_type.clone()),
             version: Some(event.version.value()),
+            stream_revision: Some(event.version.value().saturating_sub(1)),
             occurred_at: event.occurred_at,
             correlation_id,
             causation_id,
             headers,
             payload: event.payload.clone(),
         })
+    }
+
+    /// Constrói o envelope de transporte a partir do envelope de
+    /// integração do Event Relay.
+    ///
+    /// Preserva a identidade original, o Aggregate, a revisão da
+    /// stream (0-based), correlação/causação e os metadados. A versão
+    /// Gerax é derivada como `stream_revision + 1`.
+    pub fn from_integration_event(event: &gerax_eda::event_relay::IntegrationEvent) -> Self {
+        let mut headers = HashMap::new();
+        for (key, value) in event.metadata.iter() {
+            if key == "correlation_id" || key == "causation_id" {
+                continue;
+            }
+            let text = value
+                .as_str()
+                .map(str::to_owned)
+                .unwrap_or_else(|| value.to_string());
+            headers.insert(key.clone(), text);
+        }
+
+        let correlation_id = event
+            .correlation_id
+            .clone()
+            .or_else(|| metadata_string(&event.metadata, "correlation_id"));
+        let causation_id = event
+            .causation_id
+            .clone()
+            .or_else(|| metadata_string(&event.metadata, "causation_id"));
+
+        Self {
+            event_id: Some(event.id.as_uuid().to_string()),
+            event_type: event.event_type.clone(),
+            aggregate_id: Some(event.aggregate_id.clone()),
+            aggregate_type: Some(event.aggregate_type.clone()),
+            version: Some(event.stream_revision.saturating_add(1)),
+            stream_revision: Some(event.stream_revision),
+            occurred_at: event.occurred_at,
+            correlation_id,
+            causation_id,
+            headers,
+            payload: event.payload.clone(),
+        }
     }
 
     /// Referência ao `event_type` (token final do subject).
@@ -193,6 +240,11 @@ impl NatsEnvelope {
         }
         metadata
     }
+}
+
+/// Lê uma entrada textual da metadata.
+fn metadata_string(metadata: &gerax_es::EventMetadata, key: &str) -> Option<String> {
+    metadata.get(key).and_then(Value::as_str).map(str::to_owned)
 }
 
 /// Headers NATS derivados do envelope (produtor usa esta função).
@@ -365,10 +417,53 @@ mod tests {
         assert_eq!(envelope.aggregate_id.as_deref(), Some("student-1"));
         assert_eq!(envelope.aggregate_type.as_deref(), Some("Student"));
         assert_eq!(envelope.version, Some(7));
+        assert_eq!(envelope.stream_revision, Some(6));
         assert_eq!(envelope.correlation_id.as_deref(), Some("fluxo-stored"));
         assert_eq!(
             envelope.headers.get("tenant_id").map(String::as_str),
             Some("ten-1")
         );
+    }
+
+    #[test]
+    fn from_integration_event_preserva_identidade_e_revisao() {
+        use chrono::TimeZone;
+        use gerax_es::Version;
+
+        let occurred_at = Utc.with_ymd_and_hms(2026, 1, 2, 3, 4, 5).unwrap();
+        let event = gerax_eda::event_relay::IntegrationEvent {
+            id: EventId::new(),
+            event_type: "aluno.matriculado.v1".into(),
+            aggregate_id: "student-1".into(),
+            aggregate_type: "Student".into(),
+            stream_revision: 4,
+            occurred_at,
+            correlation_id: Some("fluxo-1".into()),
+            causation_id: None,
+            payload: serde_json::json!({ "aluno_id": "a-1" }),
+            metadata: {
+                let mut metadata = gerax_es::EventMetadata::new();
+                metadata.insert("causation_id", "evt-0");
+                metadata.insert("tenant", "cmf");
+                metadata
+            },
+        };
+
+        let envelope = NatsEnvelope::from_integration_event(&event);
+
+        assert_eq!(envelope.event_id(), event.id);
+        assert_eq!(envelope.event_type, "aluno.matriculado.v1");
+        assert_eq!(envelope.aggregate_id.as_deref(), Some("student-1"));
+        assert_eq!(envelope.aggregate_type.as_deref(), Some("Student"));
+        assert_eq!(envelope.stream_revision, Some(4));
+        assert_eq!(envelope.version, Some(Version::new(5).value()));
+        assert_eq!(envelope.occurred_at, occurred_at);
+        assert_eq!(envelope.correlation_id.as_deref(), Some("fluxo-1"));
+        assert_eq!(envelope.causation_id.as_deref(), Some("evt-0"));
+        assert_eq!(
+            envelope.headers.get("tenant").map(String::as_str),
+            Some("cmf")
+        );
+        assert_eq!(envelope.payload["aluno_id"].as_str(), Some("a-1"));
     }
 }

@@ -4,7 +4,7 @@
 
 mod common;
 
-use gerax_eda::{EventEnvelope, EventId, EventMetadata, EventBus, EventBusError};
+use gerax_eda::{EventBus, EventBusError, EventEnvelope, EventId, EventMetadata};
 use gerax_rabbitmq::{
     EnvelopeCodec, JsonEnvelopeCodec, RabbitMqConfig, RabbitMqConnection, RabbitMqEventBus,
 };

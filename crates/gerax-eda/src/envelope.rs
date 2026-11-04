@@ -116,11 +116,7 @@ where
     }
 
     /// Define o aggregate dono do evento e a versão na stream (builder).
-    pub fn with_aggregate(
-        mut self,
-        aggregate_id: impl Into<String>,
-        version: Version,
-    ) -> Self {
+    pub fn with_aggregate(mut self, aggregate_id: impl Into<String>, version: Version) -> Self {
         self.aggregate_id = Some(aggregate_id.into());
         self.version = Some(version);
         self
@@ -256,8 +252,7 @@ mod tests {
 
     #[test]
     fn builders_definem_aggregate_e_versao() {
-        let envelope = EventEnvelope::new(aluno())
-            .with_aggregate("aluno-1", Version::new(3));
+        let envelope = EventEnvelope::new(aluno()).with_aggregate("aluno-1", Version::new(3));
 
         assert_eq!(envelope.aggregate_id(), Some("aluno-1"));
         assert_eq!(envelope.version(), Some(Version::new(3)));

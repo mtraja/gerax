@@ -106,8 +106,6 @@
 //!   (`cargo build --features postgres`)
 //! - `mongodb` → [`adapters::mongodb::MongoDbEventStore`](adapters::mongodb/struct.MongoDbEventStore.html)
 //!   (`cargo build --features mongodb`)
-//! - `kurrentdb` → [`adapters::kurrentdb::KurrentDbEventStore`](adapters::kurrentdb/struct.KurrentDbEventStore.html)
-//!   (`cargo build --features kurrentdb`)
 //!
 //! ```text
 //! gerax-es
@@ -118,7 +116,6 @@
 //!   ├── InMemoryEventStore        (sempre disponível)
 //!   ├── PostgresEventStore        (feature "postgres")
 //!   ├── MongoDbEventStore         (feature "mongodb")
-//!   └── KurrentDbEventStore       (feature "kurrentdb")
 //! ```
 //!
 //! ## Uso do derive `Aggregate`
@@ -165,13 +162,7 @@ pub mod version;
 ///
 /// - `postgres` → [`adapters::postgres::PostgresEventStore`]
 /// - `mongodb` → [`adapters::mongodb::MongoDbEventStore`]
-/// - `kurrentdb` → [`adapters::kurrentdb::KurrentDbEventStore`]
-#[cfg(any(
-    feature = "postgres",
-    feature = "mongodb",
-    feature = "kurrentdb",
-    feature = "eventstore"
-))]
+#[cfg(any(feature = "postgres", feature = "mongodb",))]
 pub mod adapters;
 
 pub use aggregate::{Aggregate, AggregateApplier};

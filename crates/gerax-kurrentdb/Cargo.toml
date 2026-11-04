@@ -1,0 +1,33 @@
+[package]
+name = "gerax-kurrentdb"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+description = "Adapter KurrentDB (Event Store + Persistent Subscriptions) para o ecossistema Gerax"
+
+[features]
+default = ["eda"]
+eda = ["dep:gerax-eda"]
+
+[dependencies]
+gerax-es.workspace = true
+gerax-eda = { workspace = true, optional = true }
+kurrentdb.workspace = true
+async-trait.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+chrono = { workspace = true, features = ["serde"] }
+uuid.workspace = true
+toml.workspace = true
+
+[dev-dependencies]
+tokio.workspace = true
+gerax-nats.workspace = true

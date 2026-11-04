@@ -17,8 +17,9 @@ memória para testes/protótipos e adapters opcionais de persistência
 - `SnapshotStore`/`Snapshot` opcionais para reidratação rápida.
 - `EventPublisher` para publicar eventos **após** a persistência confirmada.
 - Erros tipados com `thiserror` e conversão automática entre camadas.
-- Adapters opcionais: `PostgresEventStore` (`postgres`), `MongoDbEventStore`
-  (`mongodb`) e `KurrentDbEventStore` (`kurrentdb`).
+- Adapters opcionais: `PostgresEventStore` (`postgres`) e
+  `MongoDbEventStore` (`mongodb`). O adapter KurrentDB vive na crate
+  [`gerax-kurrentdb`](../gerax-kurrentdb) e implementa esta mesma porta.
 
 ## Visão geral do fluxo
 
@@ -53,7 +54,7 @@ Consumers / Projections
 | `snapshot` | `Snapshot` e porta `SnapshotStore`. |
 | `publisher` | Porta `EventPublisher` (publicação pós-persistência). |
 | `error` | Erros: `ConcurrencyError`, `EventStoreError`, `RepositoryError`, etc. |
-| `adapters` | `PostgresEventStore`, `MongoDbEventStore` e `KurrentDbEventStore` (features opcionais). |
+| `adapters` | `PostgresEventStore` e `MongoDbEventStore` (features opcionais). O adapter KurrentDB está em `gerax-kurrentdb`. |
 
 ## Exemplo mínimo
 
@@ -174,7 +175,7 @@ EventStore (porta)
   ├── InMemoryEventStore        (sempre disponível)
   ├── PostgresEventStore        (feature "postgres")
   ├── MongoDbEventStore         (feature "mongodb")
-  └── KurrentDbEventStore       (feature "kurrentdb")
+  └── KurrentDbEventStore       (crate gerax-kurrentdb)
 ```
 
 ### PostgreSQL
@@ -217,13 +218,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ### KurrentDB
 
+O adapter KurrentDB (Event Store + Persistent Subscriptions) vive na
+crate [`gerax-kurrentdb`](../gerax-kurrentdb), que implementa a porta
+`gerax_es::EventStore`:
+
 ```sh
-cargo add gerax-es --features kurrentdb
+cargo add gerax-kurrentdb
 ```
 
 ```rust,no_run
-use gerax_es::adapters::kurrentdb::KurrentDbEventStore;
 use gerax_es::{EventSourcedRepository, JsonEventSerializer};
+use gerax_kurrentdb::KurrentDbEventStore;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -240,15 +245,11 @@ converte a `Version` do Gerax (baseada em `1`) para as revisões do
 KurrentDB (baseadas em `0`) e preserva a `EventMetadata` e o instante
 original do evento no *custom metadata*.
 
-A feature `eventstore`, o módulo `adapters::eventstore` e o tipo
-`EventStoreDbEventStore` continuam disponíveis como aliases de
-compatibilidade para o nome anterior do banco.
-
-Testes de integração são ignorados sem um KurrentDB disponível:
+Testes de integração do adapter são ignorados sem um KurrentDB disponível:
 
 ```sh
 KURRENTDB_URL='kurrentdb://admin:changeit@localhost:2113?tls=false' \
-    cargo test -p gerax-es --features kurrentdb --test kurrentdb
+    cargo test -p gerax-kurrentdb
 ```
 
 ## Integração com CQRS
