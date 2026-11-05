@@ -10,7 +10,7 @@ use gerax_graphql::{DefaultExecutor, GraphiQL, GraphqlHandler, Schema};
 use gerax_http::routing::{Context as HttpContext, Response, Router};
 use gerax_http::server::HttpServer;
 use serde::{Deserialize, Serialize};
-use tokio::sync::{RwLock, broadcast};
+use tokio::sync::broadcast;
 use uuid::Uuid;
 
 #[derive(Debug, Clone, Serialize, SimpleObject)]
