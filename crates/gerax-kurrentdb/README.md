@@ -147,6 +147,21 @@ O `max_retry_count` do grupo limita as reentregas no servidor.
 `SubscriptionManager::replay_parked` devolve mensagens parkeadas ao fluxo
 quando a falha for corrigida.
 
+### Replay automático
+
+Quando `replay_parked_interval_secs > 0`, `SubscriptionManager::start_replay_parked`
+inicia uma tarefa periódica que chama `replay_parked` com backoff exponencial
+após falhas consecutivas (limitado por `replay_parked_max_backoff_secs`). O
+retornado [`ReplayParkedHandle`] cancela a tarefa quando descartado.
+
+```rust,no_run
+# use gerax_kurrentdb::{SubscriptionConfig, SubscriptionManager, ReplayParkedHandle};
+# let manager = SubscriptionManager::new(client.clone());
+# let config = SubscriptionConfig::all("relay");
+let handle: Option<ReplayParkedHandle> = manager.start_replay_parked(&config);
+// descartar `handle` (ou chamar handle.abort().await) cancela a tarefa
+```
+
 ### Reconexão
 
 `KurrentDbSubscription::run(handler)` reconecta automaticamente em falhas
@@ -260,6 +275,8 @@ start_from = "end"
 message_timeout_secs = 30
 consumer_strategy = "round_robin"
 reconnect_delay_ms = 1000
+replay_parked_interval_secs = 30
+replay_parked_max_backoff_secs = 3600
 
 [kurrentdb.subscription.filter]
 prefixes = ["Aluno-", "Turma-"]

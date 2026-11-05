@@ -63,7 +63,7 @@ use gerax_es::event_store::EventStore;
 use gerax_es::version::Version;
 use tracing::{debug, warn};
 
-use crate::client::{KurrentDbClient, map_connection_error};
+use crate::client::KurrentDbClient;
 use crate::config::KurrentDbConfig;
 
 use super::mapper::{recorded_to_stored, stored_to_event_data, stream_state};
@@ -243,8 +243,13 @@ fn validate_sequence(
 /// Converte erros de leitura em erros da porta [`EventStore`].
 fn map_read_error(error: kurrentdb::Error) -> EventStoreError {
     match error {
-        kurrentdb::Error::ResourceNotFound => EventStoreError::Storage("stream not found".into()),
-        kurrentdb::Error::ResourceDeleted => EventStoreError::Storage("stream was deleted".into()),
+        kurrentdb::Error::ResourceNotFound => EventStoreError::ResourceNotFound("stream not found".into()),
+        kurrentdb::Error::ResourceDeleted => EventStoreError::ResourceDeleted("stream was deleted".into()),
+        kurrentdb::Error::AccessDenied => EventStoreError::Unauthorized("access denied".into()),
+        kurrentdb::Error::ConnectionClosed
+        | kurrentdb::Error::GrpcConnectionError(_)
+        | kurrentdb::Error::NotLeaderException(_)
+        | kurrentdb::Error::DeadlineExceeded => EventStoreError::Unavailable(error.to_string()),
         other => EventStoreError::Storage(other.to_string()),
     }
 }
@@ -269,7 +274,8 @@ fn map_append_error(error: kurrentdb::Error, expected: Version) -> EventStoreErr
         kurrentdb::Error::ConnectionClosed
         | kurrentdb::Error::GrpcConnectionError(_)
         | kurrentdb::Error::NotLeaderException(_)
-        | kurrentdb::Error::DeadlineExceeded => map_connection_error(error).into(),
+        | kurrentdb::Error::DeadlineExceeded => EventStoreError::Unavailable(error.to_string()),
+        kurrentdb::Error::AccessDenied => EventStoreError::Unauthorized("access denied".into()),
         other => EventStoreError::Storage(other.to_string()),
     }
 }

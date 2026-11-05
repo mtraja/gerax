@@ -1,0 +1,44 @@
+# KurrentDB (antigo EventStoreDB) para produção.
+#
+# Uso:
+#   docker compose -f compose-kurrentdb.prod.yaml up -d
+#   (ou: podman-compose -f compose-kurrentdb.prod.yaml up -d)
+#
+# Variáveis de ambiente esperadas (definir em .env ou no orquestrador):
+#   KURRENTDB_ADMIN_PASSWORD   senha do usuário `admin`
+#   KURRENTDB_CERT_FILE         caminho do certificado TLS (mount)
+#   KURRENTDB_KEY_FILE          caminho da chave privada TLS (mount)
+#
+# - gRPC/HTTP TLS : localhost:2113
+# - Dados persistidos em volume nomeado `kurrentdb-data`.
+#
+# Segredos NUNCA versionados — fornecer via variáveis de ambiente ou
+# gerenciador de segredos (§39).
+services:
+  kurrentdb:
+    image: docker.io/kurrentdb/kurrentdb:latest
+    container_name: gerax-kurrentdb
+    restart: unless-stopped
+    ports:
+      - "2113:2113"
+    environment:
+      KURRENTDB_RUN_PROJECTIONS: All
+      KURRENTDB_START_STANDARD_PROJECTIONS: "true"
+      KURRENTDB_CLUSTER_SIZE: "1"
+      KURRENTDB_CERTIFICATE_FILE: /etc/kurrentdb/certs/server.crt
+      KURRENTDB_CERTIFICATE_PRIVATE_KEY_FILE: /etc/kurrentdb/certs/server.key
+      KURRENTDB_ADMIN_PASSWORD: ${KURRENTDB_ADMIN_PASSWORD}
+    volumes:
+      - kurrentdb-data:/var/lib/kurrentdb
+      - ${KURRENTDB_CERT_FILE:-/dev/null}:/etc/kurrentdb/certs/server.crt:ro
+      - ${KURRENTDB_KEY_FILE:-/dev/null}:/etc/kurrentdb/certs/server.key:ro
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "https://localhost:2113/health/live", "--insecure"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+
+volumes:
+  kurrentdb-data:
+    driver: local

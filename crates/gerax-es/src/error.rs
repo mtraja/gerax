@@ -38,6 +38,14 @@ pub enum EventStoreError {
     #[error("event not found: {0}")]
     EventNotFound(String),
 
+    /// Stream ou recurso solicitado não foi encontrado.
+    #[error("resource not found: {0}")]
+    ResourceNotFound(String),
+
+    /// Stream ou recurso foi excluído.
+    #[error("resource deleted: {0}")]
+    ResourceDeleted(String),
+
     /// A sequência de eventos do append não segue a versão esperada.
     #[error("invalid event sequence: {0}")]
     InvalidSequence(String),
@@ -45,6 +53,14 @@ pub enum EventStoreError {
     /// Falha de serialização/desserialização de eventos.
     #[error("serialization error: {0}")]
     Serialization(String),
+
+    /// Falha de autenticação ou autorização.
+    #[error("unauthorized: {0}")]
+    Unauthorized(String),
+
+    /// Serviço indisponível temporariamente.
+    #[error("service unavailable: {0}")]
+    Unavailable(String),
 
     /// Outras falhas não categorizadas.
     #[error("{0}")]

@@ -8,6 +8,13 @@
 //! Múltiplas instâncias que desejam processamento concorrente devem
 //! usar o **mesmo** grupo; grupos diferentes possuem checkpoints
 //! independentes.
+//!
+//! ## Replay automático de mensagens parkeadas
+//!
+//! Use [`SubscriptionManager::start_replay_parked`] para iniciar uma
+//! tarefa periódica que invoca [`replay_parked`](Self::replay_parked)
+//! com backoff exponencial após falhas consecutivas. O handle
+//! retornado é [`ReplayParkedHandle`]; descartá-lo cancela a tarefa.
 
 use kurrentdb::{
     DeletePersistentSubscriptionOptions, GetPersistentSubscriptionInfoOptions,
@@ -20,6 +27,7 @@ use crate::config::KurrentDbConfig;
 
 use super::config::{ALL_STREAM, SubscriptionConfig};
 use super::error::SubscriptionError;
+use super::replay::ReplayParkedHandle;
 
 /// Estado retornado por [`SubscriptionManager::ensure`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -319,6 +327,19 @@ impl SubscriptionManager {
                 "replay parked messages for `{group}` on `{stream}` failed: {error}"
             ))
         })
+    }
+
+    /// Inicia a tarefa de replay automático de mensagens parkeadas
+    /// para um grupo, conforme a configuração.
+    ///
+    /// Retorna `None` quando o replay automático está desativado
+    /// (`config.replay_parked_interval_secs == 0`). Use o handle
+    /// retornado para cancelar a tarefa.
+    pub fn start_replay_parked(
+        &self,
+        config: &SubscriptionConfig,
+    ) -> Option<ReplayParkedHandle> {
+        ReplayParkedHandle::start(self.clone(), config.clone())
     }
 }
 

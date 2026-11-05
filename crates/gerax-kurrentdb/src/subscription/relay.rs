@@ -12,7 +12,7 @@
 //! envenenada bloqueie o grupo.
 
 use async_trait::async_trait;
-use tracing::{debug, warn};
+use tracing::{debug, info, warn};
 
 use gerax_eda::event_relay::{
     DeliveryAction, EventSource, IntegrationEvent, SourceError, SourceEvent,
@@ -25,15 +25,21 @@ use super::config::SubscriptionConfig;
 use super::consumer::{KurrentDbSubscription, SubscriptionSession};
 use super::error::SubscriptionError;
 use super::event::SubscriptionEvent;
+use super::idempotency::{SharedIdempotencyStore, IdempotencyStore};
 
 /// Fonte de eventos KurrentDB para o Event Relay.
 ///
 /// Mantém uma sessão ativa e reconecta automaticamente em falhas
 /// transitórias. A reconexão respeita
 /// [`SubscriptionConfig::reconnect_delay`].
+///
+/// Opcionalmente, uma [`IdempotencyStore`] rastreia os `event_id`
+/// já despachados: reentregas do mesmo id são confirmadas com
+/// [`SubscriptionAck::Skip`] sem que o relay as processe.
 pub struct KurrentDbEventSource {
     subscription: KurrentDbSubscription,
     session: Option<SubscriptionSession>,
+    idempotency: Option<SharedIdempotencyStore>,
 }
 
 impl KurrentDbEventSource {
@@ -42,7 +48,34 @@ impl KurrentDbEventSource {
         Self {
             subscription,
             session: None,
+            idempotency: None,
         }
+    }
+
+    /// Associa uma [`IdempotencyStore`] ao fluxo de relay.
+    ///
+    /// Reentregas de `event_id` já despachados são ignoradas (ACK
+    /// `Skip`) antes de chegar à camada superior.
+    pub fn with_idempotency_store(
+        mut self,
+        store: impl IdempotencyStore + 'static,
+    ) -> Self {
+        self.idempotency = Some(super::idempotency::shared_idempotency_store(store));
+        self
+    }
+
+    /// Associa uma [`SharedIdempotencyStore`] já existente.
+    pub fn with_shared_idempotency_store(
+        mut self,
+        store: SharedIdempotencyStore,
+    ) -> Self {
+        self.idempotency = Some(store);
+        self
+    }
+
+    /// Referência opcional à store de idempotência, se configurada.
+    pub fn idempotency_store(&self) -> Option<&SharedIdempotencyStore> {
+        self.idempotency.as_ref()
     }
 
     /// Configuração do grupo consumido.
@@ -75,6 +108,16 @@ impl KurrentDbEventSource {
             .as_mut()
             .expect("sessão inicializada imediatamente acima"))
     }
+
+    /// Confirma um evento como `Skip` na sessão ativa (usado para
+    /// idempotência: evento já processado).
+    async fn skip_event(&mut self, event: &SubscriptionEvent) -> Result<(), SourceError> {
+        let acked = {
+            let session = self.session().await?;
+            session.ack(event, SubscriptionAck::Skip).await
+        };
+        acked.map_err(map_source_error)
+    }
 }
 
 #[async_trait]
@@ -89,31 +132,53 @@ impl EventSource for KurrentDbEventSource {
             };
 
             match received {
-                Ok(event) => match subscription_event_to_integration(&event) {
-                    Ok(integration) => {
-                        return Ok(SourceEvent {
-                            event: integration,
-                            retry_count: event.retry_count,
-                        });
-                    }
-                    Err(error) => {
-                        warn!(
+                Ok(event) => {
+                    // Idempotência: reentregas do mesmo event_id são
+                    // ignoradas antes de chegar à camada superior.
+                    if let Some(store) = &self.idempotency
+                        && store.is_processed(&event.id).await
+                    {
+                        debug!(
+                            metric = "kurrentdb.subscription.skip",
                             event_id = %event.id.as_uuid(),
-                            event_type = %event.event_type,
-                            aggregate_id = %event.aggregate_id,
-                            stream_revision = event.stream_revision,
                             subscription_group = %self.subscription.config().group,
-                            error = %error,
-                            "evento inválido; encaminhando para park"
+                            stream = %event.stream_id,
+                            "event_id já processado; confirmando com Skip"
                         );
-
-                        let parked = {
-                            let session = self.session().await?;
-                            session.ack(&event, SubscriptionAck::Park).await
-                        };
-                        if let Err(error) = parked {
+                        if let Err(error) = self.skip_event(&event).await {
                             self.session = None;
-                            return Err(map_source_error(error));
+                            return Err(error);
+                        }
+                        continue;
+                    }
+
+                    match subscription_event_to_integration(&event) {
+                        Ok(integration) => {
+                            return Ok(SourceEvent {
+                                event: integration,
+                                retry_count: event.retry_count,
+                            });
+                        }
+                        Err(error) => {
+                            warn!(
+                                metric = "kurrentdb.subscription.park",
+                                event_id = %event.id.as_uuid(),
+                                event_type = %event.event_type,
+                                aggregate_id = %event.aggregate_id,
+                                stream_revision = event.stream_revision,
+                                subscription_group = %self.subscription.config().group,
+                                error = %error,
+                                "evento inválido; encaminhando para park"
+                            );
+
+                            let parked = {
+                                let session = self.session().await?;
+                                session.ack(&event, SubscriptionAck::Park).await
+                            };
+                            if let Err(error) = parked {
+                                self.session = None;
+                                return Err(map_source_error(error));
+                            }
                         }
                     }
                 },
@@ -141,7 +206,14 @@ impl EventSource for KurrentDbEventSource {
         action: DeliveryAction,
     ) -> Result<(), SourceError> {
         let ack = subscription_ack(action);
+        let metric = match ack {
+            SubscriptionAck::Ack => "kurrentdb.subscription.ack",
+            SubscriptionAck::Retry => "kurrentdb.subscription.retry",
+            SubscriptionAck::Park => "kurrentdb.subscription.park",
+            SubscriptionAck::Skip => "kurrentdb.subscription.skip",
+        };
         debug!(
+            metric = metric,
             event_id = %event.id.as_uuid(),
             action = ?ack,
             subscription_group = %self.subscription.config().group,
@@ -158,6 +230,13 @@ impl EventSource for KurrentDbEventSource {
                 )
                 .await
         };
+
+        if result.is_ok()
+            && ack.is_ack()
+            && let Some(store) = &self.idempotency
+        {
+            store.mark_processed(EventId::from_uuid(event.id.as_uuid())).await;
+        }
 
         result.map_err(|error| {
             let mapped = map_source_error(error);

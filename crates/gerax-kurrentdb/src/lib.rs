@@ -92,11 +92,20 @@
 //! group = "gerax-event-relay"
 //! buffer_size = 100
 //! max_retry_count = 5
+//! replay_parked_interval_secs = 30
+//! replay_parked_max_backoff_secs = 3600
 //! ```
 //!
 //! Use [`KurrentDbConfig::from_toml_str`] / [`KurrentDbConfig::from_toml_file`]
 //! para carregar a configuração. Credenciais devem vir de variáveis de
 //! ambiente ou de um gerenciador de segredos.
+//!
+//! ## Replay automático de mensagens parkeadas
+//!
+//! [`SubscriptionManager::start_replay_parked`] inicia uma tarefa
+//! periódica que reencaminha mensagens parkeadas com backoff
+//! exponencial após falhas consecutivas. O handle
+//! [`ReplayParkedHandle`] cancela a tarefa quando descartado.
 
 pub mod client;
 pub mod config;
@@ -105,13 +114,14 @@ pub mod event_store;
 pub mod subscription;
 
 pub use client::KurrentDbClient;
-pub use config::{DEFAULT_CONNECTION_STRING, KurrentDbConfig};
+pub use config::{DEFAULT_CONNECTION_STRING, KurrentDbConfig, RunProjections};
 pub use error::KurrentDbError;
 pub use event_store::{KurrentDbEventStore, parse_stream_name, stream_name};
 pub use subscription::{
-    ALL_STREAM, ConsumerStrategy, GroupState, KurrentDbSubscription, SubscriptionAck,
-    SubscriptionConfig, SubscriptionError, SubscriptionEvent, SubscriptionFilterConfig,
-    SubscriptionInfo, SubscriptionManager, SubscriptionSession, SubscriptionStart,
+    ALL_STREAM, ConsumerStrategy, GroupState, KurrentDbSubscription, ReplayParkedHandle,
+    SubscriptionAck, SubscriptionConfig, SubscriptionError, SubscriptionEvent,
+    SubscriptionFilterConfig, SubscriptionInfo, SubscriptionManager, SubscriptionSession,
+    SubscriptionStart,
 };
 
 #[cfg(feature = "eda")]

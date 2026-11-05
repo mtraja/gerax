@@ -291,17 +291,46 @@ impl SubscriptionSession {
             }
         };
 
-        result.map_err(|error| {
-            let mapped = SubscriptionError::acknowledgement(action, error.to_string());
-            warn!(
-                event_id = %id,
-                action = ?action,
-                error = %mapped,
-                subscription_group = %self.config.group,
-                "falha ao confirmar evento"
-            );
-            mapped
-        })
+        let result = match action {
+            SubscriptionAck::Ack => self.inner.ack_ids([id]).await,
+            action => {
+                let nak = action
+                    .nak_action()
+                    .expect("NACK action required for non-ACK results");
+                self.inner.nack_ids([id], nak, reason.as_ref()).await
+            }
+        };
+
+        match &result {
+            Ok(_) => {
+                let metric = match action {
+                    SubscriptionAck::Ack => "kurrentdb.subscription.ack",
+                    SubscriptionAck::Retry => "kurrentdb.subscription.retry",
+                    SubscriptionAck::Park => "kurrentdb.subscription.park",
+                    SubscriptionAck::Skip => "kurrentdb.subscription.skip",
+                };
+                tracing::debug!(
+                    metric = metric,
+                    event_id = %id,
+                    action = ?action,
+                    subscription_group = %self.config.group,
+                    "evento confirmado"
+                );
+            }
+            Err(error) => {
+                let mapped = SubscriptionError::acknowledgement(action, error.to_string());
+                warn!(
+                    event_id = %id,
+                    action = ?action,
+                    error = %mapped,
+                    subscription_group = %self.config.group,
+                    "falha ao confirmar evento"
+                );
+                return Err(mapped);
+            }
+        }
+
+        Ok(())
     }
 
     /// Encerra a sessão (o drop fecha o stream gRPC).

@@ -14,6 +14,8 @@
 //! start_from = "end"
 //! message_timeout_secs = 30
 //! consumer_strategy = "round_robin"
+//! replay_parked_interval_secs = 30
+//! replay_parked_max_backoff_secs = 3600
 //!
 //! [kurrentdb.subscription.filter]
 //! prefixes = ["Aluno-", "Turma-"]
@@ -41,6 +43,10 @@ pub const DEFAULT_MAX_RETRY_COUNT: u32 = 5;
 pub const DEFAULT_MESSAGE_TIMEOUT_SECS: u64 = 30;
 /// Atraso padrão entre tentativas de reconexão do consumidor.
 pub const DEFAULT_RECONNECT_DELAY_MS: u64 = 1_000;
+/// Intervalo padrão entre rodadas de replay de mensagens parkeadas.
+pub const DEFAULT_REPLAY_PARKED_INTERVAL_SECS: u64 = 30;
+/// Atraso máximo de backoff exponencial entre rodadas de replay fracassadas.
+pub const DEFAULT_REPLAY_PARKED_MAX_BACKOFF_SECS: u64 = 3_600;
 
 /// Ponto inicial de consumo de um grupo.
 ///
@@ -249,6 +255,14 @@ pub struct SubscriptionConfig {
     /// Atraso entre tentativas de reconexão do consumidor.
     #[serde(default = "default_reconnect_delay_ms")]
     pub reconnect_delay_ms: u64,
+    /// Intervalo em segundos entre rodadas de replay automático de
+    /// mensagens parkeadas. `0` desativa o replay automático.
+    #[serde(default = "default_replay_parked_interval_secs")]
+    pub replay_parked_interval_secs: u64,
+    /// Limite superior do backoff exponencial (em segundos) aplicado após
+    /// falhas consecutivas do replay de mensagens parkeadas.
+    #[serde(default = "default_replay_parked_max_backoff_secs")]
+    pub replay_parked_max_backoff_secs: u64,
 }
 
 fn default_buffer_size() -> usize {
@@ -267,6 +281,14 @@ fn default_reconnect_delay_ms() -> u64 {
     DEFAULT_RECONNECT_DELAY_MS
 }
 
+fn default_replay_parked_interval_secs() -> u64 {
+    DEFAULT_REPLAY_PARKED_INTERVAL_SECS
+}
+
+fn default_replay_parked_max_backoff_secs() -> u64 {
+    DEFAULT_REPLAY_PARKED_MAX_BACKOFF_SECS
+}
+
 impl SubscriptionConfig {
     /// Cria a configuração mínima de um grupo.
     pub fn new(stream: impl Into<String>, group: impl Into<String>) -> Self {
@@ -282,6 +304,8 @@ impl SubscriptionConfig {
             resolve_link_tos: false,
             filter: None,
             reconnect_delay_ms: DEFAULT_RECONNECT_DELAY_MS,
+            replay_parked_interval_secs: DEFAULT_REPLAY_PARKED_INTERVAL_SECS,
+            replay_parked_max_backoff_secs: DEFAULT_REPLAY_PARKED_MAX_BACKOFF_SECS,
         }
     }
 
@@ -344,6 +368,20 @@ impl SubscriptionConfig {
         self
     }
 
+    /// Define o intervalo de replay automático de mensagens parkeadas
+    /// em segundos (builder). Use `0` para desativar.
+    pub fn replay_parked_interval_secs(mut self, seconds: u64) -> Self {
+        self.replay_parked_interval_secs = seconds;
+        self
+    }
+
+    /// Define o limite de backoff exponencial do replay em segundos
+    /// (builder).
+    pub fn replay_parked_max_backoff_secs(mut self, seconds: u64) -> Self {
+        self.replay_parked_max_backoff_secs = seconds;
+        self
+    }
+
     /// `true` quando a configuração aponta para o `$all`.
     pub fn is_all_stream(&self) -> bool {
         self.stream == ALL_STREAM
@@ -352,6 +390,22 @@ impl SubscriptionConfig {
     /// Atraso de reconexão como [`Duration`].
     pub fn reconnect_delay(&self) -> Duration {
         Duration::from_millis(self.reconnect_delay_ms)
+    }
+
+    /// Intervalo base do replay automático como [`Duration`].
+    ///
+    /// Retorna `None` quando o replay automático está desativado.
+    pub fn replay_parked_interval(&self) -> Option<Duration> {
+        if self.replay_parked_interval_secs == 0 {
+            None
+        } else {
+            Some(Duration::from_secs(self.replay_parked_interval_secs))
+        }
+    }
+
+    /// Limite de backoff exponencial do replay como [`Duration`].
+    pub fn replay_parked_max_backoff(&self) -> Duration {
+        Duration::from_secs(self.replay_parked_max_backoff_secs)
     }
 
     /// Valida os campos antes de qualquer chamada ao servidor.
@@ -402,6 +456,11 @@ impl SubscriptionConfig {
         if !self.is_all_stream() && matches!(self.start_from, SubscriptionStart::Position { .. }) {
             return Err(SubscriptionError::Configuration(
                 "regular stream subscriptions must use `start`, `end` or `revision`".into(),
+            ));
+        }
+        if self.replay_parked_interval_secs > 0 && self.replay_parked_max_backoff_secs == 0 {
+            return Err(SubscriptionError::Configuration(
+                "replay_parked_max_backoff_secs must be greater than zero when replay_parked_interval_secs is enabled".into(),
             ));
         }
         Ok(())
@@ -619,5 +678,40 @@ exclude_system_events = true
             })
             .filter(SubscriptionFilterConfig::regex("^Aluno-"));
         assert!(all.to_all_options().is_ok());
+    }
+
+    #[test]
+    fn replay_parked_defaults_e_serializa_em_toml() {
+        let config = SubscriptionConfig::all("relay");
+        assert_eq!(config.replay_parked_interval_secs, DEFAULT_REPLAY_PARKED_INTERVAL_SECS);
+        assert_eq!(
+            config.replay_parked_max_backoff_secs,
+            DEFAULT_REPLAY_PARKED_MAX_BACKOFF_SECS
+        );
+        assert_eq!(
+            config.replay_parked_interval(),
+            Some(Duration::from_secs(DEFAULT_REPLAY_PARKED_INTERVAL_SECS))
+        );
+        assert!(config.replay_parked_max_backoff() > Duration::ZERO);
+        assert!(config.validate().is_ok());
+
+        let toml = toml::to_string(&config).unwrap();
+        assert!(toml.contains("replay_parked_interval_secs"));
+        assert!(toml.contains("replay_parked_max_backoff_secs"));
+    }
+
+    #[test]
+    fn replay_parked_desativado_retorna_none_e_nao_valida_backoff() {
+        let config = SubscriptionConfig::all("relay").replay_parked_interval_secs(0);
+        assert!(config.replay_parked_interval().is_none());
+        assert!(config.validate().is_ok());
+
+        let invalid = SubscriptionConfig::all("relay")
+            .replay_parked_interval_secs(10)
+            .replay_parked_max_backoff_secs(0);
+        assert!(matches!(
+            invalid.validate(),
+            Err(SubscriptionError::Configuration(_))
+        ));
     }
 }
