@@ -300,7 +300,7 @@ impl MessageEnvelope {
             metadata.insert_header(key.clone(), value.clone());
         }
 
-        let mut envelope = EdaEnvelope {
+        let envelope = EdaEnvelope {
             id: EventId::from_uuid(self.event_id),
             aggregate_id: self.aggregate_id.clone(),
             version: self.version.map(gerax_eda::Version::new),
