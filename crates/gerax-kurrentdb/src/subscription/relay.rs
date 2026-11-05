@@ -12,7 +12,7 @@
 //! envenenada bloqueie o grupo.
 
 use async_trait::async_trait;
-use tracing::{debug, info, warn};
+use tracing::{debug, warn};
 
 use gerax_eda::event_relay::{
     DeliveryAction, EventSource, IntegrationEvent, SourceError, SourceEvent,

@@ -291,16 +291,6 @@ impl SubscriptionSession {
             }
         };
 
-        let result = match action {
-            SubscriptionAck::Ack => self.inner.ack_ids([id]).await,
-            action => {
-                let nak = action
-                    .nak_action()
-                    .expect("NACK action required for non-ACK results");
-                self.inner.nack_ids([id], nak, reason.as_ref()).await
-            }
-        };
-
         match &result {
             Ok(_) => {
                 let metric = match action {
