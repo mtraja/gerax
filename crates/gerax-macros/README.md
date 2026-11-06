@@ -42,6 +42,43 @@ Atributo opcional:
 struct Item { ... }
 ```
 
+### Event
+
+Derive para implementar `gerax_eda::Event` (e opcionalmente
+`gerax_eda::IntegrationEvent`).
+
+```rust
+use gerax_macros::Event; // ou gerax_eda::Event, que reexporta o derive
+
+#[derive(Event)]
+#[event(name = "aluno.matriculado", version = 1)]
+struct AlunoMatriculadoV1 {
+    aluno_id: String,
+}
+```
+
+Atributos:
+
+- `name = "..."` — nome lógico estável (padrão: nome da struct/variante);
+- `version = N` — acrescenta o sufixo `.vN`;
+- `integration` — também implementa `IntegrationEvent`.
+
+Em enums, o `event_type` é decidido por variante. O atributo `name` não é
+aceito no nível do enum:
+
+```rust
+use gerax_macros::Event;
+
+#[derive(Event)]
+#[event(integration)]
+enum AlunoEvent {
+    #[event(name = "aluno.matriculado")]
+    Matriculado { aluno_id: String },
+    #[event(name = "aluno.cancelado")]
+    Cancelado,
+}
+```
+
 ---
 
 ## Exemplos

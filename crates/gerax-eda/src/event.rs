@@ -47,6 +47,24 @@
 /// assíncronas. O [`EventBus::publish`](crate::EventBus::publish)
 /// exige também `Clone`: o mesmo evento é entregue a N handlers e
 /// cada um recebe um envelope próprio.
+///
+/// A implementação pode ser manual ou gerada pelo derive
+/// `#[derive(Event)]` reexportado por esta crate:
+///
+/// ```rust
+/// use gerax_eda::Event;
+///
+/// #[derive(Event)]
+/// #[event(name = "aluno.matriculado")]
+/// struct AlunoMatriculado {
+///     aluno_id: String,
+/// }
+///
+/// assert_eq!(
+///     AlunoMatriculado { aluno_id: "a-1".into() }.event_type(),
+///     "aluno.matriculado",
+/// );
+/// ```
 pub trait Event: Send + Sync + 'static {
     /// Nome lógico estável do evento (contrato externo).
     fn event_type(&self) -> &'static str;

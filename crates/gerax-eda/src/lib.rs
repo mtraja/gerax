@@ -195,6 +195,7 @@
 //! ```text
 //! gerax-eda
 //! ├── Event                  trait de evento (nome lógico estável)
+//! ├── Event (derive)         #[derive(Event)] para structs/enums
 //! ├── IntegrationEvent       marcador de contrato externo
 //! ├── EventEnvelope<E>       id + aggregate + payload + metadata
 //! ├── EventMetadata          event_type, occurred_at, correlation,
@@ -296,6 +297,7 @@ pub use event_relay::{
     SourceEvent,
 };
 pub use gerax_es::{EventId, Version};
+pub use gerax_macros::Event;
 pub use handler::EventHandler;
 pub use in_memory::InMemoryEventBus;
 pub use metadata::{CausationId, CorrelationId, EventMetadata};

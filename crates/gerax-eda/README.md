@@ -8,6 +8,8 @@ RabbitMQ ou qualquer broker externo.
 ## Características
 
 - `Event` — trait de evento com nome lógico estável (`event_type`).
+- `#[derive(Event)]` — gera `Event` (e opcionalmente `IntegrationEvent`) para
+  structs e enums, com nome/versão configuráveis.
 - `IntegrationEvent` — marcador de contrato público, separado do Domain Event.
 - `EventEnvelope<E>` — identificação + aggregate/versão + payload + metadata
   do evento.
@@ -60,8 +62,8 @@ gerax-es ──X──> gerax-eda     (Event Sourcing funciona sem EDA)
 ```
 
 Esta crate depende de `gerax-es` (reutiliza `EventId`, `StoredEvent`,
-`EventPublisher`, `EventSerializer` do `gerax-es`) e **não** duplica
-responsabilidades:
+`EventPublisher`, `EventSerializer` do `gerax-es`) e de `gerax-macros` (derive
+`Event`), e **não** duplica responsabilidades:
 
 | Responsabilidade | Crate |
 |---|---|
@@ -95,7 +97,7 @@ EventBus                      distribuição
 
 | Módulo | Responsabilidade |
 | --- | --- |
-| `event` | Trait `Event` e marcador `IntegrationEvent`. |
+| `event` | Trait `Event`, marcador `IntegrationEvent` e derive `Event`. |
 | `envelope` | `EventEnvelope<E>` (id + aggregate_id/version + payload + metadata). |
 | `metadata` | `EventMetadata`, `CorrelationId`, `CausationId`. |
 | `bus` | Porta `EventBus` (`publish`). |
@@ -118,13 +120,11 @@ use gerax_eda::{
     Event, EventBus, EventEnvelope, EventHandler, EventHandlerError,
     InMemoryEventBus,
 };
+use serde::Serialize;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Event)]
+#[event(name = "aluno.matriculado")]
 struct AlunoMatriculado { aluno_id: String }
-
-impl Event for AlunoMatriculado {
-    fn event_type(&self) -> &'static str { "aluno.matriculado" }
-}
 
 struct AtualizarDiario;
 struct EnviarNotificacao;
@@ -159,6 +159,66 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 ```
+
+## Derive `Event`
+
+O trait `Event` pode ser implementado manualmente ou com o derive reexportado
+por esta crate:
+
+```rust
+use gerax_eda::Event;
+
+#[derive(Event)]
+#[event(name = "aluno.matriculado", version = 1)]
+struct AlunoMatriculadoV1 {
+    aluno_id: String,
+}
+```
+
+Regras:
+
+- struct: o nome padrão é o nome do tipo; `name = "..."` sobrescreve e
+  `version = N` acrescenta o sufixo `.vN`;
+- enum: cada variante vira um `event_type` com o nome da variante; use
+  `#[event(name = "...", version = N)]` na variante para sobrescrever;
+- `name` não é aceito no nível do enum (cada variante tem seu próprio nome);
+- `version` e `integration` no nível do enum são aplicados a todas as
+  variantes;
+- `integration` no tipo também implementa `IntegrationEvent`.
+
+```rust
+use gerax_eda::Event;
+use serde::Serialize;
+
+#[derive(Debug, Clone, Serialize, Event)]
+#[event(integration)]
+#[serde(tag = "event_type")]
+enum AlunoEvent {
+    #[event(name = "aluno.matriculado")]
+    Matriculado { aluno_id: String },
+    #[event(name = "aluno.cancelado")]
+    Cancelado,
+}
+```
+
+No enum, o padrão de `event_type()` é o nome da variante — o mesmo nome que o
+`#[serde(tag = "event_type")]` usa por padrão. Se houver `#[serde(rename)]`, use
+`#[event(name = "...")]` para manter os dois lados iguais.
+
+O nome declarado deve ser consistente com a tag `event_type` usada na
+persistência (`gerax-es`) e na serialização do broker. Para publicar pelo
+`EventBus`, o evento também precisa de `Clone` e `Serialize`:
+
+```rust
+#[derive(Debug, Clone, Serialize, Event)]
+#[event(name = "aluno.matriculado")]
+struct AlunoMatriculado {
+    aluno_id: String,
+}
+```
+
+O derive `Event` gera **apenas** os impls de `Event`/`IntegrationEvent`; os
+demais derives continuam explícitos.
 
 ## Exemplo completo (CQRS + Event Sourcing + EDA)
 
@@ -231,6 +291,7 @@ perda silenciosa de entregas.
 
 ```sh
 cargo test -p gerax-eda
+cargo test -p gerax-eda --test event_macro
 cargo clippy -p gerax-eda --all-targets
 cargo fmt --package gerax-eda --check
 ```

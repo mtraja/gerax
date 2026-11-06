@@ -13,6 +13,7 @@ description = "Event-Driven Architecture (EDA) para o Gerax"
 
 [dependencies]
 gerax-es.workspace = true
+gerax-macros.workspace = true
 async-trait.workspace = true
 thiserror.workspace = true
 tracing.workspace = true
