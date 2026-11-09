@@ -23,7 +23,7 @@
 //! idempotentes (ver [`crate::EventId`] e `Nats-Msg-Id`).
 
 use thiserror::Error;
-use tracing::{debug, info, warn};
+use tracing::{debug, error, info, warn};
 
 use super::envelope::IntegrationEvent;
 use super::handler::HandlerError;
@@ -302,9 +302,30 @@ where
                 event_type = %event.event_type,
                 aggregate_id = %event.aggregate_id,
                 stream_revision = event.stream_revision,
+                action = "ack",
                 "evento processado e confirmado"
             ),
-            DeliveryAction::Retry | DeliveryAction::Park | DeliveryAction::Skip => {}
+
+            DeliveryAction::Retry => warn!(
+                event_id = %event.id.as_uuid(),
+                event_type = %event.event_type,
+                action = "retry",
+                "evento será reprocessado"
+            ),
+
+            DeliveryAction::Park => error!(
+                event_id = %event.id.as_uuid(),
+                event_type = %event.event_type,
+                action = "park",
+                "evento enviado para tratamento posterior"
+            ),
+
+            DeliveryAction::Skip => warn!(
+                event_id = %event.id.as_uuid(),
+                event_type = %event.event_type,
+                action = "skip",
+                "evento ignorado"
+            ),
         }
     }
 }
