@@ -12,7 +12,7 @@ mod util;
 pub fn entity_derive(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
     entity::expand_entity(&input)
-        .unwrap_or_else(|e| e.to_compile_error().into())
+        .unwrap_or_else(|e| e.to_compile_error())
         .into()
 }
 
@@ -20,7 +20,7 @@ pub fn entity_derive(input: TokenStream) -> TokenStream {
 pub fn handler(_attr: TokenStream, item: TokenStream) -> TokenStream {
     let input = parse_macro_input!(item as ItemFn);
     handler::expand_handler(&input)
-        .unwrap_or_else(|e| e.to_compile_error().into())
+        .unwrap_or_else(|e| e.to_compile_error())
         .into()
 }
 

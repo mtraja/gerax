@@ -26,18 +26,14 @@ pub(crate) fn expand_handler(input: &ItemFn) -> Result<TokenStream2, Error> {
 
     let mut state_type: Option<syn::Type> = None;
     for arg in &sig.inputs {
-        if let syn::FnArg::Typed(pat_type) = arg {
-            if let syn::Type::Path(type_path) = pat_type.ty.as_ref() {
-                if let Some(seg) = type_path.path.segments.last() {
-                    if seg.ident == "State" {
-                        if let syn::PathArguments::AngleBracketed(args) = &seg.arguments {
-                            if let Some(syn::GenericArgument::Type(inner_ty)) = args.args.first() {
-                                state_type = Some(inner_ty.clone());
-                            }
-                        }
-                    }
-                }
-            }
+        if let syn::FnArg::Typed(pat_type) = arg
+            && let syn::Type::Path(type_path) = pat_type.ty.as_ref()
+            && let Some(seg) = type_path.path.segments.last()
+            && seg.ident == "State"
+            && let syn::PathArguments::AngleBracketed(args) = &seg.arguments
+            && let Some(syn::GenericArgument::Type(inner_ty)) = args.args.first()
+        {
+            state_type = Some(inner_ty.clone());
         }
     }
 
@@ -131,10 +127,10 @@ fn extract_param_name_and_type(
     match pat {
         Pat::Ident(pat_ident) => Ok((pat_ident.ident.clone(), ty.clone())),
         Pat::TupleStruct(pat_tuple_struct) => {
-            if pat_tuple_struct.elems.len() == 1 {
-                if let Pat::Ident(inner_ident) = &pat_tuple_struct.elems[0] {
-                    return Ok((inner_ident.ident.clone(), ty.clone()));
-                }
+            if pat_tuple_struct.elems.len() == 1
+                && let Pat::Ident(inner_ident) = &pat_tuple_struct.elems[0]
+            {
+                return Ok((inner_ident.ident.clone(), ty.clone()));
             }
             Err(Error::new_spanned(
                 pat,
@@ -149,11 +145,11 @@ fn extract_param_name_and_type(
 }
 
 fn is_infallible_type(ty: &syn::Type) -> bool {
-    if let syn::Type::Path(type_path) = ty {
-        if let Some(seg) = type_path.path.segments.last() {
-            let name = seg.ident.to_string();
-            return name == "State" || name == "Request";
-        }
+    if let syn::Type::Path(type_path) = ty
+        && let Some(seg) = type_path.path.segments.last()
+    {
+        let name = seg.ident.to_string();
+        return name == "State" || name == "Request";
     }
     false
 }
