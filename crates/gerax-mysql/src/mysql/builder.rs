@@ -2,7 +2,7 @@ use std::marker::PhantomData;
 use std::sync::Arc;
 
 use gerax_core::Entity;
-use gerax_db::{Connection, DbError, Repository, RepositoryBuilder};
+use gerax_db::{DbError, Repository, RepositoryBuilder};
 
 use crate::mysql::MySqlConfig;
 use crate::mysql::MySqlConnection;
@@ -40,7 +40,7 @@ impl<T: Entity + Send + Sync + 'static> RepositoryBuilder<T> for MySqlRepository
         let connection = if let Some(ref conn) = self.connection {
             conn.clone()
         } else {
-            Arc::new(MySqlConnection::connect().await?)
+            Arc::new(MySqlConnection::connect_with_config(self.config.clone()).await?)
         };
 
         Ok(Box::new(MySqlRepository::new(connection)))
@@ -82,5 +82,22 @@ mod tests {
 
         assert_eq!(builder.config().url, "user:password@host:port");
         assert_eq!(builder.config().database, "test_db");
+    }
+
+    #[tokio::test]
+    async fn build_uses_builder_config_instead_of_env() {
+        // URL vazia: se `build` lesse o ambiente, o erro viria de `DATABASE_URL`
+        // ausente; usando a config do builder, a validação falha com "empty".
+        let config = MySqlConfig {
+            url: String::new(),
+            database: "configured_db".into(),
+        };
+        let builder = MySqlRepositoryBuilder::<User>::new(config);
+
+        let result = builder.build().await;
+        assert!(matches!(
+            result,
+            Err(DbError::ConfigurationError(ref message)) if message.contains("empty")
+        ));
     }
 }

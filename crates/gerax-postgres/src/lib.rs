@@ -1,6 +1,8 @@
 pub mod postgres;
 
-pub use postgres::{PostgresConnection, PostgresRepository, PostgresRepositoryBuilder};
+pub use postgres::{
+    PostgresConfig, PostgresConnection, PostgresRepository, PostgresRepositoryBuilder, PostgresTls,
+};
 
 #[cfg(feature = "tracing-subscriber")]
 pub mod tracing_setup {

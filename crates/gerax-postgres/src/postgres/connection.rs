@@ -2,7 +2,7 @@ use async_trait::async_trait;
 use gerax_config::Config;
 use gerax_db::{Connection, DbError};
 use serde_json::Value;
-use sqlx::postgres::PgPoolOptions;
+use sqlx::postgres::{PgConnectOptions, PgPoolOptions, PgSslMode};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum PostgresTls {
@@ -15,6 +15,7 @@ pub enum PostgresTls {
 #[derive(Debug, Clone)]
 pub struct PostgresConfig {
     pub url: String,
+    pub database: Option<String>,
     pub tls: PostgresTls,
 }
 
@@ -22,8 +23,14 @@ impl PostgresConfig {
     pub fn new(url: impl Into<String>) -> Self {
         Self {
             url: url.into(),
+            database: None,
             tls: PostgresTls::default(),
         }
+    }
+
+    pub fn with_database(mut self, database: impl Into<String>) -> Self {
+        self.database = Some(database.into());
+        self
     }
 
     pub fn with_tls(mut self, tls: PostgresTls) -> Self {
@@ -51,11 +58,36 @@ impl PostgresConnection {
         Self::validate(&config)?;
 
         let pool = PgPoolOptions::new()
-            .connect(&config.url)
+            .connect_with(Self::connect_options(&config)?)
             .await
             .map_err(DbError::connection)?;
 
         Ok(Self { pool })
+    }
+
+    /// Opções de conexão efetivas. O `database` da configuração, quando
+    /// informado, tem precedência sobre o database do path da URL; se vazio,
+    /// o path da URL é mantido. `tls` habilitado exige TLS (`PgSslMode::Require`).
+    fn connect_options(config: &PostgresConfig) -> Result<PgConnectOptions, DbError> {
+        let mut options: PgConnectOptions = config.url.parse().map_err(DbError::connection)?;
+
+        if let Some(database) = config
+            .database
+            .as_deref()
+            .map(str::trim)
+            .filter(|database| !database.is_empty())
+        {
+            options = options.database(database);
+        }
+
+        // `tls` explícito: `Disabled` respeita o `sslmode` da URL; os demais
+        // exigem TLS. O backend concreto (native-tls ou rustls) é escolhido em
+        // tempo de compilação pelas features do sqlx, não pelo variant.
+        if !matches!(config.tls, PostgresTls::Disabled) {
+            options = options.ssl_mode(PgSslMode::Require);
+        }
+
+        Ok(options)
     }
 
     fn validate(config: &PostgresConfig) -> Result<(), DbError> {
@@ -99,7 +131,7 @@ impl Connection for PostgresConnection {
             })
             .unwrap_or_default();
 
-        let config = PostgresConfig { url, tls };
+        let config = PostgresConfig::new(url).with_tls(tls);
         Self::connect_with_config(config).await
     }
 
@@ -149,22 +181,39 @@ mod tests {
         );
     }
 
+    /// Define uma variável de ambiente e a remove ao sair do escopo (inclusive
+    /// em caso de panic), para um teste não vazar estado para outro.
+    struct EnvGuard(&'static str);
+
+    impl EnvGuard {
+        fn set(key: &'static str, value: &str) -> Self {
+            unsafe { std::env::set_var(key, value) };
+            Self(key)
+        }
+    }
+
+    impl Drop for EnvGuard {
+        fn drop(&mut self) {
+            unsafe { std::env::remove_var(self.0) };
+        }
+    }
+
     #[tokio::test]
     async fn env_config_loads_url_from_process() {
-        unsafe {
-            std::env::set_var("GERAX_TEST_DATABASE_URL", "postgresql://localhost/test");
-        }
+        // Nome único por teste: dois testes usando a mesma variável disputam o
+        // ambiente do processo e falham quando rodam em paralelo.
+        let _guard = EnvGuard::set(
+            "GERAX_TEST_DATABASE_URL_LOADS",
+            "postgresql://localhost/test",
+        );
 
         let result: Result<Value, _> = Config::builder().system_env().build();
-
-        unsafe {
-            std::env::remove_var("GERAX_TEST_DATABASE_URL");
-        }
 
         assert!(result.is_ok());
         let doc = result.unwrap();
         assert_eq!(
-            doc.get("gerax_test_database_url").and_then(|v| v.as_str()),
+            doc.get("gerax_test_database_url_loads")
+                .and_then(|v| v.as_str()),
             Some("postgresql://localhost/test")
         );
     }
@@ -172,26 +221,61 @@ mod tests {
     #[tokio::test]
     async fn env_config_system_env_overrides_earlier_sources() {
         let memory = MemorySource::from_value(&serde_json::json!({
-            "gerax_test_database_url": "postgresql://memory/db"
+            "gerax_test_database_url_override": "postgresql://memory/db"
         }))
         .expect("memory source");
 
-        unsafe {
-            std::env::set_var("GERAX_TEST_DATABASE_URL", "postgresql://system/db");
-        }
+        let _guard = EnvGuard::set("GERAX_TEST_DATABASE_URL_OVERRIDE", "postgresql://system/db");
 
         let result: Result<Value, _> = Config::builder().source(memory).system_env().build();
-
-        unsafe {
-            std::env::remove_var("GERAX_TEST_DATABASE_URL");
-        }
 
         assert!(result.is_ok());
         let doc = result.unwrap();
         assert_eq!(
-            doc.get("gerax_test_database_url").and_then(|v| v.as_str()),
+            doc.get("gerax_test_database_url_override")
+                .and_then(|v| v.as_str()),
             Some("postgresql://system/db")
         );
+    }
+
+    #[test]
+    fn connect_options_prefers_configured_database() {
+        let options = PostgresConnection::connect_options(
+            &PostgresConfig::new("postgresql://host:5432/from_url").with_database("configured_db"),
+        )
+        .expect("parse");
+
+        assert_eq!(options.get_database(), Some("configured_db"));
+    }
+
+    #[test]
+    fn connect_options_keeps_url_database_when_config_has_none() {
+        let options = PostgresConnection::connect_options(&PostgresConfig::new(
+            "postgresql://host:5432/from_url",
+        ))
+        .expect("parse");
+
+        assert_eq!(options.get_database(), Some("from_url"));
+    }
+
+    #[test]
+    fn connect_options_requires_tls_when_configured() {
+        let options = PostgresConnection::connect_options(
+            &PostgresConfig::new("postgresql://host:5432/db").with_tls(PostgresTls::Rustls),
+        )
+        .expect("parse");
+
+        assert!(matches!(options.get_ssl_mode(), PgSslMode::Require));
+    }
+
+    #[test]
+    fn connect_options_respects_url_ssl_mode_when_tls_disabled() {
+        let options = PostgresConnection::connect_options(&PostgresConfig::new(
+            "postgresql://host:5432/db?sslmode=disable",
+        ))
+        .expect("parse");
+
+        assert!(matches!(options.get_ssl_mode(), PgSslMode::Disable));
     }
 
     #[tokio::test]

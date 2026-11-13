@@ -2,9 +2,9 @@ use std::marker::PhantomData;
 use std::sync::Arc;
 
 use gerax_core::Entity;
-use gerax_db::{Connection, DatabaseConfig, DbError, Repository, RepositoryBuilder};
+use gerax_db::{DatabaseConfig, DbError, Repository, RepositoryBuilder};
 
-use crate::mongodb::{MongoDbConnection, MongoDbRepository};
+use crate::mongodb::{MongoDbConfig, MongoDbConnection, MongoDbRepository};
 
 /// Builder concreto para repositórios MongoDB.
 pub struct MongoDbRepositoryBuilder<T> {
@@ -30,6 +30,14 @@ impl<T: Entity + Send + Sync + 'static> MongoDbRepositoryBuilder<T> {
     pub fn config(&self) -> &DatabaseConfig {
         &self.config
     }
+
+    /// Configuração de conexão efetiva, derivada da configuração do builder.
+    fn connection_config(&self) -> MongoDbConfig {
+        MongoDbConfig {
+            uri: self.config.url.clone(),
+            database: self.config.database.clone(),
+        }
+    }
 }
 
 #[async_trait::async_trait]
@@ -38,7 +46,7 @@ impl<T: Entity + Send + Sync + 'static> RepositoryBuilder<T> for MongoDbReposito
         let connection = if let Some(ref conn) = self.connection {
             conn.clone()
         } else {
-            Arc::new(MongoDbConnection::connect().await?)
+            Arc::new(MongoDbConnection::connect_with_config(self.connection_config()).await?)
         };
 
         Ok(Box::new(MongoDbRepository::new(connection)))
@@ -80,5 +88,35 @@ mod tests {
 
         assert_eq!(builder.config().url, "mongodb://localhost:27017");
         assert_eq!(builder.config().database, "test_db");
+    }
+
+    #[tokio::test]
+    async fn build_uses_builder_config_instead_of_env() {
+        // URI vazia: se `build` lesse o ambiente, o erro viria de `DATABASE_URL`
+        // ausente; usando a config do builder, a validação falha com "empty".
+        let config = DatabaseConfig {
+            url: String::new(),
+            database: "configured_db".into(),
+        };
+        let builder = MongoDbRepositoryBuilder::<User>::new(config);
+
+        let result = builder.build().await;
+        assert!(matches!(
+            result,
+            Err(DbError::ConfigurationError(ref message)) if message.contains("empty")
+        ));
+    }
+
+    #[tokio::test]
+    async fn build_derives_connection_config_from_builder_config() {
+        let config = DatabaseConfig {
+            url: "mongodb://configured-host:27017".into(),
+            database: "configured_db".into(),
+        };
+        let builder = MongoDbRepositoryBuilder::<User>::new(config);
+
+        let connection_config = builder.connection_config();
+        assert_eq!(connection_config.uri, "mongodb://configured-host:27017");
+        assert_eq!(connection_config.database, "configured_db");
     }
 }

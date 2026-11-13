@@ -1,7 +1,7 @@
 # gerax-postgres
 
 Adaptador PostgreSQL para o framework Gerax. Ele fornece uma conexão assíncrona
-baseada em `tokio-postgres` e um repositório genérico que implementa os traits
+baseada em `sqlx` e um repositório genérico que implementa os traits
 `Connection` e `Repository<T>` de `gerax-db`.
 
 Cada entidade é armazenada em uma tabela com duas colunas: `id` (`TEXT`, chave
@@ -40,7 +40,7 @@ POSTGRES_URL=postgresql://postgres:postgres@localhost:5432/gerax
 ### TLS
 
 TLS é uma decisão de configuração explícita. O padrão é **desativado**; para
-habilitá-lo, defina a variável `tls` como `native` (ou `true`, `1`, `enable`,
+**exigir** TLS, defina a variável `tls` como `native` (ou `true`, `1`, `enable`,
 `enabled`) ou `rustls`:
 
 ```dotenv
@@ -48,15 +48,16 @@ URL=postgresql://postgres:postgres@localhost:5432/gerax
 TLS=native
 ```
 
-```dotenv
-URL=postgresql://postgres:postgres@localhost:5432/gerax
-TLS=rustls
-```
+`tls` habilitado mapeia para `PgSslMode::Require` (sobrepõe o `sslmode` da URL).
+Com `tls` desativado (padrão), as opções não são alteradas e o `sslmode` da URL
+prevalece.
 
-Quando TLS está habilitado com `native`, a conexão usa `native-tls` via
-`postgres-native-tls`. Com `rustls`, é usado `rustls` via
-`tokio-postgres-rustls` (roots da WebPKI embutidas). Para conexões sem TLS,
-mantenha `TLS=false` ou omita a variável.
+O backend TLS concreto (native-tls ou rustls) é escolhido em **tempo de
+compilação** pelas features do `sqlx` (`tls-native-tls` / `tls-rustls`), não pelo
+variant de `PostgresTls`. Neste workspace nenhuma feature de TLS do sqlx está
+habilitada, então exigir TLS falha de forma explícita ("SQLx was built without
+TLS support enabled") em vez de conectar em texto claro. Habilite a feature
+desejada no `Cargo.toml` para usar TLS.
 
 Também é possível configurar a conexão de forma programática com
 `PostgresConfig`:
@@ -67,11 +68,7 @@ use gerax_postgres::{PostgresConfig, PostgresTls};
 // Sem TLS (padrão)
 let config = PostgresConfig::new("postgresql://localhost/gerax");
 
-// TLS com native-tls
-let config = PostgresConfig::new("postgresql://localhost/gerax")
-    .with_tls(PostgresTls::NativeTls);
-
-// TLS com rustls
+// Exige TLS
 let config = PostgresConfig::new("postgresql://localhost/gerax")
     .with_tls(PostgresTls::Rustls);
 ```
@@ -142,21 +139,21 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 ## API pública
 
 - `PostgresConnection`: implementa `Connection`. Use `connect()` para criar a
-  conexão e `ping()` para verificar sua disponibilidade. `client()` expõe o
-  `tokio_postgres::Client` subjacente para operações específicas do PostgreSQL.
-- `PostgresConfig`: configuração explícita com `url` e `tls`. Use
-  `connect_with_config(config)` para evitar dependência de variáveis de ambiente.
-- `PostgresTls`: `Disabled` (padrão), `NativeTls` (native-tls), `Rustls`
-  (rustls com roots WebPKI). Configure via `PostgresConfig::with_tls()` ou
-  ambiente (`TLS=native` / `TLS=rustls`).
-- `PostgresConnection::try_connection_error()`: consulta não bloqueante para
-  verificar se a task do driver reportou uma falha de conexão, TLS ou rede.
+  conexão (lendo do ambiente) ou `connect_with_config(config)` para usar uma
+  `PostgresConfig` explícita; `ping()` verifica a disponibilidade. `client()` e
+  `pool()` expõem o `sqlx::PgPool` subjacente para operações específicas do
+  PostgreSQL.
+- `PostgresConfig`: configuração explícita com `url`, `database` (opcional, tem
+  precedência sobre o path da URL) e `tls`.
+- `PostgresTls`: `Disabled` (padrão), `NativeTls`, `Rustls`. Configure via
+  `PostgresConfig::with_tls()` ou ambiente (`TLS=native` / `TLS=rustls`). O
+  backend concreto é escolhido em tempo de compilação pelas features do sqlx.
 - `PostgresRepository<T>`: recebe um `Arc<PostgresConnection>` em `new()` e
   implementa `Repository<T>`. Também oferece `create_table()` e `connection()`.
 - `PostgresRepositoryBuilder<T>`: recebe um `DatabaseConfig` em `new()` e pode
   receber uma conexão já aberta com `with_connection()`. `build()` retorna
   `Box<dyn Repository<T>>`; sem uma conexão explícita, ele chama
-  `PostgresConnection::connect()`.
+  `PostgresConnection::connect_with_config()` derivada do `DatabaseConfig`.
 
 `PostgresRepository<T>` exige que `T` implemente `Entity`, `Serialize` e
 `Deserialize` (além de `Send`, `Sync` e `'static`).
@@ -180,8 +177,8 @@ para `SerializationError`. Problemas de configuração são mapeados para
 
 `create_table()` cria somente a estrutura mínima `id`/`data` e não substitui
 migrações. O crate não faz escape ou validação do nome retornado por
-`collection_name()`; esse valor não deve vir de entrada externa. A task do
-driver é executada em segundo plano enquanto o `Client` estiver em uso; falhas
-são capturadas por `try_connection_error()`, mas **não há reconexão automática**.
-Em ambientes onde a reconexão é necessária, envolva `PostgresConnection::connect()`
-em uma estratégia de retry no caller e recrie repositórios com a nova conexão.
+`collection_name()`; esse valor não deve vir de entrada externa. O pool do sqlx
+gerencia e reutiliza as conexões, mas **não há retry automático da conexão
+inicial**. Em ambientes onde a reconexão é necessária, envolva
+`PostgresConnection::connect()` em uma estratégia de retry no caller e recrie
+repositórios com a nova conexão.

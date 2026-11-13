@@ -17,6 +17,30 @@ impl MongoDbConnection {
     pub fn database(&self) -> &Database {
         &self.database
     }
+
+    /// Conecta usando a configuração fornecida, sem consultar o ambiente.
+    pub async fn connect_with_config(config: MongoDbConfig) -> Result<Self, DbError> {
+        Self::validate(&config)?;
+
+        let options = ClientOptions::parse(&config.uri)
+            .await
+            .map_err(|e| DbError::connection(e))?;
+        let client = Client::with_options(options).map_err(|e| DbError::connection(e))?;
+
+        let database = client.database(&config.database);
+
+        Ok(Self { client, database })
+    }
+
+    fn validate(config: &MongoDbConfig) -> Result<(), DbError> {
+        if config.uri.trim().is_empty() {
+            return Err(DbError::configuration("mongodb uri cannot be empty"));
+        }
+        if config.database.trim().is_empty() {
+            return Err(DbError::configuration("mongodb database cannot be empty"));
+        }
+        Ok(())
+    }
 }
 
 #[async_trait]
@@ -26,14 +50,7 @@ impl Connection for MongoDbConnection {
         Self: Sized,
     {
         let config = MongoDbConfig::from_env()?;
-        let options = ClientOptions::parse(&config.uri)
-            .await
-            .map_err(|e| DbError::connection(e))?;
-        let client = Client::with_options(options).map_err(|e| DbError::connection(e))?;
-
-        let database = client.database(&config.database);
-
-        Ok(Self { client, database })
+        Self::connect_with_config(config).await
     }
 
     async fn ping(&self) -> Result<(), DbError> {
