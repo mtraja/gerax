@@ -1,7 +1,7 @@
 # Gerax — Product Specification
 
 ## Visão Geral
-Gerax é um framework web type-safe para Rust, focado em produtividade e modularidade. Oferece abstrações para servidores HTTP, persistência em banco de dados, autenticação e configuração, com suporte a múltiplos backends (Actix, Axum, Poem) e bancos (MongoDB, PostgreSQL).
+Gerax é um framework web type-safe para Rust, focado em produtividade e modularidade. Oferece abstrações para servidores HTTP, persistência em banco de dados, autenticação e configuração, com suporte a múltiplos backends (Actix, Axum) e bancos (MongoDB, PostgreSQL).
 
 ## Princípios
 - **Type-safe**: APIs fortemente tipadas, sem `Stringly-typed` ou `Any`.
@@ -22,7 +22,6 @@ Gerax é um framework web type-safe para Rust, focado em produtividade e modular
 | `gerax-macros` | Macros proc-macro para reduzir boilerplate. |
 | `gerax-actix` | Adapter Actix Web (`HttpServer` para Actix). |
 | `gerax-axum` | Adapter Axum (`HttpServer` para Axum). |
-| `gerax-poem` | Adapter Poem (`HttpServer` para Poem). |
 | `gerax-mongodb` | Implementação MongoDB do `gerax-db`. |
 | `gerax-postgres` | Implementação PostgreSQL do `gerax-db`. |
 | `gerax` | Fachada pública; re-exporta módulos por feature. |

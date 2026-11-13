@@ -11,17 +11,11 @@ pub use gerax_actix::*;
 #[cfg(feature = "axum")]
 pub use gerax_axum::*;
 
-#[cfg(feature = "poem")]
-pub use gerax_poem::*;
-
 #[cfg(feature = "mongodb")]
 pub use gerax_mongodb::*;
 
 #[cfg(feature = "postgres")]
 pub use gerax_postgres::*;
-
-#[cfg(feature = "turso")]
-pub use gerax_turso::*;
 
 #[cfg(feature = "ai")]
 pub use gerax_ai::*;

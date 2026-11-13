@@ -688,8 +688,6 @@ Permitir integração com:
 gerax-http
 gerax-axum
 gerax-actix
-gerax-poem
-gerax-salvo
 ```
 
 A lógica MCP deve permanecer em:
@@ -1080,8 +1078,6 @@ depende desnecessariamente de:
 ```text
 gerax-actix
 gerax-axum
-gerax-poem
-gerax-salvo
 ```
 
 ### Duplicação

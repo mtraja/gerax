@@ -20,10 +20,8 @@ direta via feature flags.
 |---------|-----------|
 | `actix` | Suporte a Actix Web via `gerax-actix` |
 | `axum` | Suporte a Axum via `gerax-axum` |
-| `poem` | Suporte a Poem via `gerax-poem` |
 | `mongodb` | Suporte a MongoDB via `gerax-mongodb` |
 | `postgres` | Suporte a PostgreSQL via `gerax-postgres` |
-| `turso` | Suporte a Turso via `gerax-turso` |
 | `ai` | Integração de IA via `gerax-ai` |
 | `mysql` | Suporte a MySQL via `gerax-mysql` |
 | `auth` | Autenticação/autorização via `gerax-auth` |
@@ -56,10 +54,8 @@ estiver ativa:
 
 - `actix` -> `gerax_actix::*`
 - `axum` -> `gerax_axum::*`
-- `poem` -> `gerax_poem::*`
 - `mongodb` -> `gerax_mongodb::*`
 - `postgres` -> `gerax_postgres::*`
-- `turso` -> `gerax_turso::*`
 - `ai` -> `gerax_ai::*`
 - `mysql` -> `gerax_mysql::*`
 - `auth` -> `gerax_auth::*`

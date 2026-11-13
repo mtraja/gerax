@@ -10,7 +10,6 @@
 ### Features
 - `actix`: habilita `gerax-http` + `gerax-actix`.
 - `axum`: habilita `gerax-http` + `gerax-axum`.
-- `poem`: habilita `gerax-http` + `gerax-poem`.
 - `mongodb`: habilita `gerax-mongodb`.
 - `postgres`: habilita `gerax-postgres`.
 - `auth`: habilita `gerax-auth`.
